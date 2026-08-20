@@ -1,47 +1,41 @@
+#include <chrono>
 #include <iostream>
+#include <algorithm>
 #include <array/ndarray.hpp>
 #include <ops/binary.hpp>
 #include <ops/unary.hpp>
 #include <ops/reduce.hpp>
-#include <linalg/matrix.hpp>
+#include <linalg/matmul.hpp>
 
 int main() {
     using namespace sci;
+
+    const auto start = std::chrono::high_resolution_clock::now();
 
     constexpr array::shape<2> bounds{2, 2};
 
     array::ndarray<float, 2> alpha(bounds);
     array::ndarray<float, 2> beta(bounds);
 
-    float* left = alpha.data();
-    float* right = beta.data();
+    constexpr float source[] = {1.0f, 2.0f, 3.0f, 4.0f};
+    constexpr float target[] = {5.0f, 6.0f, 7.0f, 8.0f};
 
-    left[0] = 1.0f;
-    left[1] = 2.0f;
-    left[2] = 3.0f;
-    left[3] = 4.0f;
+    std::copy_n(source, 4, alpha.data());
+    std::copy_n(target, 4, beta.data());
 
-    right[0] = 5.0f;
-    right[1] = 6.0f;
-    right[2] = 7.0f;
-    right[3] = 8.0f;
-
-    auto sum = ops::add(alpha, beta);
-    auto product = ops::mul(alpha, beta);
-    auto transformed = ops::sin(alpha);
+    const auto sum = ops::add(alpha, beta);
+    const auto product = ops::mul(alpha, beta);
+    const auto transform = ops::sin(alpha);
 
     std::cout << "Sum aggregate: " << ops::sum(sum) << "\n";
     std::cout << "Mean aggregate: " << ops::mean(product) << "\n";
-    std::cout << "Min aggregate: " << ops::min(transformed) << "\n";
-    std::cout << "Max aggregate: " << ops::max(transformed) << "\n";
+    std::cout << "Min aggregate: " << ops::min(transform) << "\n";
+    std::cout << "Max aggregate: " << ops::max(transform) << "\n";
 
-    auto output = linalg::matmul(alpha, beta);
+    const auto finish = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<double, std::milli> elapsed = finish - start;
 
-    const float* data = output.data();
-    for (std::size_t index = 0; index < output.size(); ++index) {
-        std::cout << data[index] << " ";
-    }
-    std::cout << "\n";
+    std::cout << "Execution time: " << elapsed.count() << " ms\n";
 
     return 0;
 }

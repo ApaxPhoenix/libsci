@@ -1,7 +1,8 @@
 #pragma once
 
+#include "core/types.hpp"
+
 #include <array>
-#include <core/types.hpp>
 
 namespace sci::array {
 

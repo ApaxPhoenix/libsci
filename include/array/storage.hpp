@@ -1,70 +1,106 @@
 #pragma once
 
-#include <cstdlib>
-#include <utility>
-#include <core/arch/alignment.hpp>
-#include <core/types.hpp>
+#include "core/drivers/device.hpp"
+#include "core/memory/arena.hpp"
+#include "core/types.hpp"
 
 namespace sci::array {
 
-    template <typename element>
-    class storage {
-        element* buffer = nullptr;
-        core::size count = 0;
+template <typename element>
+class storage {
+public:
+    storage() = default;
 
-    public:
-        storage() = default;
+    explicit storage(const core::size total)
+        : count_(total), pointer_(new element[total]()), owned_(true) {}
 
-        explicit storage(core::size total) : count(total) {
-            if (count > 0) {
-                buffer = static_cast<element*>(
-                    ::operator new[](count * sizeof(element), std::align_val_t{core::arch::boundary})
-                );
-            }
+    explicit storage(core::drivers::device& device, const core::size total)
+        : count_(total), device_(&device), target_(device.target()) {
+        if (count_ == 0) return;
+        device_->allocate(count_ * sizeof(element), memory_);
+    }
+
+    explicit storage(core::memory::arena& arena, const core::size total)
+        : count_(total), pointer_(arena.allocate<element>(total)) {}
+
+    ~storage() {
+        release();
+    }
+
+    storage(const storage&) = delete;
+    storage& operator=(const storage&) = delete;
+
+    storage(storage&& other) noexcept
+        : memory_(other.memory_),
+          count_(other.count_),
+          device_(other.device_),
+          pointer_(other.pointer_),
+          owned_(other.owned_),
+          target_(other.target_) {
+        other.memory_ = {};
+        other.count_ = 0;
+        other.device_ = nullptr;
+        other.pointer_ = nullptr;
+        other.owned_ = false;
+        other.target_ = core::drivers::target::cpu;
+    }
+
+    storage& operator=(storage&& other) noexcept {
+        if (this != &other) {
+            release();
+            memory_ = other.memory_;
+            count_ = other.count_;
+            device_ = other.device_;
+            pointer_ = other.pointer_;
+            owned_ = other.owned_;
+            target_ = other.target_;
+
+            other.memory_ = {};
+            other.count_ = 0;
+            other.device_ = nullptr;
+            other.pointer_ = nullptr;
+            other.owned_ = false;
+            other.target_ = core::drivers::target::cpu;
         }
+        return *this;
+    }
 
-        ~storage() {
-            if (buffer) {
-                ::operator delete[](buffer, std::align_val_t{core::arch::boundary});
-            }
+    [[nodiscard]] element* data() noexcept {
+        if (pointer_) return pointer_;
+        if (memory_.handle) return static_cast<element*>(*memory_.handle);
+        return nullptr;
+    }
+
+    [[nodiscard]] const element* data() const noexcept {
+        if (pointer_) return pointer_;
+        if (memory_.handle) return static_cast<const element*>(*memory_.handle);
+        return nullptr;
+    }
+
+    [[nodiscard]] core::size size() const noexcept { return count_; }
+    [[nodiscard]] const core::drivers::memory& handle() const noexcept { return memory_; }
+    [[nodiscard]] core::drivers::device* device() const noexcept { return device_; }
+    [[nodiscard]] core::drivers::target target() const noexcept { return target_; }
+
+private:
+    void release() noexcept {
+        if (device_ && memory_.bytes > 0) {
+            device_->dispose(memory_);
+        } else if (owned_ && pointer_) {
+            delete[] pointer_;
         }
+        pointer_ = nullptr;
+        device_ = nullptr;
+        memory_ = {};
+        count_ = 0;
+    }
 
-        storage(const storage& other) : storage(other.count) {
-            for (core::size index = 0; index < count; ++index) {
-                buffer[index] = other.buffer[index];
-            }
-        }
-
-        storage& operator=(const storage& other) {
-            if (this != &other) {
-                storage temp(other);
-                std::swap(buffer, temp.buffer);
-                std::swap(count, temp.count);
-            }
-            return *this;
-        }
-
-        storage(storage&& other) noexcept : buffer(other.buffer), count(other.count) {
-            other.buffer = nullptr;
-            other.count = 0;
-        }
-
-        storage& operator=(storage&& other) noexcept {
-            if (this != &other) {
-                if (buffer) {
-                    ::operator delete[](buffer, std::align_val_t{core::arch::boundary});
-                }
-                buffer = other.buffer;
-                count = other.count;
-                other.buffer = nullptr;
-                other.count = 0;
-            }
-            return *this;
-        }
-
-        element* data() noexcept { return buffer; }
-        const element* data() const noexcept { return buffer; }
-        core::size size() const noexcept { return count; }
-    };
+    core::drivers::memory memory_{};
+    core::size count_{0};
+    core::drivers::device* device_{nullptr};
+    element* pointer_{nullptr};
+    bool owned_{false};
+    core::drivers::target target_{core::drivers::target::cpu};
+};
 
 }

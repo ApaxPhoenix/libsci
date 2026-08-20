@@ -23,21 +23,21 @@ namespace sci::ops {
     template <typename element, core::size rank>
     element min(const array::ndarray<element, rank>& input) {
         const element* src = input.data();
-        element val = src[0];
+        element value = src[0];
         for (core::size index = 1; index < input.size(); ++index) {
-            val = std::min(val, src[index]);
+            value = std::min(value, src[index]);
         }
-        return val;
+        return value;
     }
 
     template <typename element, core::size rank>
     element max(const array::ndarray<element, rank>& input) {
         const element* src = input.data();
-        element val = src[0];
+        element value = src[0];
         for (core::size index = 1; index < input.size(); ++index) {
-            val = std::max(val, src[index]);
+            value = std::max(value, src[index]);
         }
-        return val;
+        return value;
     }
 
 }

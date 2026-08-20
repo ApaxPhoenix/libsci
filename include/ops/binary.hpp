@@ -9,9 +9,9 @@ namespace sci::ops {
         array::ndarray<element, rank> output(left.extents());
         const element* lhs = left.data();
         const element* rhs = right.data();
-        element* dst = output.data();
+        element* destination = output.data();
         for (core::size index = 0; index < left.size(); ++index) {
-            dst[index] = lhs[index] + rhs[index];
+            destination[index] = lhs[index] + rhs[index];
         }
         return output;
     }
@@ -21,9 +21,9 @@ namespace sci::ops {
         array::ndarray<element, rank> output(left.extents());
         const element* lhs = left.data();
         const element* rhs = right.data();
-        element* dst = output.data();
+        element* destination = output.data();
         for (core::size index = 0; index < left.size(); ++index) {
-            dst[index] = lhs[index] - rhs[index];
+            destination[index] = lhs[index] - rhs[index];
         }
         return output;
     }
@@ -33,9 +33,9 @@ namespace sci::ops {
         array::ndarray<element, rank> output(left.extents());
         const element* lhs = left.data();
         const element* rhs = right.data();
-        element* dst = output.data();
+        element* destination = output.data();
         for (core::size index = 0; index < left.size(); ++index) {
-            dst[index] = lhs[index] * rhs[index];
+            destination[index] = lhs[index] * rhs[index];
         }
         return output;
     }
@@ -45,9 +45,9 @@ namespace sci::ops {
         array::ndarray<element, rank> output(left.extents());
         const element* lhs = left.data();
         const element* rhs = right.data();
-        element* dst = output.data();
+        element* destination = output.data();
         for (core::size index = 0; index < left.size(); ++index) {
-            dst[index] = lhs[index] / rhs[index];
+            destination[index] = lhs[index] / rhs[index];
         }
         return output;
     }
