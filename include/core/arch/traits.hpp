@@ -5,7 +5,7 @@
 
 namespace sci::core::arch {
 
-    template <typename type>
+    template <typename type, size boundary = cpu>
     inline constexpr size lanes = boundary / sizeof(type);
 
 }

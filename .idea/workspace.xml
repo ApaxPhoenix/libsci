@@ -3,9 +3,9 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
-  <component name="CMakePresetLoader"><![CDATA[{
-  "useNewFormat": true
-}]]></component>
+  <component name="CMakePresetLoader">{
+  &quot;useNewFormat&quot;: true
+}</component>
   <component name="CMakeProjectFlavorService">
     <option name="flavorId" value="CMakePlainProjectFlavor" />
   </component>
@@ -23,7 +23,55 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="da230a09-af73-4e1a-8554-6505e2456f7c" name="Changes" comment="" />
+    <list default="true" id="da230a09-af73-4e1a-8554-6505e2456f7c" name="Changes" comment="Initial Commit">
+      <change afterPath="$PROJECT_DIR$/include/core/drivers/cpu/context.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/drivers/cpu/dispatch.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/avx2.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/avx512.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/fallback.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/neon.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/drivers/cpu/pool.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/drivers/device.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/drivers/vulkan/allocator.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/drivers/vulkan/context.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/drivers/vulkan/dispatch.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/drivers/vulkan/pipeline.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/memory/arena.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/memory/cursor.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/memory/pool.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/core/memory/slice.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/linalg/matmul.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/core/drivers/cpu/context.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/core/drivers/cpu/dispatch.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/avx2.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/avx512.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/fallback.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/neon.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/core/drivers/cpu/pool.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/core/drivers/device.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/core/drivers/vulkan/allocator.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/core/drivers/vulkan/context.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/core/drivers/vulkan/dispatch.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/core/drivers/vulkan/pipeline.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/libsci" beforeDir="false" afterPath="$PROJECT_DIR$/bin/libsci" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/ndarray.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/ndarray.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/shape.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/shape.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/slice.hpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/storage.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/storage.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/stride.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/stride.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/arch/alignment.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/arch/alignment.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/arch/traits.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/arch/traits.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/concepts.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/meta/concepts.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/memory.hpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/traits.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/meta/traits.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/types.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/types.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/linalg/matrix.hpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/ops/binary.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/ops/binary.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/ops/reduce.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/ops/reduce.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -36,6 +84,25 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;ApaxPhoenix&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/ApaxPhoenix/libsci.git&quot;,
+    &quot;accountId&quot;: &quot;9f46370b-9fa2-4bb8-856c-6f4c3ebc0c61&quot;
+  }
+}</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/include/core/drivers/cpu/kernels/avx2.hpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/include/core/drivers/cpu/kernels/avx512.hpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/include/core/drivers/cpu/kernels/fallback.hpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/include/core/drivers/cpu/kernels/neon.hpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file:///usr/local/include/vulkan/vulkan_core.h" root0="FORCE_HIGHLIGHTING" />
+  </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="UuqJSfOM" />
   </component>
@@ -45,36 +112,44 @@
     <option name="minorVersion" value="1" />
     <option name="productBranch" value="Classic" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 2
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
   <component name="ProjectId" id="3Heq9bBJmwF87qznO8tCcHf8mFo" />
+  <component name="ProjectStatusUIService"><![CDATA[{
+  "uiKindId": "Widget"
+}]]></component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "CMake Application.libsci.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.RadMigrateCodeStyle": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "RunOnceActivity.west.config.association.type.startup.service": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "master",
-    "onboarding.tips.debug.path": "/Users/82805/CLionProjects/libsci/main.cpp",
-    "org.rust.first.attach.projects": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;CMake Application.libsci.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.RadMigrateCodeStyle&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.west.config.association.type.startup.service&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;/Users/82805/CLionProjects/libsci/main.cpp&quot;,
+    &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/src/core/drivers" />
+      <recent name="$PROJECT_DIR$/include/core/drivers" />
+      <recent name="$PROJECT_DIR$/include/core/meta" />
+      <recent name="$PROJECT_DIR$/include/core" />
+      <recent name="$PROJECT_DIR$/include/core/drivers/cpu" />
     </key>
   </component>
   <component name="RunManager">
@@ -96,8 +171,21 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1786238732102</updated>
-      <workItem from="1786238733767" duration="1192000" />
+      <workItem from="1786238733767" duration="3800000" />
+      <workItem from="1786323658992" duration="6207000" />
+      <workItem from="1787160147827" duration="1293000" />
+      <workItem from="1787166770403" duration="13808000" />
+      <workItem from="1787231538317" duration="11245000" />
     </task>
+    <task id="LOCAL-00001" summary="Initial Commit">
+      <option name="closed" value="true" />
+      <created>1786239947641</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1786239947641</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -108,5 +196,9 @@
     <isAutomaticFoundErrors value="true" />
     <isAutomaticReloadCMake value="true" />
     <isAutomaticBootstrapAfterUpdate value="false" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Initial Commit" />
+    <option name="LAST_COMMIT_MESSAGE" value="Initial Commit" />
   </component>
 </project>

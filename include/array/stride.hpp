@@ -1,8 +1,9 @@
 #pragma once
 
+#include "array/shape.hpp"
+#include "core/types.hpp"
+
 #include <array>
-#include <array/shape.hpp>
-#include <core/types.hpp>
 
 namespace sci::array {
 
@@ -18,6 +19,10 @@ namespace sci::array {
                 step *= extents[index - 1];
             }
             return result;
+        }
+
+        constexpr core::size operator[](core::size index) const noexcept {
+            return steps[index];
         }
 
         constexpr core::size offset(std::array<core::size, rank> indices) const noexcept {
