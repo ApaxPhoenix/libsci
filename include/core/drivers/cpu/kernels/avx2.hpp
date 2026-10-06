@@ -1,12 +1,10 @@
 #pragma once
 
-#include "core/memory/cursor.hpp"
-#include "core/types.hpp"
+#include "core/drivers/cpu/kernels/table.hpp"
 
 namespace sci::core::drivers::cpu::kernels {
 
-    struct avx2 {
-        static void add(memory::cursor<float> left, memory::cursor<float> right, memory::cursor<float> yield, size count) noexcept;
-    };
+    // AVX2 + FMA kernels: eight floats or four doubles per register. Null when this build has no AVX2 code path.
+    [[nodiscard]] const Table* avx2() noexcept;
 
 }

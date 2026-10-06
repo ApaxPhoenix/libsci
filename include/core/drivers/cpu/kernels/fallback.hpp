@@ -1,12 +1,10 @@
 #pragma once
 
-#include "core/memory/cursor.hpp"
-#include "core/types.hpp"
+#include "core/drivers/cpu/kernels/table.hpp"
 
 namespace sci::core::drivers::cpu::kernels {
 
-    struct fallback {
-        static void add(memory::cursor<float> left, memory::cursor<float> right, memory::cursor<float> yield, size count) noexcept;
-    };
+    // Plain scalar kernels: any CPU, and the reference the vector paths are tested against. Never null.
+    [[nodiscard]] const Table* fallback() noexcept;
 
 }

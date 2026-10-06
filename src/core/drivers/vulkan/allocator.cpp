@@ -1,82 +1,139 @@
 #include "core/drivers/vulkan/allocator.hpp"
-#include "core/arch/alignment.hpp"
 #include "core/drivers/vulkan/context.hpp"
+#include "core/types.hpp"
+
+#include <cstdint>
+#include <ranges>
 
 namespace sci::core::drivers::vulkan {
 
-    allocator::allocator(const context& context, const size bytes)
-        : context_(context), capacity_(bytes) {
-        const VkBufferCreateInfo buffer{
+    // Requests are rounded to this granularity so similar sizes share cached buffers.
+    constexpr size granule = 4096;
+
+    // Upper bound on memory parked in the cache.
+    constexpr size budget = size{1} << 30;
+
+    // Host-visible and coherent is mandatory; device-local on top of it (unified memory) wins.
+    static uint32 choose(VkPhysicalDevice physical) noexcept {
+        VkPhysicalDeviceMemoryProperties memory{};
+        vkGetPhysicalDeviceMemoryProperties(physical, &memory);
+        constexpr VkMemoryPropertyFlags required = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        uint32 best = UINT32_MAX;
+        for (uint32 index = 0; index < memory.memoryTypeCount; ++index) {
+            const VkMemoryPropertyFlags flags = memory.memoryTypes[index].propertyFlags;
+            if ((flags & required) != required) continue;
+            if (best == UINT32_MAX) best = index;
+            if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) return index;
+        }
+        return best == UINT32_MAX ? 0 : best;
+    }
+
+    Allocator::Allocator(const Context& context)
+        : context(context), type(choose(context.physical)) {}
+
+    Allocator::~Allocator() noexcept {
+        for (const Buffer& buffer : std::views::values(live)) destroy(buffer);
+        for (const Buffer& buffer : std::views::values(spare)) destroy(buffer);
+    }
+
+    Buffer Allocator::compose(const size bytes) {
+        const size rounded = (bytes == 0 ? 1 : bytes) + granule - 1 & ~(granule - 1);
+
+        // Reuse a cached buffer that is at most a quarter larger than needed.
+        if (const auto match = spare.lower_bound(rounded); match != spare.end() && match->first <= rounded + rounded / 4) {
+            const Buffer buffer = match->second;
+            cached -= buffer.bytes;
+            spare.erase(match);
+            live.emplace(reinterpret_cast<std::uintptr_t>(buffer.host), buffer);
+            return buffer;
+        }
+
+        Buffer buffer = create(rounded);
+        if (!buffer.handle) {
+            // Out of memory: drop the cache and retry once.
+            for (const Buffer& cache : std::views::values(spare)) destroy(cache);
+            spare.clear();
+            cached = 0;
+            buffer = create(rounded);
+            if (!buffer.handle) return {};
+        }
+        live.emplace(reinterpret_cast<std::uintptr_t>(buffer.host), buffer);
+        return buffer;
+    }
+
+    void Allocator::release(const Buffer& buffer) noexcept {
+        if (!buffer.handle) return;
+        live.erase(reinterpret_cast<std::uintptr_t>(buffer.host));
+        if (cached + buffer.bytes <= budget) {
+            spare.emplace(buffer.bytes, buffer);
+            cached += buffer.bytes;
+        } else {
+            destroy(buffer);
+        }
+    }
+
+    uint64 Allocator::locate(const void* pointer) const noexcept {
+        const auto point = reinterpret_cast<std::uintptr_t>(pointer);
+        auto match = live.upper_bound(point);
+        if (match == live.begin()) return 0;
+        --match;
+        const Buffer& buffer = match->second;
+        if (point >= match->first + buffer.bytes) return 0;
+        return buffer.address + (point - match->first);
+    }
+
+    Buffer Allocator::create(const size bytes) {
+        Buffer buffer{};
+        buffer.bytes = bytes;
+
+        const VkBufferCreateInfo info{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .size = capacity_,
-            .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            .size = bytes,
+            .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .queueFamilyIndexCount = 0,
             .pQueueFamilyIndices = nullptr
         };
-        if (vkCreateBuffer(context_.device, &buffer, nullptr, &buffer_) != VK_SUCCESS) return;
+        if (vkCreateBuffer(context.device, &info, nullptr, &buffer.handle) != VK_SUCCESS) return {};
 
         VkMemoryRequirements requirements{};
-        vkGetBufferMemoryRequirements(context_.device, buffer_, &requirements);
+        vkGetBufferMemoryRequirements(context.device, buffer.handle, &requirements);
 
+        constexpr VkMemoryAllocateFlagsInfo flags{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
+            .pNext = nullptr,
+            .flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT,
+            .deviceMask = 0
+        };
         const VkMemoryAllocateInfo allocation{
             .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-            .pNext = nullptr,
+            .pNext = &flags,
             .allocationSize = requirements.size,
-            .memoryTypeIndex = select(context_.physical, requirements.memoryTypeBits)
+            .memoryTypeIndex = type
         };
-        if (vkAllocateMemory(context_.device, &allocation, nullptr, &memory_) != VK_SUCCESS) return;
-
-        vkBindBufferMemory(context_.device, buffer_, memory_, 0);
-        vkMapMemory(context_.device, memory_, 0, capacity_, 0, &host_);
-    }
-
-    allocator::~allocator() noexcept {
-        if (host_) vkUnmapMemory(context_.device, memory_);
-        if (buffer_) vkDestroyBuffer(context_.device, buffer_, nullptr);
-        if (memory_) vkFreeMemory(context_.device, memory_, nullptr);
-    }
-
-    buffer allocator::compose(const size bytes) noexcept {
-        buffer object{};
-        const size aligned = bytes + arch::gpu - 1 & ~(arch::gpu - 1);
-
-        if (offset_ + aligned > capacity_) return object;
-
-        object.handle = buffer_;
-        object.memory = memory_;
-        object.offset = offset_;
-        object.bytes = aligned;
-        object.host = static_cast<uint8*>(host_) + offset_;
-
-        offset_ += aligned;
-        return object;
-    }
-
-    void allocator::dispose(buffer& object) noexcept {
-        object.host = nullptr;
-        object.handle = VK_NULL_HANDLE;
-        object.memory = VK_NULL_HANDLE;
-        object.bytes = 0;
-        object.offset = 0;
-    }
-
-    void allocator::reset() noexcept {
-        offset_ = 0;
-    }
-
-    uint32 allocator::select(const VkPhysicalDevice physical, const uint32 filter) noexcept {
-        VkPhysicalDeviceMemoryProperties buffer{};
-        vkGetPhysicalDeviceMemoryProperties(physical, &buffer);
-        constexpr VkMemoryPropertyFlags required = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        for (uint32 index = 0; index < buffer.memoryTypeCount; ++index) {
-            if (filter & 1 << index && (buffer.memoryTypes[index].propertyFlags & required) == required) {
-                return index;
-            }
+        if (vkAllocateMemory(context.device, &allocation, nullptr, &buffer.memory) != VK_SUCCESS ||
+            vkBindBufferMemory(context.device, buffer.handle, buffer.memory, 0) != VK_SUCCESS ||
+            vkMapMemory(context.device, buffer.memory, 0, VK_WHOLE_SIZE, 0, &buffer.host) != VK_SUCCESS) {
+            destroy(buffer);
+            return {};
         }
-        return 0;
+
+        const VkBufferDeviceAddressInfo address{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+            .pNext = nullptr,
+            .buffer = buffer.handle
+        };
+        buffer.address = vkGetBufferDeviceAddress(context.device, &address);
+        return buffer;
+    }
+
+    void Allocator::destroy(const Buffer& buffer) const noexcept {
+        if (buffer.host) vkUnmapMemory(context.device, buffer.memory);
+        if (buffer.handle) vkDestroyBuffer(context.device, buffer.handle, nullptr);
+        if (buffer.memory) vkFreeMemory(context.device, buffer.memory, nullptr);
     }
 
 }

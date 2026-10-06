@@ -7,6 +7,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+option(SCI_NATIVE "Tune every translation unit for the build machine (-march=native / -mcpu=native)" OFF)
+
 include(FetchContent)
 
 if(WIN32)
@@ -36,44 +42,100 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(slang)
 
+find_package(Vulkan REQUIRED)
+
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
-file(GLOB_RECURSE SLANG_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/*.slang")
+file(GLOB SLANG_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.slang")
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64" OR CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
-    list(FILTER SOURCES EXCLUDE REGEX ".*/cpu/kernels/(avx2|avx512)\\.cpp$")
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|i386" OR CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
-    list(FILTER SOURCES EXCLUDE REGEX ".*/cpu/kernels/neon\\.cpp$")
+list(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+
+add_library(sci STATIC ${SOURCES} ${HEADERS})
+
+# Each SIMD kernel file is compiled for its own ISA; the dispatcher picks one at runtime from cpuid,
+# so the rest of the library stays at the baseline ISA.
+set(SCI_KERNELS "${CMAKE_CURRENT_SOURCE_DIR}/src/core/drivers/cpu/kernels")
+list(LENGTH CMAKE_OSX_ARCHITECTURES SCI_ARCH_COUNT)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64|i[3-6]86" AND SCI_ARCH_COUNT LESS_EQUAL 1)
+    if(MSVC)
+        set_source_files_properties("${SCI_KERNELS}/avx2.cpp" PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+        set_source_files_properties("${SCI_KERNELS}/avx512.cpp" PROPERTIES COMPILE_OPTIONS "/arch:AVX512")
+    else()
+        set_source_files_properties("${SCI_KERNELS}/avx2.cpp" PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
+        set_source_files_properties("${SCI_KERNELS}/avx512.cpp" PROPERTIES COMPILE_OPTIONS "-mavx512f;-mavx2;-mfma")
+    endif()
 endif()
 
-add_executable(libsci ${SOURCES} ${HEADERS})
-
-foreach(SLANG_SRC ${SLANG_SOURCES})
-    file(RELATIVE_PATH REL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/shaders" "${SLANG_SRC}")
-    string(REGEX REPLACE "\\.slang$" ".spv" REL_SPV "${REL_PATH}")
-    set(SPV_OUT "${CMAKE_CURRENT_BINARY_DIR}/generated/shaders/${REL_SPV}")
-
-    get_filename_component(OUT_DIR "${SPV_OUT}" DIRECTORY)
-
+# Slang compute shaders. Every shaders/*.slang compiles (all of its entry points) to one SPIR-V
+# module, and the modules are embedded into the library as sci::shaders::<file name> through the
+# generated header shaders/spirv.hpp, so nothing has to be found on disk at runtime.
+set(SCI_GENERATED "${CMAKE_CURRENT_BINARY_DIR}/generated")
+set(SCI_SPIRV "")
+foreach(SHADER ${SLANG_SOURCES})
+    get_filename_component(NAME "${SHADER}" NAME_WE)
+    set(SPIRV "${SCI_GENERATED}/shaders/${NAME}.spv")
     add_custom_command(
-            OUTPUT ${SPV_OUT}
-            COMMAND ${CMAKE_COMMAND} -E make_directory "${OUT_DIR}"
-            COMMAND ${SLANGC_EXE} ${SLANG_SRC} -target spirv -entry main -stage compute -o ${SPV_OUT}
-            DEPENDS ${SLANG_SRC}
+            OUTPUT "${SPIRV}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${SCI_GENERATED}/shaders"
+            COMMAND "${SLANGC_EXE}" "${SHADER}" -target spirv -fvk-use-entrypoint-name -O3 -o "${SPIRV}"
+            DEPENDS ${SLANG_SOURCES}
+            COMMENT "Compiling shader ${NAME}.slang"
+            VERBATIM
     )
-    target_sources(libsci PRIVATE ${SPV_OUT})
+    list(APPEND SCI_SPIRV "${SPIRV}")
 endforeach()
 
-target_include_directories(libsci PRIVATE
+string(JOIN "|" SCI_SPIRV_LIST ${SCI_SPIRV})
+add_custom_command(
+        OUTPUT "${SCI_GENERATED}/shaders/spirv.hpp"
+        COMMAND ${CMAKE_COMMAND} "-DOUTPUT=${SCI_GENERATED}/shaders/spirv.hpp" "-DINPUTS=${SCI_SPIRV_LIST}" -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed.cmake"
+        DEPENDS ${SCI_SPIRV} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed.cmake"
+        COMMENT "Embedding SPIR-V"
+        VERBATIM
+)
+target_sources(sci PRIVATE "${SCI_GENERATED}/shaders/spirv.hpp")
+
+target_include_directories(sci
+        PUBLIC
         include
-        "${CMAKE_CURRENT_SOURCE_DIR}/vendors/slang/include"
-        "${CMAKE_CURRENT_BINARY_DIR}/generated"
+        PRIVATE
+        "${SCI_GENERATED}"
 )
 
-target_link_libraries(libsci PRIVATE ${SLANG_LIB})
+find_package(Threads REQUIRED)
+
+# Slang is a build-time tool here (slangc); the runtime library is not linked.
+target_link_libraries(sci PUBLIC
+        Vulkan::Vulkan
+        Threads::Threads
+)
+
+# On macOS, host matrix products go through Accelerate (Apple's BLAS, on the AMX units), as NumPy's do.
+if(APPLE)
+    find_library(ACCELERATE Accelerate)
+    if(ACCELERATE)
+        target_link_libraries(sci PRIVATE ${ACCELERATE})
+        target_compile_definitions(sci PRIVATE SCI_ACCELERATE ACCELERATE_NEW_LAPACK)
+    endif()
+endif()
 
 if(MSVC)
-    target_compile_options(libsci PRIVATE /W4 /permissive-)
+    set(SCI_WARNINGS /W4 /permissive-)
+    set(SCI_OPTIMIZE /O2)
 else()
-    target_compile_options(libsci PRIVATE -Wall -Wextra -Wpedantic -O3)
+    set(SCI_WARNINGS -Wall -Wextra -Wpedantic)
+    set(SCI_OPTIMIZE -O3)
+    if(SCI_NATIVE)
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+            list(APPEND SCI_OPTIMIZE -mcpu=native)
+        else()
+            list(APPEND SCI_OPTIMIZE -march=native)
+        endif()
+    endif()
 endif()
+
+target_compile_options(sci PRIVATE ${SCI_WARNINGS} ${SCI_OPTIMIZE})
+
+add_executable(libsci src/main.cpp)
+target_link_libraries(libsci PRIVATE sci)
+target_compile_options(libsci PRIVATE ${SCI_WARNINGS} ${SCI_OPTIMIZE})

@@ -1,43 +1,34 @@
 #pragma once
 
-#include <algorithm>
 #include <array/ndarray.hpp>
+
+// Whole-array reductions, named as in numpy. Reducing an expression fuses it into the reduction,
+// so sum(a * b) never materialises a * b.
 
 namespace sci::ops {
 
-    template <typename element, core::size rank>
-    element sum(const array::ndarray<element, rank>& input) {
-        element total = 0;
-        const element* src = input.data();
-        for (core::size index = 0; index < input.size(); ++index) {
-            total += src[index];
-        }
-        return total;
+    using array::operand;
+
+    template <operand source>
+    array::element_t<source> sum(const source& input) {
+        return array::reduce(input, core::Fold::sum);
     }
 
-    template <typename element, core::size rank>
-    element mean(const array::ndarray<element, rank>& input) {
-        return sum(input) / static_cast<element>(input.size());
+    template <operand source>
+    array::element_t<source> mean(const source& input) {
+        const core::size count = array::wrap(input).shape().total();
+        return count == 0 ? array::element_t<source>{} : sum(input) / static_cast<array::element_t<source>>(count);
     }
 
-    template <typename element, core::size rank>
-    element min(const array::ndarray<element, rank>& input) {
-        const element* src = input.data();
-        element value = src[0];
-        for (core::size index = 1; index < input.size(); ++index) {
-            value = std::min(value, src[index]);
-        }
-        return value;
+    // NaN anywhere gives NaN, as in numpy.min / numpy.max.
+    template <operand source>
+    array::element_t<source> min(const source& input) {
+        return array::reduce(input, core::Fold::min);
     }
 
-    template <typename element, core::size rank>
-    element max(const array::ndarray<element, rank>& input) {
-        const element* src = input.data();
-        element value = src[0];
-        for (core::size index = 1; index < input.size(); ++index) {
-            value = std::max(value, src[index]);
-        }
-        return value;
+    template <operand source>
+    array::element_t<source> max(const source& input) {
+        return array::reduce(input, core::Fold::max);
     }
 
 }

@@ -1,106 +1,122 @@
 #pragma once
 
+#include "array/uninitialized.hpp"
+#include "core/arch/alignment.hpp"
 #include "core/drivers/device.hpp"
+#include "core/drivers/memory.hpp"
+#include "core/drivers/target.hpp"
 #include "core/memory/arena.hpp"
 #include "core/types.hpp"
 
+#include <cstring>
+#include <memory>
+#include <new>
+
 namespace sci::array {
 
-template <typename element>
-class storage {
-public:
-    storage() = default;
+    using core::drivers::Device;
+    using core::drivers::Target;
 
-    explicit storage(const core::size total)
-        : count_(total), pointer_(new element[total]()), owned_(true) {}
+    // The memory behind an NDArray: owned host memory, memory on a Device, or a slice of an Arena.
+    template <typename element>
+    class Storage {
+    public:
+        Storage() = default;
 
-    explicit storage(core::drivers::device& device, const core::size total)
-        : count_(total), device_(&device), target_(device.target()) {
-        if (count_ == 0) return;
-        device_->allocate(count_ * sizeof(element), memory_);
-    }
+        // Zero-filled host memory.
+        explicit Storage(const core::size total)
+            : count(total), pointer(acquire(total)), owned(true) {
+            std::uninitialized_value_construct_n(pointer, count);
+        }
 
-    explicit storage(core::memory::arena& arena, const core::size total)
-        : count_(total), pointer_(arena.allocate<element>(total)) {}
+        Storage(const core::size total, Uninitialized)
+            : count(total), pointer(acquire(total)), owned(true) {
+            std::uninitialized_default_construct_n(pointer, count);
+        }
 
-    ~storage() {
-        release();
-    }
+        // Zero-filled memory on a device (GPU memory is host-mapped, so this is a plain memset).
+        Storage(Device& device, const core::size total)
+            : Storage(device, total, Uninitialized{}) {
+            if (count > 0) std::memset(memory.host, 0, count * sizeof(element));
+        }
 
-    storage(const storage&) = delete;
-    storage& operator=(const storage&) = delete;
+        Storage(Device& device, const core::size total, Uninitialized)
+            : count(total), owner(&device) {
+            if (count > 0) owner->allocate(count * sizeof(element), memory);
+        }
 
-    storage(storage&& other) noexcept
-        : memory_(other.memory_),
-          count_(other.count_),
-          device_(other.device_),
-          pointer_(other.pointer_),
-          owned_(other.owned_),
-          target_(other.target_) {
-        other.memory_ = {};
-        other.count_ = 0;
-        other.device_ = nullptr;
-        other.pointer_ = nullptr;
-        other.owned_ = false;
-        other.target_ = core::drivers::target::cpu;
-    }
+        // Zero-filled memory from an arena, which keeps ownership.
+        Storage(core::memory::Arena& arena, const core::size total)
+            : count(total), pointer(arena.allocate<element>(total)) {
+            std::uninitialized_value_construct_n(pointer, count);
+        }
 
-    storage& operator=(storage&& other) noexcept {
-        if (this != &other) {
+        ~Storage() {
             release();
-            memory_ = other.memory_;
-            count_ = other.count_;
-            device_ = other.device_;
-            pointer_ = other.pointer_;
-            owned_ = other.owned_;
-            target_ = other.target_;
-
-            other.memory_ = {};
-            other.count_ = 0;
-            other.device_ = nullptr;
-            other.pointer_ = nullptr;
-            other.owned_ = false;
-            other.target_ = core::drivers::target::cpu;
         }
-        return *this;
-    }
 
-    [[nodiscard]] element* data() noexcept {
-        if (pointer_) return pointer_;
-        if (memory_.handle) return static_cast<element*>(*memory_.handle);
-        return nullptr;
-    }
+        Storage(const Storage&) = delete;
+        Storage& operator=(const Storage&) = delete;
 
-    [[nodiscard]] const element* data() const noexcept {
-        if (pointer_) return pointer_;
-        if (memory_.handle) return static_cast<const element*>(*memory_.handle);
-        return nullptr;
-    }
-
-    [[nodiscard]] core::size size() const noexcept { return count_; }
-    [[nodiscard]] const core::drivers::memory& handle() const noexcept { return memory_; }
-    [[nodiscard]] core::drivers::device* device() const noexcept { return device_; }
-    [[nodiscard]] core::drivers::target target() const noexcept { return target_; }
-
-private:
-    void release() noexcept {
-        if (device_ && memory_.bytes > 0) {
-            device_->dispose(memory_);
-        } else if (owned_ && pointer_) {
-            delete[] pointer_;
+        Storage(Storage&& storage) noexcept
+            : memory(storage.memory), count(storage.count), owner(storage.owner), pointer(storage.pointer), owned(storage.owned) {
+            storage.forget();
         }
-        pointer_ = nullptr;
-        device_ = nullptr;
-        memory_ = {};
-        count_ = 0;
-    }
 
-    core::drivers::memory memory_{};
-    core::size count_{0};
-    core::drivers::device* device_{nullptr};
-    element* pointer_{nullptr};
-    bool owned_{false};
-    core::drivers::target target_{core::drivers::target::cpu};
-};
+        Storage& operator=(Storage&& storage) noexcept {
+            if (this != &storage) {
+                release();
+                memory = storage.memory;
+                count = storage.count;
+                owner = storage.owner;
+                pointer = storage.pointer;
+                owned = storage.owned;
+                storage.forget();
+            }
+            return *this;
+        }
+
+        [[nodiscard]] element* data() noexcept {
+            return pointer ? pointer : static_cast<element*>(memory.host);
+        }
+
+        [[nodiscard]] const element* data() const noexcept {
+            return pointer ? pointer : static_cast<const element*>(memory.host);
+        }
+
+        [[nodiscard]] core::size size() const noexcept { return count; }
+        [[nodiscard]] Device* device() const noexcept { return owner; }
+        [[nodiscard]] Target target() const noexcept { return owner ? memory.target : Target::cpu; }
+
+    private:
+        [[nodiscard]] static element* acquire(const core::size total) {
+            if (total == 0) return nullptr;
+            return static_cast<element*>(::operator new(total * sizeof(element), std::align_val_t{core::arch::line}));
+        }
+
+        void release() noexcept {
+            if (owner && memory.bytes > 0) {
+                owner->dispose(memory);
+            } else if (owned && pointer) {
+                std::destroy_n(pointer, count);
+                ::operator delete(pointer, std::align_val_t{core::arch::line});
+            }
+            forget();
+        }
+
+        void forget() noexcept {
+            memory = {};
+            count = 0;
+            owner = nullptr;
+            pointer = nullptr;
+            owned = false;
+        }
+
+        core::drivers::Memory memory{};
+        core::size count{0};
+        Device* owner{nullptr};
+        element* pointer{nullptr};
+        bool owned{false};
+    };
 
 }

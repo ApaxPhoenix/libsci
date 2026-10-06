@@ -1,53 +1,47 @@
 #pragma once
 
 #include "core/arch/alignment.hpp"
+#include "core/memory/block.hpp"
 #include "core/memory/cursor.hpp"
 #include "core/types.hpp"
 
 #include <cstddef>
 #include <new>
+#include <utility>
 
 namespace sci::core::memory {
 
-class arena {
-    struct chunk {
-        std::byte* data{nullptr};
-        cursor<std::byte> head{};
-        size total{0};
-        size bound{arch::cpu};
-        chunk* next{nullptr};
-    };
-
+class Arena {
 public:
-    explicit arena(const size bytes)
+    explicit Arena(const size bytes)
         : limit(bytes) {
         first = compose(limit, arch::cpu);
         active = first;
     }
 
-    ~arena() {
+    ~Arena() {
         dispose();
     }
 
-    arena(const arena&) = delete;
-    arena& operator=(const arena&) = delete;
+    Arena(const Arena&) = delete;
+    Arena& operator=(const Arena&) = delete;
 
-    arena(arena&& other) noexcept
-        : first(other.first), active(other.active), limit(other.limit) {
-        other.first = nullptr;
-        other.active = nullptr;
-        other.limit = 0;
+    Arena(Arena&& arena) noexcept
+        : first(arena.first), active(arena.active), limit(arena.limit) {
+        arena.first = nullptr;
+        arena.active = nullptr;
+        arena.limit = 0;
     }
 
-    arena& operator=(arena&& other) noexcept {
-        if (this != &other) {
+    Arena& operator=(Arena&& arena) noexcept {
+        if (this != &arena) {
             dispose();
-            first = other.first;
-            active = other.active;
-            limit = other.limit;
-            other.first = nullptr;
-            other.active = nullptr;
-            other.limit = 0;
+            first = arena.first;
+            active = arena.active;
+            limit = arena.limit;
+            arena.first = nullptr;
+            arena.active = nullptr;
+            arena.limit = 0;
         }
         return *this;
     }
@@ -55,7 +49,7 @@ public:
     template <typename type>
     [[nodiscard]] type* allocate(const size count, const size bound = arch::cpu) {
         const size bytes = count * sizeof(type) + bound - 1 & ~(bound - 1);
-        if (static_cast<size>(active->data + active->total - active->head.raw()) < bytes) {
+        if (std::cmp_less(active->data + active->total - active->head.raw(), bytes)) {
             const size scale = bytes > limit ? bytes : limit;
             if (!active->next) {
                 active->next = compose(scale, bound);
@@ -68,14 +62,14 @@ public:
     }
 
     template <typename type>
-    [[nodiscard]] cursor<type> acquire(const size count, const size bound = arch::cpu) {
-        return cursor<type>(allocate<type>(count, bound));
+    [[nodiscard]] Cursor<type> acquire(const size count, const size bound = arch::cpu) {
+        return Cursor<type>(allocate<type>(count, bound));
     }
 
     void reset() noexcept {
         active = first;
-        for (auto* node = first; node; node = node->next) {
-            node->head = cursor(node->data);
+        for (auto* block = first; block; block = block->next) {
+            block->head = Cursor(block->data);
         }
     }
 
@@ -94,26 +88,26 @@ public:
 
     [[nodiscard]] size capacity() const noexcept {
         size sum = 0;
-        for (const auto* node = first; node; node = node->next) {
-            sum += node->total;
+        for (const auto* block = first; block; block = block->next) {
+            sum += block->total;
         }
         return sum;
     }
 
 private:
-    [[nodiscard]] static chunk* compose(const size bytes, const size bound) {
-        auto* node = new chunk();
-        node->data = static_cast<std::byte*>(
+    [[nodiscard]] static Block* compose(const size bytes, const size bound) {
+        auto* block = new Block();
+        block->data = static_cast<std::byte*>(
             operator new[](bytes, std::align_val_t{bound}));
-        node->head = cursor(node->data);
-        node->total = bytes;
-        node->bound = bound;
-        node->next = nullptr;
-        return node;
+        block->head = Cursor(block->data);
+        block->total = bytes;
+        block->bound = bound;
+        block->next = nullptr;
+        return block;
     }
 
-    chunk* first{nullptr};
-    chunk* active{nullptr};
+    Block* first{nullptr};
+    Block* active{nullptr};
     size limit{0};
 };
 

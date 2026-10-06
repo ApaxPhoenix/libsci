@@ -4,17 +4,17 @@
 
 namespace sci::core::memory {
 
-    struct slice {
+    struct Slice {
         size start{0};
         size stop{0};
         size step{1};
 
-        constexpr slice() noexcept = default;
+        constexpr Slice() noexcept = default;
 
-        explicit constexpr slice(const size end) noexcept
+        explicit constexpr Slice(const size end) noexcept
             : stop(end) {}
 
-        constexpr slice(const size begin, const size end, const size rate = 1) noexcept
+        constexpr Slice(const size begin, const size end, const size rate = 1) noexcept
             : start(begin), stop(end), step(rate) {}
 
         [[nodiscard]] constexpr size length() const noexcept {

@@ -5,9 +5,10 @@
 
 namespace sci::ops {
 
+    // Shape two same-rank shapes broadcast to: the larger extent in each dimension.
     template <core::size rank>
-    array::shape<rank> broadcast(const array::shape<rank>& left, const array::shape<rank>& right) {
-        array::shape<rank> output{};
+    array::Shape<rank> broadcast(const array::Shape<rank>& left, const array::Shape<rank>& right) {
+        array::Shape<rank> output{};
         for (core::size index = 0; index < rank; ++index) {
             output[index] = std::max(left[index], right[index]);
         }
