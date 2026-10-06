@@ -1,14 +1,24 @@
 #include "core/drivers/cpu/kernels/fallback.hpp"
+#include "core/drivers/cpu/kernels/generic/compose.hpp"
+#include "core/drivers/cpu/kernels/generic/scalar.hpp"
+#include "core/types.hpp"
 
 namespace sci::core::drivers::cpu::kernels {
 
-    void fallback::add(memory::cursor<float> left, memory::cursor<float> right, memory::cursor<float> yield, const size count) noexcept {
-        for (size index = 0; index < count; ++index) {
-            yield.get() = left.get() + right.get();
-            left.advance(1);
-            right.advance(1);
-            yield.advance(1);
-        }
+    // Plain scalar code: any CPU, and the reference the vector paths are tested against.
+    template <typename type>
+    struct Fallback;
+
+    template <>
+    struct Fallback<float> : Scalar<float, uint32, Fallback<float>> {};
+
+    template <>
+    struct Fallback<double> : Scalar<double, uint64, Fallback<double>> {};
+
+    constexpr Table table = compose<Fallback>("fallback");
+
+    const Table* fallback() noexcept {
+        return &table;
     }
 
 }

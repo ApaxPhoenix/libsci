@@ -5,11 +5,11 @@
 namespace sci::core::memory {
 
     template <typename type>
-    class cursor {
+    class Cursor {
     public:
-        constexpr cursor() noexcept = default;
+        constexpr Cursor() noexcept = default;
 
-        constexpr explicit cursor(type* origin, size offset = 0) noexcept
+        constexpr explicit Cursor(type* origin, size offset = 0) noexcept
             : pointer(origin + offset) {}
 
         constexpr void advance(size offset) noexcept {

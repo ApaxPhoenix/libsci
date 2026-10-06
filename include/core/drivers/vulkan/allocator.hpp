@@ -1,44 +1,46 @@
 #pragma once
 
-#include "core/memory/cursor.hpp"
+#include "core/drivers/vulkan/buffer.hpp"
 #include "core/types.hpp"
 #include <vulkan/vulkan.h>
 
+#include <cstdint>
+#include <map>
+
 namespace sci::core::drivers::vulkan {
 
-    struct context;
+    struct Context;
 
-    struct buffer {
-        VkBuffer handle{VK_NULL_HANDLE};
-        VkDeviceMemory memory{VK_NULL_HANDLE};
-        void* host{nullptr};
-        size offset{0};
-        size bytes{0};
-    };
-
-    class allocator {
+    // One VkBuffer per array, recycled through a size-keyed cache so temporaries created in a loop
+    // do not pay for vkAllocateMemory every time.
+    class Allocator {
     public:
-        explicit allocator(const context& context, size bytes = 128 * 1024 * 1024);
-        ~allocator() noexcept;
+        explicit Allocator(const Context& context);
+        ~Allocator() noexcept;
 
-        [[nodiscard]] buffer compose(size bytes) noexcept;
-        static void dispose(buffer& object) noexcept;
-        void reset() noexcept;
+        Allocator(const Allocator&) = delete;
+        Allocator& operator=(const Allocator&) = delete;
 
-        template <typename type>
-        [[nodiscard]] static memory::cursor<type> map(const buffer& object) noexcept {
-            return memory::cursor<type>(static_cast<type*>(object.host));
-        }
+        // An empty buffer (null handle) when the device is out of memory.
+        [[nodiscard]] Buffer compose(size bytes);
+
+        // The caller guarantees the GPU no longer uses the buffer (see Stream::retire).
+        void release(const Buffer& buffer) noexcept;
+
+        // Device address of a host pointer into a live buffer, or 0 when it is not GPU memory.
+        [[nodiscard]] uint64 locate(const void* pointer) const noexcept;
 
     private:
-        [[nodiscard]] static uint32 select(VkPhysicalDevice physical, uint32 filter) noexcept;
+        [[nodiscard]] Buffer create(size bytes);
+        void destroy(const Buffer& buffer) const noexcept;
 
-        const context& context_;
-        VkBuffer buffer_{VK_NULL_HANDLE};
-        VkDeviceMemory memory_{VK_NULL_HANDLE};
-        void* host_{nullptr};
-        size capacity_{0};
-        size offset_{0};
+        const Context& context;
+        uint32 type{0};
+
+        // Live buffers keyed by host address, and released ones kept for reuse, keyed by size.
+        std::map<std::uintptr_t, Buffer> live;
+        std::multimap<size, Buffer> spare;
+        size cached{0};
     };
 
 }

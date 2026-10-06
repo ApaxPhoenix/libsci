@@ -2,54 +2,55 @@
 
 #include <array/ndarray.hpp>
 
+// Elementwise operations on two arrays (or an array and a scalar), named as in numpy. Each returns
+// a lazy expression that runs when it is assigned to an NDArray, reduced, or copied.
+
 namespace sci::ops {
 
-    template <typename element, core::size rank>
-    array::ndarray<element, rank> add(const array::ndarray<element, rank>& left, const array::ndarray<element, rank>& right) {
-        array::ndarray<element, rank> output(left.extents());
-        const element* lhs = left.data();
-        const element* rhs = right.data();
-        element* destination = output.data();
-        for (core::size index = 0; index < left.size(); ++index) {
-            destination[index] = lhs[index] + rhs[index];
-        }
-        return output;
+    using array::compatible;
+    using array::operand;
+
+    template <typename left, typename right>
+    requires compatible<left, right>
+    auto add(left&& first, right&& second) {
+        return array::apply<core::Opcode::add>(std::forward<left>(first), std::forward<right>(second));
     }
 
-    template <typename element, core::size rank>
-    array::ndarray<element, rank> sub(const array::ndarray<element, rank>& left, const array::ndarray<element, rank>& right) {
-        array::ndarray<element, rank> output(left.extents());
-        const element* lhs = left.data();
-        const element* rhs = right.data();
-        element* destination = output.data();
-        for (core::size index = 0; index < left.size(); ++index) {
-            destination[index] = lhs[index] - rhs[index];
-        }
-        return output;
+    template <typename left, typename right>
+    requires compatible<left, right>
+    auto subtract(left&& first, right&& second) {
+        return array::apply<core::Opcode::sub>(std::forward<left>(first), std::forward<right>(second));
     }
 
-    template <typename element, core::size rank>
-    array::ndarray<element, rank> mul(const array::ndarray<element, rank>& left, const array::ndarray<element, rank>& right) {
-        array::ndarray<element, rank> output(left.extents());
-        const element* lhs = left.data();
-        const element* rhs = right.data();
-        element* destination = output.data();
-        for (core::size index = 0; index < left.size(); ++index) {
-            destination[index] = lhs[index] * rhs[index];
-        }
-        return output;
+    template <typename left, typename right>
+    requires compatible<left, right>
+    auto multiply(left&& first, right&& second) {
+        return array::apply<core::Opcode::mul>(std::forward<left>(first), std::forward<right>(second));
     }
 
-    template <typename element, core::size rank>
-    array::ndarray<element, rank> div(const array::ndarray<element, rank>& left, const array::ndarray<element, rank>& right) {
-        array::ndarray<element, rank> output(left.extents());
-        const element* lhs = left.data();
-        const element* rhs = right.data();
-        element* destination = output.data();
-        for (core::size index = 0; index < left.size(); ++index) {
-            destination[index] = lhs[index] / rhs[index];
-        }
-        return output;
+    template <typename left, typename right>
+    requires compatible<left, right>
+    auto divide(left&& first, right&& second) {
+        return array::apply<core::Opcode::div>(std::forward<left>(first), std::forward<right>(second));
+    }
+
+    // Elementwise minimum / maximum; NaN in either operand gives NaN, as in numpy.
+    template <typename left, typename right>
+    requires compatible<left, right>
+    auto minimum(left&& first, right&& second) {
+        return array::apply<core::Opcode::min>(std::forward<left>(first), std::forward<right>(second));
+    }
+
+    template <typename left, typename right>
+    requires compatible<left, right>
+    auto maximum(left&& first, right&& second) {
+        return array::apply<core::Opcode::max>(std::forward<left>(first), std::forward<right>(second));
+    }
+
+    // A new array holding the values of an array or expression (numpy.copy).
+    template <operand source>
+    auto copy(source&& item) {
+        return array::NDArray<array::element_t<source>, array::rank_v<source>>(array::wrap(std::forward<source>(item)));
     }
 
 }

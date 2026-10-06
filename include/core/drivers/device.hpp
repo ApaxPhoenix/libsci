@@ -1,71 +1,59 @@
 #pragma once
 
-#include "core/drivers/vulkan/allocator.hpp"
-#include "core/drivers/vulkan/context.hpp"
-#include "core/drivers/vulkan/dispatch.hpp"
-#include "core/drivers/vulkan/pipeline.hpp"
+#include "core/drivers/memory.hpp"
+#include "core/drivers/target.hpp"
+#include "core/bytecode/chunk.hpp"
+#include "core/bytecode/dtype.hpp"
+#include "core/bytecode/fold.hpp"
 #include "core/types.hpp"
 
-#include <optional>
-#include <span>
+#include <memory>
 
 namespace sci::core::drivers {
 
-    enum class target : uint32 {
-        cpu,
-        gpu
-    };
+    struct Gpu;
 
-    struct memory {
-        void** handle{nullptr};
-        vulkan::buffer buffer{};
-        size bytes{0};
-        target target{target::cpu};
-    };
-
-    struct cpu {
-        static void allocate(size bytes, void** address) noexcept;
-        static void dispose(void** address) noexcept;
-        static void compose(std::span<const uint32> code, void** const* items, uint32 count, uint32 x, uint32 y = 1, uint32 z = 1) noexcept;
-        static void sync() noexcept;
-    };
-
-    struct gpu {
-        vulkan::context context;
-        vulkan::allocator allocator;
-        vulkan::dispatch dispatch;
-        vulkan::pipeline pipeline;
-
-        explicit gpu(const vulkan::context& ctx);
-
-        static gpu compose(uint32 index = 0);
-
-        void allocate(size bytes, vulkan::buffer& object, void** address) noexcept;
-        static void dispose(vulkan::buffer& object, void** address) noexcept;
-        void compose(std::span<const uint32> code, std::span<const vulkan::buffer> buffers, uint32 x, uint32 y = 1, uint32 z = 1);
-        void sync() const noexcept;
-        [[nodiscard]] bool ready() const noexcept;
-        void dispose() noexcept;
-    };
-
-    class device {
+    // A compute device, in the spirit of torch.device / cupy.cuda.Device:
+    //
+    //     Device gpu(Target::gpu);
+    //     auto a = host.to(gpu);       // arrays on the GPU
+    //     NDArray<float, 1> b = a * 2.0f + 1.0f;   // runs there, asynchronously
+    //     gpu.synchronize();           // wait for it (reading an array waits by itself)
+    //
+    // GPU work is queued and submitted in batches; results are ready once synchronize() returns.
+    class Device {
     public:
-        explicit device(target target = target::gpu, uint32 index = 0);
-        ~device();
+        // Falls back to the CPU (target() says so) when no usable Vulkan device exists.
+        explicit Device(Target target = Target::gpu, uint32 index = 0);
+        ~Device();
 
-        [[nodiscard]] target target() const noexcept { return target_; }
-        [[nodiscard]] uint32 index() const noexcept { return index_; }
+        Device(const Device&) = delete;
+        Device& operator=(const Device&) = delete;
 
-        void allocate(size bytes, memory& object);
-        void dispose(memory& object) const noexcept;
-        void compose(std::span<const uint32> code, std::span<const memory> items, uint32 x, uint32 y = 1, uint32 z = 1);
-        void sync() const noexcept;
+        [[nodiscard]] Target target() const noexcept { return kind; }
+        [[nodiscard]] uint32 index() const noexcept { return ordinal; }
+        [[nodiscard]] const char* name() const noexcept;
+
+        // Blocks until all queued GPU work has finished. Cheap when nothing is queued.
+        void synchronize() noexcept;
+
+        // True when no GPU work is queued or running.
         [[nodiscard]] bool ready() const noexcept;
+
+        // Engine entry points, used by NDArray and the ops; GPU work falls back to the CPU (after a
+        // synchronize) when the GPU cannot run it: float64, or arrays that live elsewhere.
+        void allocate(size bytes, Memory& memory);
+        void dispose(Memory& memory) noexcept;
+        void execute(const Chunk& chunk, void* output, size count);
+        [[nodiscard]] double reduce(const Chunk& chunk, Fold fold, size count);
+
+        // Row-major output = left * right, with left rows x depth and right depth x columns.
+        void matmul(Dtype type, const void* left, const void* right, void* output, size rows, size columns, size depth);
 
     private:
-        drivers::target target_{target::cpu};
-        uint32 index_{0};
-        std::optional<gpu> gpu_{std::nullopt};
+        Target kind{Target::cpu};
+        uint32 ordinal{0};
+        std::unique_ptr<Gpu> gpu;
     };
 
 }

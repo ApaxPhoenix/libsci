@@ -1,12 +1,10 @@
 #pragma once
 
-#include "core/memory/cursor.hpp"
-#include "core/types.hpp"
+#include "core/drivers/cpu/kernels/table.hpp"
 
 namespace sci::core::drivers::cpu::kernels {
 
-    struct neon {
-        static void add(memory::cursor<float> left, memory::cursor<float> right, memory::cursor<float> yield, size count) noexcept;
-    };
+    // NEON kernels: four floats or two doubles per register. Null when this build is not for ARM64.
+    [[nodiscard]] const Table* neon() noexcept;
 
 }

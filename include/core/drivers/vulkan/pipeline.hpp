@@ -6,26 +6,31 @@
 
 namespace sci::core::drivers::vulkan {
 
-    struct context;
+    struct Context;
 
-    class pipeline {
+    // A compute pipeline for one entry point of a SPIR-V module. Shaders take every argument
+    // (device pointers included) as push constants, so there are no descriptor sets to manage.
+    class Pipeline {
     public:
-        explicit pipeline(const context& context);
-        ~pipeline();
+        Pipeline(const Context& context, std::span<const uint32> code, const char* entry, uint32 bytes);
+        ~Pipeline();
 
-        bool compose(std::span<const uint32> code, uint32 count = 3);
-        void dispose() noexcept;
+        Pipeline(const Pipeline&) = delete;
+        Pipeline& operator=(const Pipeline&) = delete;
 
-        [[nodiscard]] VkPipeline native() const noexcept { return handle_; }
-        [[nodiscard]] VkPipelineLayout schema() const noexcept { return layout_; }
-        [[nodiscard]] VkDescriptorSetLayout binding() const noexcept { return descriptor_; }
+        [[nodiscard]] bool valid() const noexcept { return handle != VK_NULL_HANDLE; }
+        [[nodiscard]] VkPipeline native() const noexcept { return handle; }
+        [[nodiscard]] VkPipelineLayout schema() const noexcept { return layout; }
+
+        // Size of the push-constant block the entry point takes.
+        [[nodiscard]] uint32 constants() const noexcept { return bytes; }
 
     private:
-        const context& context_;
-        VkShaderModule shader_{VK_NULL_HANDLE};
-        VkDescriptorSetLayout descriptor_{VK_NULL_HANDLE};
-        VkPipelineLayout layout_{VK_NULL_HANDLE};
-        VkPipeline handle_{VK_NULL_HANDLE};
+        const Context& context;
+        VkShaderModule shader{VK_NULL_HANDLE};
+        VkPipelineLayout layout{VK_NULL_HANDLE};
+        VkPipeline handle{VK_NULL_HANDLE};
+        uint32 bytes{0};
     };
 
 }

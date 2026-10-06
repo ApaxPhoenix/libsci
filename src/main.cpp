@@ -1,41 +1,32 @@
+#include <sci.hpp>
+
 #include <chrono>
 #include <iostream>
-#include <algorithm>
-#include <array/ndarray.hpp>
-#include <ops/binary.hpp>
-#include <ops/unary.hpp>
-#include <ops/reduce.hpp>
-#include <linalg/matmul.hpp>
+#include <ratio>
 
 int main() {
-    using namespace sci;
+    const auto start = std::chrono::steady_clock::now();
 
-    const auto start = std::chrono::high_resolution_clock::now();
+    const sci::NDArray<float, 2> alpha({2, 2}, {1.0f, 2.0f, 3.0f, 4.0f});
+    const sci::NDArray<float, 2> beta({2, 2}, {5.0f, 6.0f, 7.0f, 8.0f});
 
-    constexpr array::shape<2> bounds{2, 2};
+    const auto sum = sci::add(alpha, beta);
+    const auto product = sci::multiply(alpha, beta);
+    const auto transform = sci::sin(alpha);
 
-    array::ndarray<float, 2> alpha(bounds);
-    array::ndarray<float, 2> beta(bounds);
+    const float total = sci::sum(sum);
+    const float mean = sci::mean(product);
+    const float low = sci::min(transform);
+    const float high = sci::max(transform);
 
-    constexpr float source[] = {1.0f, 2.0f, 3.0f, 4.0f};
-    constexpr float target[] = {5.0f, 6.0f, 7.0f, 8.0f};
+    const auto finish = std::chrono::steady_clock::now();
+    const std::chrono::duration<double, std::micro> elapsed = finish - start;
 
-    std::copy_n(source, 4, alpha.data());
-    std::copy_n(target, 4, beta.data());
-
-    const auto sum = ops::add(alpha, beta);
-    const auto product = ops::mul(alpha, beta);
-    const auto transform = ops::sin(alpha);
-
-    std::cout << "Sum aggregate: " << ops::sum(sum) << "\n";
-    std::cout << "Mean aggregate: " << ops::mean(product) << "\n";
-    std::cout << "Min aggregate: " << ops::min(transform) << "\n";
-    std::cout << "Max aggregate: " << ops::max(transform) << "\n";
-
-    const auto finish = std::chrono::high_resolution_clock::now();
-    const std::chrono::duration<double, std::milli> elapsed = finish - start;
-
-    std::cout << "Execution time: " << elapsed.count() << " ms\n";
+    std::cout << "Sum aggregate: " << total << "\n";
+    std::cout << "Mean aggregate: " << mean << "\n";
+    std::cout << "Min aggregate: " << low << "\n";
+    std::cout << "Max aggregate: " << high << "\n";
+    std::cout << "Compute time: " << elapsed.count() << " us (printing excluded)\n";
 
     return 0;
 }
