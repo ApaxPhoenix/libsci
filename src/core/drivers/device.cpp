@@ -4,6 +4,8 @@
 #include "core/drivers/cpu/dispatch.hpp"
 #include "core/drivers/vulkan/allocator.hpp"
 #include "core/drivers/vulkan/context.hpp"
+#include "core/drivers/vulkan/jit.hpp"
+#include "core/drivers/vulkan/kernel.hpp"
 #include "core/drivers/vulkan/pipeline.hpp"
 #include "core/drivers/vulkan/region.hpp"
 #include "core/drivers/vulkan/stream.hpp"
@@ -28,7 +30,8 @@
 
 namespace sci::core::drivers {
 
-    // Mirrors Chunk in shaders/interpreter.slang.
+    // Mirrors Chunk in shaders/common/layout.slang, byte for byte: the GPU reads fields by offset.
+    // `reserved` is padding that puts `code` at byte 16 in both; it is never read.
     struct Layout {
         uint32 length;
         uint32 result;
@@ -40,7 +43,7 @@ namespace sci::core::drivers {
 
     static_assert(offsetof(Layout, code) == 16 && offsetof(Layout, constants) == 528 && offsetof(Layout, inputs) == 784);
 
-    // Mirrors Arguments in shaders/interpreter.slang.
+    // Mirrors Arguments in shaders/common/layout.slang; `reserved` pads it to the shader's 32 bytes.
     struct Evaluation {
         uint64 chunk;
         uint64 output;
@@ -49,6 +52,8 @@ namespace sci::core::drivers {
         uint32 groups;
         uint32 reserved;
     };
+
+    static_assert(sizeof(Evaluation) == 32);
 
     // Mirrors Arguments in shaders/matmul.slang.
     struct Product {
@@ -83,34 +88,38 @@ namespace sci::core::drivers {
         return static_cast<uint32>(needed < limit ? needed : limit);
     }
 
-    // Everything a GPU device owns. Members are destroyed in reverse order, so `context` (the Vulkan
-    // device) outlives every object created from it.
+    // Everything a GPU device owns. Members are destroyed in reverse order: the stream first, which
+    // waits for queued GPU work, then the pipelines that work used, and `context` (the Vulkan device)
+    // last, after every object created from it.
     struct Gpu {
         vulkan::Context context;
         vulkan::Allocator allocator;
-        vulkan::Stream stream;
         vulkan::Pipeline evaluate;
         vulkan::Pipeline reduce;
         vulkan::Pipeline matmul;
+        vulkan::Jit jit;
+        vulkan::Stream stream;
         std::mutex guard;
 
         // Takes over an opened context; everything else is built on top of it.
         explicit Gpu(vulkan::Context&& opened)
             : context(std::move(opened)),
               allocator(context),
-              stream(context, allocator),
               evaluate(context, shaders::interpreter, "evaluate", sizeof(Evaluation)),
               reduce(context, shaders::interpreter, "reduce", sizeof(Evaluation)),
-              matmul(context, shaders::matmul, "matmul", sizeof(Product)) {}
+              matmul(context, shaders::matmul, "matmul", sizeof(Product)),
+              jit(context, sizeof(Evaluation)),
+              stream(context, allocator) {}
 
         [[nodiscard]] bool valid() const noexcept {
             return evaluate.valid() && reduce.valid() && matmul.valid();
         }
 
-        // Translates a chunk for interpreter.slang. False when the GPU cannot run it: float64,
-        // too many temporaries, or an array that does not live on this device.
-        [[nodiscard]] bool encode(const Chunk& chunk, const size count, Layout& layout) const noexcept {
-            if (chunk.type != Dtype::float32 || chunk.temporaries > registers) return false;
+        // Translates a chunk for interpreter.slang and the JIT's kernels, which read the same block.
+        // False when the GPU cannot run it: float64, more temporaries than the interpreter has
+        // registers (unless the chunk is `compiled`), or an array that does not live on this device.
+        [[nodiscard]] bool encode(const Chunk& chunk, const size count, Layout& layout, const bool compiled) const noexcept {
+            if (chunk.type != Dtype::float32 || (!compiled && chunk.temporaries > registers)) return false;
             if (count > std::numeric_limits<uint32>::max() / 2) return false;
 
             layout.length = chunk.length;
@@ -207,7 +216,9 @@ namespace sci::core::drivers {
             std::unique_lock lock(gpu->guard);
             Layout layout;
             const uint64 destination = gpu->allocator.locate(output);
-            if (destination != 0 && gpu->encode(chunk, count, layout)) {
+            const vulkan::Kernel* kernel = destination != 0 ? gpu->jit.find(chunk) : nullptr;
+            if (destination != 0 && gpu->encode(chunk, count, layout, kernel != nullptr)) {
+                const vulkan::Pipeline& pipeline = kernel ? *kernel->evaluate : gpu->evaluate;
                 const size cost = chunk.cost();
                 const size limit = std::max<size>(stride, slice / cost / stride * stride);
                 for (size start = 0; start < count; start += limit) {
@@ -220,7 +231,7 @@ namespace sci::core::drivers {
                         .groups = groups(length, 65535),
                         .reserved = 0,
                     };
-                    gpu->stream.record(gpu->evaluate, &arguments, length * cost, arguments.groups);
+                    gpu->stream.record(pipeline, &arguments, length * cost, arguments.groups);
                 }
                 return;
             }
@@ -235,9 +246,12 @@ namespace sci::core::drivers {
         }
         if (gpu) {
             std::unique_lock lock(gpu->guard);
-            Layout layout;
+            Layout layout{};
             const size cost = chunk.cost();
-            if (count * cost >= handoff && gpu->encode(chunk, count, layout)) {
+            const bool large = count * cost >= handoff;
+            const vulkan::Kernel* kernel = large ? gpu->jit.find(chunk) : nullptr;
+            if (large && gpu->encode(chunk, count, layout, kernel != nullptr)) {
+                const vulkan::Pipeline& pipeline = kernel ? *kernel->reduce : gpu->reduce;
                 // One dispatch per bounded slice, each leaving one partial per workgroup.
                 struct Piece {
                     const float* values;
@@ -258,7 +272,7 @@ namespace sci::core::drivers {
                         .groups = width,
                         .reserved = 0,
                     };
-                    gpu->stream.record(gpu->reduce, &arguments, length * cost, width);
+                    gpu->stream.record(pipeline, &arguments, length * cost, width);
                     pieces.push_back({.values = static_cast<const float*>(partials.host), .width = width});
                 }
                 gpu->stream.wait();

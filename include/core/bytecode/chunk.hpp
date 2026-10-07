@@ -7,12 +7,13 @@
 
 #include <algorithm>
 #include <bit>
+#include <string>
 
 // Bytecode for array expressions. Writing `a * b + c` does not compute anything yet: the expression
 // is translated into a Chunk (a short list of instructions, like a chunk of Lua bytecode), and the
 // chunk runs when the result is needed, in a single loop over the arrays with no temporary arrays.
-// The CPU engine, the GPU interpreter (shaders/interpreter.slang) and the future JIT all run the
-// same Chunk.
+// The CPU engine, the GPU interpreter (shaders/interpreter.slang) and the JITs (cpu::Jit,
+// vulkan::Jit) all run the same Chunk.
 
 namespace sci::core {
 
@@ -110,6 +111,27 @@ namespace sci::core {
                 }
             }
             return total;
+        }
+
+        // The instructions and value counts without the input addresses or constant values: chunks
+        // with the same signature compile to the same machine code or shader (see the JITs).
+        [[nodiscard]] std::string signature() const {
+            std::string key;
+            key.reserve(5 + 5 * size{length});
+            key += static_cast<char>(type);
+            key += static_cast<char>(arguments);
+            key += static_cast<char>(literals);
+            key += static_cast<char>(temporaries);
+            key += static_cast<char>(result);
+            for (uint8 index = 0; index < length; ++index) {
+                const Instruction& instruction = code[index];
+                key += static_cast<char>(instruction.opcode);
+                key += static_cast<char>(instruction.target);
+                for (const uint8 source : instruction.sources) {
+                    key += static_cast<char>(source);
+                }
+            }
+            return key;
         }
 
         // The recorded chunk, read by the executors. Only the first length / arguments / literals

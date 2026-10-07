@@ -36,12 +36,15 @@ In scope: problems in libsci's own code, for example:
   `NDArray`, `Storage`, `Arena` or the expression engine;
 - CPU kernels reading or writing outside the arrays they were given;
 - GPU dispatches reading or writing outside their buffers, or GPU memory reaching the host before
-  pending work has finished.
+  pending work has finished;
+- the JITs: machine code (`cpu::Jit`) or shaders (`vulkan::Jit`) generated for an expression that
+  do anything other than compute that expression, or executable memory left writable.
 
 Out of scope, please report these to their own projects:
 
 - the Vulkan loader, MoltenVK and GPU drivers;
-- Slang (`slangc`), which CMake downloads into `vendors/slang`;
+- Slang (`slangc` and its runtime library), which CMake downloads into `vendors/slang`;
+- asmjit, which CMake downloads into `vendors/asmjit`;
 - the C++ standard library and the compiler.
 
 Results that are wrong but cannot be used to attack anything, such as a numerical accuracy issue,

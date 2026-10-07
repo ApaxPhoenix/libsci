@@ -1,6 +1,7 @@
 #include "core/drivers/cpu/dispatch.hpp"
 #include "core/arch/alignment.hpp"
 #include "core/drivers/cpu/context.hpp"
+#include "core/drivers/cpu/jit.hpp"
 #include "core/drivers/cpu/kernels/avx2.hpp"
 #include "core/drivers/cpu/kernels/avx512.hpp"
 #include "core/drivers/cpu/kernels/fallback.hpp"
@@ -147,14 +148,54 @@ namespace sci::core::drivers::cpu {
         }
     }
 
+    // sum(... * ...): the final multiply is skipped and its operands contracted directly (a dot
+    // product), so the product never round-trips through a temporary block.
+    static bool contracted(const Chunk& chunk, const Fold kind) noexcept {
+        if (kind != Fold::sum || chunk.length == 0) return false;
+        const Instruction& last = chunk.code[chunk.length - 1];
+        return last.opcode == Opcode::mul && last.target == chunk.result;
+    }
+
+    // The chunk's constants in the element type, as compiled chunks read them.
     template <typename type>
-    static void evaluate(const kernels::Routines<type>& routines, const Chunk& chunk, type* output, const size count) {
+    static void convert(const Chunk& chunk, type* constants) noexcept {
+        for (size index = 0; index < chunk.literals; ++index) {
+            constants[index] = static_cast<type>(chunk.constants[index]);
+        }
+    }
+
+    // Runs a compiled chunk over elements [first, first + count) of its inputs, writing to `output`
+    // (where element `first` goes). count is a multiple of the compiled code's width.
+    template <typename type>
+    static void launch(const Jit::Function function, const Chunk& chunk, const type* constants, type* output, const size first, const size count) {
+        const void* inputs[Chunk::capacity];
+        for (size index = 0; index < chunk.arguments; ++index) {
+            inputs[index] = static_cast<const type*>(chunk.inputs[index]) + first;
+        }
+        function(inputs, constants, output, count);
+    }
+
+    // `function`, when not null, is the chunk compiled by the Jit: it covers whole registers of
+    // `width` elements, and the kernels finish the elements left at the end.
+    template <typename type>
+    static void evaluate(const kernels::Routines<type>& routines, const Chunk& chunk, type* output, const size count,
+                         const Jit::Function function, const size width) {
         if (count == 0) return;
+        type constants[Chunk::capacity];
+        if (function) convert(chunk, constants);
         const Plan plan = partition(chunk, count);
         auto work = [&](const size part) {
             const auto [first, last] = bounds(part, plan.parts, count);
-            auto ignore = [](type* const*, size) noexcept {};
-            sweep(routines, chunk, output, first, last, chunk.length, ignore);
+            size start = first;
+            if (function) {
+                const size covered = (last - first) / width * width;
+                if (covered > 0) launch(function, chunk, constants, output + first, first, covered);
+                start = first + covered;
+            }
+            if (start < last) {
+                auto ignore = [](type* const*, size) noexcept {};
+                sweep(routines, chunk, output, start, last, chunk.length, ignore);
+            }
         };
         if (plan.parts == 1) {
             work(0);
@@ -164,24 +205,41 @@ namespace sci::core::drivers::cpu {
     }
 
     template <typename type>
-    static double accumulate(const kernels::Routines<type>& routines, const Chunk& chunk, const Fold kind, const size count) {
+    static double accumulate(const kernels::Routines<type>& routines, const Chunk& chunk, const Fold kind, const size count,
+                             const Jit::Function function, const size width) {
         if (count == 0) {
             return kind == Fold::sum ? 0.0 : std::numeric_limits<double>::quiet_NaN();
         }
 
-        // sum(... * ...): skip the final multiply and contract its operands directly, so the
-        // product never round-trips through a temporary block.
         const Instruction* last = chunk.length > 0 ? &chunk.code[chunk.length - 1] : nullptr;
-        const bool contract = kind == Fold::sum && last && last->opcode == Opcode::mul && last->target == chunk.result;
+        const bool contract = contracted(chunk, kind);
         const uint8 steps = contract ? chunk.length - 1 : chunk.length;
         const auto fold = routines.folds[static_cast<size>(kind)];
+        type constants[Chunk::capacity];
+        if (function) convert(chunk, constants);
 
         const Plan plan = partition(chunk, count);
 
-        // Float sums are folded per block in the native type, then accumulated in double.
+        // Float sums are folded per block in the native type, then accumulated in double. Compiled
+        // chunks fill one block at a time and fold it with the same routine, so the result is the
+        // same either way.
         auto segment = [&](const size part) {
             const auto [first, end] = bounds(part, plan.parts, count);
             double result = identity(kind);
+            if (function && !contract) {
+                alignas(64) type results[block];
+                for (size start = first; start < end; start += block) {
+                    const size length = std::min(block, end - start);
+                    const size covered = length / width * width;
+                    if (covered > 0) launch(function, chunk, constants, results, start, covered);
+                    if (covered < length) {
+                        auto gather = [&](type* const* values, const size rest) { std::copy_n(values[chunk.result], rest, results + covered); };
+                        sweep(routines, chunk, static_cast<type*>(nullptr), start + covered, start + length, steps, gather);
+                    }
+                    result = combine(kind, result, static_cast<double>(fold(results, length)));
+                }
+                return result;
+            }
             auto visit = [&](type* const* values, const size length) {
                 const auto part = static_cast<double>(contract
                     ? routines.dot(values[last->sources[0]], values[last->sources[1]], length)
@@ -297,18 +355,23 @@ namespace sci::core::drivers::cpu {
     }
 
     void Dispatch::execute(const Chunk& chunk, void* output, const size count) const {
+        const Jit::Function function = Jit::global().compile(chunk, *table, count);
+        const size width = Jit::width(*table, chunk.type);
         if (chunk.type == Dtype::float32) {
-            evaluate(table->float32, chunk, static_cast<float*>(output), count);
+            evaluate(table->float32, chunk, static_cast<float*>(output), count, function, width);
         } else {
-            evaluate(table->float64, chunk, static_cast<double*>(output), count);
+            evaluate(table->float64, chunk, static_cast<double*>(output), count, function, width);
         }
     }
 
     double Dispatch::reduce(const Chunk& chunk, const Fold kind, const size count) const {
+        // A contracted sum is already a dot product over the multiply's operands.
+        const Jit::Function function = contracted(chunk, kind) ? nullptr : Jit::global().compile(chunk, *table, count);
+        const size width = Jit::width(*table, chunk.type);
         if (chunk.type == Dtype::float32) {
-            return accumulate(table->float32, chunk, kind, count);
+            return accumulate(table->float32, chunk, kind, count, function, width);
         }
-        return accumulate(table->float64, chunk, kind, count);
+        return accumulate(table->float64, chunk, kind, count, function, width);
     }
 
     void Dispatch::matmul(const Dtype type, const void* left, const void* right, void* output, const size rows, const size columns, const size depth) {

@@ -32,6 +32,17 @@ version in `CMakeLists.txt` is 0.1.0.
 - `matmul` uses Apple's Accelerate on macOS.
 - `SCI_NATIVE` CMake option to tune every file for the build machine (`-march=native` /
   `-mcpu=native`).
+- CPU JIT (`cpu::Jit`, with [asmjit](https://asmjit.com)): an expression of two or more
+  instructions compiles into one machine-code loop that keeps every value in a register, for NEON
+  on ARM64 and AVX2 on x86-64. Results are the kernel tables' to the bit, apart from which NaN
+  comes out when two NaNs meet. A chunk compiles the second time it runs, or the first time when
+  it is large. Expressions with `exp`, `log`, `sin` or `cos` keep running on the kernels for now.
+  About 2× faster for arithmetic chains that fit in cache.
+- GPU JIT (`vulkan::Jit`, with Slang's runtime library): every expression run on the GPU gets a
+  shader of its own, compiled on a background thread; it runs on the interpreter until the shader
+  is ready. Up to 2.2× faster for long expressions on 16M-element arrays.
+- `SCI_JIT` environment variable: `0` turns both JITs off, `trace` reports every compile.
+- `Chunk::signature()`, the key both JITs cache compiled code under.
 - `CHANGELOG.md` and `SECURITY.md`.
 
 ### Changed
@@ -54,6 +65,10 @@ version in `CMakeLists.txt` is 0.1.0.
 - No anonymous namespaces. File-local helpers are `static`, and each instruction set's SIMD
   wrapper has its own name (`Fallback`, `Neon`, `Avx2`, `Avx512`), so the kernels of one
   instruction set can never be linked in place of another's.
+- The interpreter shader's shared parts moved to `shaders/common/` (`layout.slang`,
+  `entries.slang`), which the GPU JIT's shaders reuse; `cmake/sources.cmake` embeds them as text.
+- asmjit is fetched at a pinned commit and checked against its SHA-256; Slang's runtime library is
+  now linked.
 
 ### Removed
 
@@ -65,6 +80,8 @@ version in `CMakeLists.txt` is 0.1.0.
 - Clang-Tidy and CLion warnings: `const` on Vulkan handle typedefs, constant arguments to the
   stream's memory-barrier helper, `Stream::complete` changing a batch it received by reference,
   and a flag in `Node::shape()` that looked unused.
+- A GPU device destroyed its pipelines before waiting for queued GPU work that might still use
+  them; the command stream now finishes first.
 
 ### Performance
 

@@ -3,6 +3,9 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
+  <component name="BackendCodeEditorMiscSettings">
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="3" type="long" />
+  </component>
   <component name="CMakePresetLoader">{
   &quot;useNewFormat&quot;: true
 }</component>
@@ -16,7 +19,7 @@
     <generated>
       <config projectName="libsci" targetName="libsci" />
       <config projectName="libsci" targetName="sci" />
-      <config projectName="libsci" targetName="sci_tests" />
+      <config projectName="libsci" targetName="asmjit" />
     </generated>
   </component>
   <component name="CMakeSettings">
@@ -26,53 +29,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="da230a09-af73-4e1a-8554-6505e2456f7c" name="Changes" comment="Initial Commit">
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/CHANGELOG.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SECURITY.md" beforeDir="false" afterPath="$PROJECT_DIR$/SECURITY.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bin/libsci" beforeDir="false" afterPath="$PROJECT_DIR$/bin/libsci" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/array/ndarray.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/ndarray.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/array/shape.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/shape.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/array/storage.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/storage.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/array/stride.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/stride.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/arch/alignment.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/arch/alignment.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/context.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/cpu/context.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/dispatch.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/cpu/dispatch.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/avx2.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/avx2.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/avx512.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/avx512.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/fallback.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/fallback.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/neon.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/neon.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/pool.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/cpu/pool.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/device.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/device.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/vulkan/allocator.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/vulkan/allocator.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/vulkan/context.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/vulkan/context.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/vulkan/dispatch.hpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/vulkan/pipeline.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/vulkan/pipeline.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/memory/arena.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/memory/arena.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/memory/cursor.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/memory/cursor.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/memory/pool.hpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/memory/slice.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/memory/slice.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/meta/concepts.hpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/meta/traits.hpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/linalg/decompose.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/linalg/decompose.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/linalg/matmul.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/linalg/matmul.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/linalg/solve.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/linalg/solve.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/ops/binary.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/ops/binary.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/ops/broadcast.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/ops/broadcast.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/ops/reduce.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/ops/reduce.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/ops/unary.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/ops/unary.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/context.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/cpu/context.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/bytecode/chunk.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/bytecode/chunk.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/interpreter.slang" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/interpreter.slang" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/dispatch.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/cpu/dispatch.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/avx2.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/avx2.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/avx512.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/avx512.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/fallback.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/fallback.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/neon.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/neon.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/pool.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/cpu/pool.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/core/drivers/device.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/device.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/vulkan/allocator.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/vulkan/allocator.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/vulkan/context.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/vulkan/context.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/vulkan/dispatch.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/vulkan/pipeline.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/vulkan/pipeline.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -141,7 +106,7 @@
     "cidr.known.project.marker": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "ctest.advertisement.all.test.configuration.is.created": "true",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "main",
     "nodejs_package_manager_path": "npm",
     "onboarding.tips.debug.path": "/Users/82805/CLionProjects/libsci/main.cpp",
     "org.rust.first.attach.projects": "true",
@@ -163,6 +128,11 @@
         <option name="CLION.EXTERNAL.BUILD" enabled="true" />
       </method>
     </configuration>
+    <configuration name="asmjit" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="libsci" TARGET_NAME="asmjit" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="libsci" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="libsci" TARGET_NAME="libsci" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="libsci" RUN_TARGET_NAME="libsci">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -182,6 +152,7 @@
     <list>
       <item itemvalue="CMake Application.libsci" />
       <item itemvalue="CMake Application.sci" />
+      <item itemvalue="CMake Application.asmjit" />
       <item itemvalue="CTest Application.All CTest" />
     </list>
   </component>
@@ -199,7 +170,7 @@
       <workItem from="1787231538317" duration="11245000" />
       <workItem from="1788869113479" duration="1956000" />
       <workItem from="1791205608420" duration="11577000" />
-      <workItem from="1791287983064" duration="5017000" />
+      <workItem from="1791287983064" duration="8708000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Commit">
       <option name="closed" value="true" />
@@ -209,7 +180,15 @@
       <option name="project" value="LOCAL" />
       <updated>1786239947641</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Initial Commit">
+      <option name="closed" value="true" />
+      <created>1791300732121</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1791300732121</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
