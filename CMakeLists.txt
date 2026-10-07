@@ -40,13 +40,26 @@ FetchContent_Declare(
         SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendors/slang"
 )
 
-FetchContent_MakeAvailable(slang)
+# asmjit writes the CPU JIT's machine code. Pinned to one commit and checked against its hash.
+FetchContent_Declare(
+        asmjit
+        URL "https://github.com/asmjit/asmjit/archive/0d7f01052f2d3f6d6b9bb6714ef32bd7b80177eb.tar.gz"
+        URL_HASH SHA256=955a378fac217f0e9a57e61d55d869fffa21f3217e361d9402c5251bf91e1faa
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendors/asmjit"
+)
+set(ASMJIT_STATIC ON CACHE BOOL "" FORCE)
+set(ASMJIT_NO_FOREIGN ON CACHE BOOL "" FORCE)
+set(ASMJIT_NO_UJIT ON CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(slang asmjit)
 
 find_package(Vulkan REQUIRED)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
 file(GLOB SLANG_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.slang")
+file(GLOB SLANG_COMMON CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/common/*.slang")
 
 list(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 
@@ -78,7 +91,7 @@ foreach(SHADER ${SLANG_SOURCES})
             OUTPUT "${SPIRV}"
             COMMAND ${CMAKE_COMMAND} -E make_directory "${SCI_GENERATED}/shaders"
             COMMAND "${SLANGC_EXE}" "${SHADER}" -target spirv -fvk-use-entrypoint-name -O3 -o "${SPIRV}"
-            DEPENDS ${SLANG_SOURCES}
+            DEPENDS ${SLANG_SOURCES} ${SLANG_COMMON}
             COMMENT "Compiling shader ${NAME}.slang"
             VERBATIM
     )
@@ -95,6 +108,18 @@ add_custom_command(
 )
 target_sources(sci PRIVATE "${SCI_GENERATED}/shaders/spirv.hpp")
 
+# The shared shader code (shaders/common/*.slang) as text, through the generated header
+# shaders/sources.hpp: the GPU JIT compiles it together with the code it generates for each chunk.
+string(JOIN "|" SCI_COMMON_LIST ${SLANG_COMMON})
+add_custom_command(
+        OUTPUT "${SCI_GENERATED}/shaders/sources.hpp"
+        COMMAND ${CMAKE_COMMAND} "-DOUTPUT=${SCI_GENERATED}/shaders/sources.hpp" "-DINPUTS=${SCI_COMMON_LIST}" -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/sources.cmake"
+        DEPENDS ${SLANG_COMMON} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/sources.cmake"
+        COMMENT "Embedding shader sources"
+        VERBATIM
+)
+target_sources(sci PRIVATE "${SCI_GENERATED}/shaders/sources.hpp")
+
 target_include_directories(sci
         PUBLIC
         include
@@ -102,12 +127,23 @@ target_include_directories(sci
         "${SCI_GENERATED}"
 )
 
+# Third-party headers are system headers, so their warnings stay out of libsci's build.
+target_include_directories(sci SYSTEM PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/vendors/slang/include")
+get_target_property(ASMJIT_INCLUDES asmjit INTERFACE_INCLUDE_DIRECTORIES)
+set_target_properties(asmjit PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${ASMJIT_INCLUDES}")
+
 find_package(Threads REQUIRED)
 
-# Slang is a build-time tool here (slangc); the runtime library is not linked.
 target_link_libraries(sci PUBLIC
         Vulkan::Vulkan
         Threads::Threads
+)
+
+# asmjit for the CPU JIT, and Slang's runtime library for the GPU JIT, which compiles shaders while
+# the program runs (slangc compiles the fixed ones at build time).
+target_link_libraries(sci PRIVATE
+        asmjit::asmjit
+        "${SLANG_LIB}"
 )
 
 # On macOS, host matrix products go through Accelerate (Apple's BLAS, on the AMX units), as NumPy's do.
