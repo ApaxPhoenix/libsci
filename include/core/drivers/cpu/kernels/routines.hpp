@@ -6,7 +6,7 @@
 
 namespace sci::core::drivers::cpu::kernels {
 
-    // Every kernel for one element type, indexed by opcode / fold.
+    // Every kernel for one element type, indexed by code / fold.
     template <typename type>
     struct Routines {
         // Elementwise kernel over one block. The target may alias a source.

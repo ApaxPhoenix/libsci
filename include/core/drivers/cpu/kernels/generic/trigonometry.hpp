@@ -1,16 +1,14 @@
+
 #pragma once
 
 #include "core/drivers/cpu/kernels/generic/constants.hpp"
 #include "core/drivers/cpu/kernels/generic/polynomial.hpp"
 #include "core/types.hpp"
 
-// The C functions (::sinf, ::cos, ...), not <cmath>: its std:: overloads are inline functions the
-// linker could share between ISA files (see compose.hpp).
-#include <math.h> // NOLINT(modernize-deprecated-headers)
+#include <math.h>
 
 namespace sci::core::drivers::cpu::kernels {
 
-    // Sine and cosine over a whole pack.
     template <typename pack>
     struct Trigonometry {
         using type = pack::element;
@@ -25,7 +23,63 @@ namespace sci::core::drivers::cpu::kernels {
             return trig<true>(x);
         }
 
+        static value tan(const value x) noexcept {
+            return pack::div(sin(x), cos(x));
+        }
+
+        static value asin(const value x) noexcept {
+            return library<&::asinf, &::asin>(x);
+        }
+
+        static value acos(const value x) noexcept {
+            return library<&::acosf, &::acos>(x);
+        }
+
+        static value atan(const value x) noexcept {
+            return library<&::atanf, &::atan>(x);
+        }
+
+        static value sinh(const value x) noexcept {
+            return library<&::sinhf, &::sinh>(x);
+        }
+
+        static value cosh(const value x) noexcept {
+            return library<&::coshf, &::cosh>(x);
+        }
+
+        static value tanh(const value x) noexcept {
+            return library<&::tanhf, &::tanh>(x);
+        }
+
+        static value asinh(const value x) noexcept {
+            return library<&::asinhf, &::asinh>(x);
+        }
+
+        static value acosh(const value x) noexcept {
+            return library<&::acoshf, &::acosh>(x);
+        }
+
+        static value atanh(const value x) noexcept {
+            return library<&::atanhf, &::atanh>(x);
+        }
+
     private:
+        // Runs the C library function lane by lane, the float or double one to match the pack.
+        template <float (*narrow)(float), double (*wide)(double)>
+        static value library(const value x) noexcept {
+            type inputs[pack::width];
+            type outputs[pack::width];
+            pack::store(inputs, x);
+            for (size lane = 0; lane < pack::width; ++lane) {
+                if constexpr (sizeof(type) == 4) {
+                    outputs[lane] = narrow(inputs[lane]);
+                } else {
+                    outputs[lane] = wide(inputs[lane]);
+                }
+            }
+            return pack::load(outputs);
+        }
+
         static constexpr auto sinseries = alternating<type, limit::sindegree + 1, 1>();
         static constexpr auto cosseries = alternating<type, limit::cosdegree + 1, 0>();
 
@@ -42,7 +96,6 @@ namespace sci::core::drivers::cpu::kernels {
             const value odd = pack::fma(pack::mul(r, r2), horner<pack, 1>(r2, sinseries), r);
             const value even = pack::fma(r2, horner<pack, 1>(r2, cosseries), pack::splat(type{1}));
 
-            // The low bits of t hold the quadrant j mod 4.
             auto quadrant = pack::tobits(t);
             if constexpr (cosine) {
                 quadrant = pack::bxor(quadrant, pack::template shl<1>(quadrant));
@@ -53,7 +106,6 @@ namespace sci::core::drivers::cpu::kernels {
             value result = cosine ? pack::select(swap, odd, even) : pack::select(swap, even, odd);
             result = pack::cast(pack::bxor(pack::tobits(result), flip));
 
-            // Arguments beyond the Cody-Waite range (and inf) take the libm path, lane by lane.
             if (pack::any(pack::greater(pack::abs(x), pack::splat(limit::reach)))) [[unlikely]] {
                 type inputs[pack::width];
                 type outputs[pack::width];

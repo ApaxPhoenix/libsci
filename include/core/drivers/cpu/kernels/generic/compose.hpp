@@ -36,6 +36,16 @@ namespace sci::core::drivers::cpu::kernels {
         routines.kernels[static_cast<size>(Code::log)] = &unary<pack, Operation<Code::log>>;
         routines.kernels[static_cast<size>(Code::sin)] = &unary<pack, Operation<Code::sin>>;
         routines.kernels[static_cast<size>(Code::cos)] = &unary<pack, Operation<Code::cos>>;
+        routines.kernels[static_cast<size>(Code::tan)] = &unary<pack, Operation<Code::tan>>;
+        routines.kernels[static_cast<size>(Code::asin)] = &unary<pack, Operation<Code::asin>>;
+        routines.kernels[static_cast<size>(Code::acos)] = &unary<pack, Operation<Code::acos>>;
+        routines.kernels[static_cast<size>(Code::atan)] = &unary<pack, Operation<Code::atan>>;
+        routines.kernels[static_cast<size>(Code::sinh)] = &unary<pack, Operation<Code::sinh>>;
+        routines.kernels[static_cast<size>(Code::cosh)] = &unary<pack, Operation<Code::cosh>>;
+        routines.kernels[static_cast<size>(Code::tanh)] = &unary<pack, Operation<Code::tanh>>;
+        routines.kernels[static_cast<size>(Code::asinh)] = &unary<pack, Operation<Code::asinh>>;
+        routines.kernels[static_cast<size>(Code::acosh)] = &unary<pack, Operation<Code::acosh>>;
+        routines.kernels[static_cast<size>(Code::atanh)] = &unary<pack, Operation<Code::atanh>>;
         routines.kernels[static_cast<size>(Code::add)] = &binary<pack, Operation<Code::add>>;
         routines.kernels[static_cast<size>(Code::sub)] = &binary<pack, Operation<Code::sub>>;
         routines.kernels[static_cast<size>(Code::mul)] = &binary<pack, Operation<Code::mul>>;

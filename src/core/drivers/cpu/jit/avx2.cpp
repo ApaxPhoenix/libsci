@@ -5,7 +5,7 @@
 #include "core/bytecode/chunk.hpp"
 #include "core/bytecode/dtype.hpp"
 #include "core/bytecode/instruction.hpp"
-#include "core/bytecode/opcode.hpp"
+#include "core/bytecode/code.hpp"
 #include "core/types.hpp"
 
 #include <asmjit/x86.h>
@@ -42,7 +42,7 @@ namespace sci::core::drivers::cpu::jit {
         };
         for (uint8 step = 0; step < chunk.length; ++step) {
             for (const uint8 source : chunk.code[step].sources) note(source);
-            signs = signs || chunk.code[step].opcode == Code::neg || chunk.code[step].opcode == Code::abs;
+            signs = signs || chunk.code[step].code == Code::neg || chunk.code[step].code == Code::abs;
         }
         note(chunk.result);
         x86::Gp pointers[Chunk::capacity];
@@ -113,7 +113,7 @@ namespace sci::core::drivers::cpu::jit {
             const Instruction& instruction = chunk.code[step];
             const x86::Vec first = value(instruction.sources[0]);
             x86::Vec result = compiler.new_vec256("value");
-            switch (instruction.opcode) {
+            switch (instruction.code) {
                 case Code::copy: result = first; break;
                 case Code::neg:
                     if (wide) compiler.vxorpd(result, first, sign); else compiler.vxorps(result, first, sign);

@@ -142,7 +142,7 @@ namespace sci::core::drivers::cpu {
             for (uint8 index = 0; index < steps; ++index) {
                 const Instruction& step = chunk.code[index];
                 const type* sources[3] = {values[step.sources[0]], values[step.sources[1]], values[step.sources[2]]};
-                routines.kernels[static_cast<size>(step.opcode)](sources, values[step.target], count);
+                routines.kernels[static_cast<size>(step.code)](sources, values[step.target], count);
             }
             visit(values, count);
         }
@@ -153,7 +153,7 @@ namespace sci::core::drivers::cpu {
     static bool contracted(const Chunk& chunk, const Fold kind) noexcept {
         if (kind != Fold::sum || chunk.length == 0) return false;
         const Instruction& last = chunk.code[chunk.length - 1];
-        return last.opcode == Code::mul && last.target == chunk.result;
+        return last.code == Code::mul && last.target == chunk.result;
     }
 
     // The chunk's constants in the element type, as compiled chunks read them.

@@ -44,7 +44,7 @@ namespace sci::core::drivers::vulkan {
             const std::string& b = names[instruction.sources[1]];
             const std::string& c = names[instruction.sources[2]];
             std::string expression;
-            switch (instruction.opcode) {
+            switch (instruction.code) {
                 case Code::copy: expression = a; break;
                 case Code::neg: expression = std::format("-{}", a); break;
                 case Code::abs: expression = std::format("abs({})", a); break;
@@ -53,6 +53,16 @@ namespace sci::core::drivers::vulkan {
                 case Code::log: expression = std::format("log({})", a); break;
                 case Code::sin: expression = std::format("sin({})", a); break;
                 case Code::cos: expression = std::format("cos({})", a); break;
+                case Code::tan: expression = std::format("tan({})", a); break;
+                case Code::asin: expression = std::format("asin({})", a); break;
+                case Code::acos: expression = std::format("acos({})", a); break;
+                case Code::atan: expression = std::format("atan({})", a); break;
+                case Code::sinh: expression = std::format("sinh({})", a); break;
+                case Code::cosh: expression = std::format("cosh({})", a); break;
+                case Code::tanh: expression = std::format("tanh({})", a); break;
+                case Code::asinh: expression = std::format("asinh({})", a); break;
+                case Code::acosh: expression = std::format("acosh({})", a); break;
+                case Code::atanh: expression = std::format("atanh({})", a); break;
                 case Code::add: expression = std::format("{} + {}", a, b); break;
                 case Code::sub: expression = std::format("{} - {}", a, b); break;
                 case Code::mul: expression = std::format("{} * {}", a, b); break;
