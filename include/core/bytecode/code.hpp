@@ -6,7 +6,7 @@ namespace sci::core {
 
     // Operations a chunk can contain. The order is shared with the CPU kernel tables and with
     // shaders/interpreter.slang, so append new operations at the end (before count).
-    enum class Opcode : uint8 {
+    enum class Code : uint8 {
         copy,
         neg,
         abs,
@@ -15,6 +15,16 @@ namespace sci::core {
         log,
         sin,
         cos,
+        tan,
+        asin,
+        acos,
+        atan,
+        sinh,
+        cosh,
+        tanh,
+        asinh,
+        acosh,
+        atanh,
         add,
         sub,
         mul,

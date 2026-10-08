@@ -1,7 +1,7 @@
 #include "core/drivers/cpu/jit.hpp"
 #include "core/bytecode/chunk.hpp"
 #include "core/bytecode/dtype.hpp"
-#include "core/bytecode/opcode.hpp"
+#include "core/bytecode/code.hpp"
 #include "core/drivers/cpu/jit/avx2.hpp"
 #include "core/drivers/cpu/jit/neon.hpp"
 #include "core/drivers/cpu/kernels/avx2.hpp"
@@ -51,10 +51,10 @@ namespace sci::core::drivers::cpu {
     static bool compilable(const Chunk& chunk) noexcept {
         for (uint8 index = 0; index < chunk.length; ++index) {
             switch (chunk.code[index].opcode) {
-                case Opcode::exp:
-                case Opcode::log:
-                case Opcode::sin:
-                case Opcode::cos: return false;
+                case Code::exp:
+                case Code::log:
+                case Code::sin:
+                case Code::cos: return false;
                 default: break;
             }
         }

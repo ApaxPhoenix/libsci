@@ -15,7 +15,7 @@
 #include "core/drivers/target.hpp"
 #include "core/bytecode/chunk.hpp"
 #include "core/bytecode/fold.hpp"
-#include "core/bytecode/opcode.hpp"
+#include "core/bytecode/code.hpp"
 #include "core/bytecode/traits.hpp"
 #include "core/types.hpp"
 
@@ -30,7 +30,7 @@
 // An expression answers the same questions an array does (shape(), size(), sum(), mean(), min(),
 // max(), copy()), so `auto c = a * b;` behaves like an array that is computed when it is used.
 // It refers to the arrays it was built from, so it must not outlive them; temporary arrays
-// (`f() + a`) are moved into the expression and kept alive.
+// (`f() + a`) are moved into the e   xpression and kept alive.
 
 namespace sci::array {
 
@@ -87,13 +87,13 @@ namespace sci::array {
     template <typename type>
     using wrapped = decltype(wrap(std::declval<type>()));
 
-    template <core::Opcode code, operand type>
+    template <core::Code code, operand type>
     auto apply(type&& item) {
         return Node<code, wrapped<type>>(wrap(std::forward<type>(item)));
     }
 
     // Scalars on either side take the element type of the array side.
-    template <core::Opcode code, typename left, typename right>
+    template <core::Code code, typename left, typename right>
     auto apply(left&& first, right&& second) {
         if constexpr (scalar<left>) {
             using element = element_t<right>;
@@ -113,30 +113,30 @@ namespace sci::array {
     template <typename left, typename right>
     requires compatible<left, right>
     auto operator+(left&& first, right&& second) {
-        return apply<core::Opcode::add>(std::forward<left>(first), std::forward<right>(second));
+        return apply<core::Code::add>(std::forward<left>(first), std::forward<right>(second));
     }
 
     template <typename left, typename right>
     requires compatible<left, right>
     auto operator-(left&& first, right&& second) {
-        return apply<core::Opcode::sub>(std::forward<left>(first), std::forward<right>(second));
+        return apply<core::Code::sub>(std::forward<left>(first), std::forward<right>(second));
     }
 
     template <typename left, typename right>
     requires compatible<left, right>
     auto operator*(left&& first, right&& second) {
-        return apply<core::Opcode::mul>(std::forward<left>(first), std::forward<right>(second));
+        return apply<core::Code::mul>(std::forward<left>(first), std::forward<right>(second));
     }
 
     template <typename left, typename right>
     requires compatible<left, right>
     auto operator/(left&& first, right&& second) {
-        return apply<core::Opcode::div>(std::forward<left>(first), std::forward<right>(second));
+        return apply<core::Code::div>(std::forward<left>(first), std::forward<right>(second));
     }
 
     template <operand type>
     auto operator-(type&& item) {
-        return apply<core::Opcode::neg>(std::forward<type>(item));
+        return apply<core::Code::neg>(std::forward<type>(item));
     }
 
     // Writes the expression into target, which must already have the expression's shape. The target
@@ -195,10 +195,10 @@ namespace sci::array {
                     result += value;
                     break;
                 case core::Fold::min:
-                    result = calculate<core::Opcode::min, element>(result, value);
+                    result = calculate<core::Code::min, element>(result, value);
                     break;
                 default:
-                    result = calculate<core::Opcode::max, element>(result, value);
+                    result = calculate<core::Code::max, element>(result, value);
                     break;
             }
         }

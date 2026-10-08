@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 
 #include "core/bytecode/dtype.hpp"
 
@@ -10,12 +10,12 @@ namespace sci::core {
 
     template <>
     struct Traits<float> {
-        static constexpr Dtype type = Dtype::float32;
+        static constexpr auto type = Dtype::float32;
     };
 
     template <>
     struct Traits<double> {
-        static constexpr Dtype type = Dtype::float64;
+        static constexpr auto type = Dtype::float64;
     };
 
     template <typename element>

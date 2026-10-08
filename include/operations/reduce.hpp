@@ -5,7 +5,7 @@
 // Whole-array reductions, named as in numpy. Reducing an expression fuses it into the reduction,
 // so sum(a * b) never materialises a * b.
 
-namespace sci::ops {
+namespace sci::operations {
 
     using array::operand;
 

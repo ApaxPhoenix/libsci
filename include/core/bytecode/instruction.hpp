@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/bytecode/opcode.hpp"
+#include "core/bytecode/code.hpp"
 #include "core/types.hpp"
 
 namespace sci::core {
@@ -17,7 +17,7 @@ namespace sci::core {
 
     // target = code(sources...), all value ids.
     struct Instruction {
-        Opcode opcode;
+        Code opcode;
         uint8 target;
         uint8 sources[3];
     };

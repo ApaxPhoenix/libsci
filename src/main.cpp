@@ -14,6 +14,7 @@ int main() {
     const auto product = sci::multiply(alpha, beta);
     const auto transform = sci::sin(alpha);
 
+
     const float total = sci::sum(sum);
     const float mean = sci::mean(product);
     const float low = sci::min(transform);

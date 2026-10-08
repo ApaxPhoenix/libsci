@@ -5,7 +5,7 @@
 // Elementwise operations on two arrays (or an array and a scalar), named as in numpy. Each returns
 // a lazy expression that runs when it is assigned to an NDArray, reduced, or copied.
 
-namespace sci::ops {
+namespace sci::operations {
 
     using array::compatible;
     using array::operand;
@@ -13,38 +13,38 @@ namespace sci::ops {
     template <typename left, typename right>
     requires compatible<left, right>
     auto add(left&& first, right&& second) {
-        return array::apply<core::Opcode::add>(std::forward<left>(first), std::forward<right>(second));
+        return array::apply<core::Code::add>(std::forward<left>(first), std::forward<right>(second));
     }
 
     template <typename left, typename right>
     requires compatible<left, right>
     auto subtract(left&& first, right&& second) {
-        return array::apply<core::Opcode::sub>(std::forward<left>(first), std::forward<right>(second));
+        return array::apply<core::Code::sub>(std::forward<left>(first), std::forward<right>(second));
     }
 
     template <typename left, typename right>
     requires compatible<left, right>
     auto multiply(left&& first, right&& second) {
-        return array::apply<core::Opcode::mul>(std::forward<left>(first), std::forward<right>(second));
+        return array::apply<core::Code::mul>(std::forward<left>(first), std::forward<right>(second));
     }
 
     template <typename left, typename right>
     requires compatible<left, right>
     auto divide(left&& first, right&& second) {
-        return array::apply<core::Opcode::div>(std::forward<left>(first), std::forward<right>(second));
+        return array::apply<core::Code::div>(std::forward<left>(first), std::forward<right>(second));
     }
 
     // Elementwise minimum / maximum; NaN in either operand gives NaN, as in numpy.
     template <typename left, typename right>
     requires compatible<left, right>
     auto minimum(left&& first, right&& second) {
-        return array::apply<core::Opcode::min>(std::forward<left>(first), std::forward<right>(second));
+        return array::apply<core::Code::min>(std::forward<left>(first), std::forward<right>(second));
     }
 
     template <typename left, typename right>
     requires compatible<left, right>
     auto maximum(left&& first, right&& second) {
-        return array::apply<core::Opcode::max>(std::forward<left>(first), std::forward<right>(second));
+        return array::apply<core::Code::max>(std::forward<left>(first), std::forward<right>(second));
     }
 
     // A new array holding the values of an array or expression (numpy.copy).

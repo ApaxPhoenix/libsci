@@ -7,7 +7,7 @@
 #include "core/assert.hpp"
 #include "core/drivers/device.hpp"
 #include "core/bytecode/chunk.hpp"
-#include "core/bytecode/opcode.hpp"
+#include "core/bytecode/code.hpp"
 #include "core/types.hpp"
 
 #include <algorithm>
@@ -20,7 +20,7 @@ namespace sci::array {
     using core::drivers::Device;
 
     // Interior node: code applied to its operands.
-    template <core::Opcode code, typename... operands>
+    template <core::Code code, typename... operands>
     struct Node : Methods<Node<code, operands...>> {
         using element = std::tuple_element_t<0, std::tuple<operands...>>::element;
         static constexpr core::size rank = std::max({operands::rank...});
@@ -85,7 +85,7 @@ namespace sci::array {
         }
     };
 
-    template <core::Opcode code, typename... operands>
+    template <core::Code code, typename... operands>
     struct Deferred<Node<code, operands...>> : std::true_type {};
 
 }
