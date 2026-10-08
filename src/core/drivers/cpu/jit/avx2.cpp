@@ -42,7 +42,7 @@ namespace sci::core::drivers::cpu::jit {
         };
         for (uint8 step = 0; step < chunk.length; ++step) {
             for (const uint8 source : chunk.code[step].sources) note(source);
-            signs = signs || chunk.code[step].opcode == Opcode::neg || chunk.code[step].opcode == Opcode::abs;
+            signs = signs || chunk.code[step].opcode == Code::neg || chunk.code[step].opcode == Code::abs;
         }
         note(chunk.result);
         x86::Gp pointers[Chunk::capacity];
@@ -114,31 +114,31 @@ namespace sci::core::drivers::cpu::jit {
             const x86::Vec first = value(instruction.sources[0]);
             x86::Vec result = compiler.new_vec256("value");
             switch (instruction.opcode) {
-                case Opcode::copy: result = first; break;
-                case Opcode::neg:
+                case Code::copy: result = first; break;
+                case Code::neg:
                     if (wide) compiler.vxorpd(result, first, sign); else compiler.vxorps(result, first, sign);
                     break;
-                case Opcode::abs:
+                case Code::abs:
                     if (wide) compiler.vandnpd(result, sign, first); else compiler.vandnps(result, sign, first);
                     break;
-                case Opcode::sqrt:
+                case Code::sqrt:
                     if (wide) compiler.vsqrtpd(result, first); else compiler.vsqrtps(result, first);
                     break;
-                case Opcode::add:
+                case Code::add:
                     if (wide) compiler.vaddpd(result, first, value(instruction.sources[1])); else compiler.vaddps(result, first, value(instruction.sources[1]));
                     break;
-                case Opcode::sub:
+                case Code::sub:
                     if (wide) compiler.vsubpd(result, first, value(instruction.sources[1])); else compiler.vsubps(result, first, value(instruction.sources[1]));
                     break;
-                case Opcode::mul:
+                case Code::mul:
                     if (wide) compiler.vmulpd(result, first, value(instruction.sources[1])); else compiler.vmulps(result, first, value(instruction.sources[1]));
                     break;
-                case Opcode::div:
+                case Code::div:
                     if (wide) compiler.vdivpd(result, first, value(instruction.sources[1])); else compiler.vdivps(result, first, value(instruction.sources[1]));
                     break;
-                case Opcode::min: extreme(result, first, value(instruction.sources[1]), true); break;
-                case Opcode::max: extreme(result, first, value(instruction.sources[1]), false); break;
-                case Opcode::fma:
+                case Code::min: extreme(result, first, value(instruction.sources[1]), true); break;
+                case Code::max: extreme(result, first, value(instruction.sources[1]), false); break;
+                case Code::fma:
                     compiler.vmovaps(result, value(instruction.sources[2]));
                     if (wide) {
                         compiler.vfmadd231pd(result, first, value(instruction.sources[1]));

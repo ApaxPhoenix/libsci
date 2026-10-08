@@ -12,7 +12,7 @@
 #include "core/bytecode/instruction.hpp"
 #include "core/bytecode/dtype.hpp"
 #include "core/bytecode/fold.hpp"
-#include "core/bytecode/opcode.hpp"
+#include "core/bytecode/code.hpp"
 #include "core/bytecode/chunk.hpp"
 #include "core/types.hpp"
 
@@ -153,7 +153,7 @@ namespace sci::core::drivers::cpu {
     static bool contracted(const Chunk& chunk, const Fold kind) noexcept {
         if (kind != Fold::sum || chunk.length == 0) return false;
         const Instruction& last = chunk.code[chunk.length - 1];
-        return last.opcode == Opcode::mul && last.target == chunk.result;
+        return last.opcode == Code::mul && last.target == chunk.result;
     }
 
     // The chunk's constants in the element type, as compiled chunks read them.

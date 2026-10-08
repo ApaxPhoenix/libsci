@@ -50,8 +50,7 @@ namespace sci::linalg {
                 }
             };
 
-            const core::size below = n - step - 1;
-            if (below * (n - step) >= (core::size{1} << 16)) {
+            if (const core::size below = n - step - 1; below * (n - step) >= (core::size{1} << 16)) {
                 auto& pool = core::drivers::cpu::Pool::global();
                 const core::size parts = std::min(below, pool.width() * 4);
                 pool.run(parts, [&](const core::size part) {

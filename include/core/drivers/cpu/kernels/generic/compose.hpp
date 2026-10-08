@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/bytecode/fold.hpp"
-#include "core/bytecode/opcode.hpp"
+#include "core/bytecode/code.hpp"
 #include "core/drivers/cpu/kernels/generic/elementwise.hpp"
 #include "core/drivers/cpu/kernels/generic/operation.hpp"
 #include "core/drivers/cpu/kernels/generic/reductions.hpp"
@@ -28,24 +28,24 @@ namespace sci::core::drivers::cpu::kernels {
     template <typename pack>
     constexpr Routines<typename pack::element> assemble() noexcept {
         Routines<typename pack::element> routines{};
-        routines.kernels[static_cast<size>(Opcode::copy)] = &unary<pack, Operation<Opcode::copy>>;
-        routines.kernels[static_cast<size>(Opcode::neg)] = &unary<pack, Operation<Opcode::neg>>;
-        routines.kernels[static_cast<size>(Opcode::abs)] = &unary<pack, Operation<Opcode::abs>>;
-        routines.kernels[static_cast<size>(Opcode::sqrt)] = &unary<pack, Operation<Opcode::sqrt>>;
-        routines.kernels[static_cast<size>(Opcode::exp)] = &unary<pack, Operation<Opcode::exp>>;
-        routines.kernels[static_cast<size>(Opcode::log)] = &unary<pack, Operation<Opcode::log>>;
-        routines.kernels[static_cast<size>(Opcode::sin)] = &unary<pack, Operation<Opcode::sin>>;
-        routines.kernels[static_cast<size>(Opcode::cos)] = &unary<pack, Operation<Opcode::cos>>;
-        routines.kernels[static_cast<size>(Opcode::add)] = &binary<pack, Operation<Opcode::add>>;
-        routines.kernels[static_cast<size>(Opcode::sub)] = &binary<pack, Operation<Opcode::sub>>;
-        routines.kernels[static_cast<size>(Opcode::mul)] = &binary<pack, Operation<Opcode::mul>>;
-        routines.kernels[static_cast<size>(Opcode::div)] = &binary<pack, Operation<Opcode::div>>;
-        routines.kernels[static_cast<size>(Opcode::min)] = &binary<pack, Operation<Opcode::min>>;
-        routines.kernels[static_cast<size>(Opcode::max)] = &binary<pack, Operation<Opcode::max>>;
-        routines.kernels[static_cast<size>(Opcode::fma)] = &ternary<pack>;
+        routines.kernels[static_cast<size>(Code::copy)] = &unary<pack, Operation<Code::copy>>;
+        routines.kernels[static_cast<size>(Code::neg)] = &unary<pack, Operation<Code::neg>>;
+        routines.kernels[static_cast<size>(Code::abs)] = &unary<pack, Operation<Code::abs>>;
+        routines.kernels[static_cast<size>(Code::sqrt)] = &unary<pack, Operation<Code::sqrt>>;
+        routines.kernels[static_cast<size>(Code::exp)] = &unary<pack, Operation<Code::exp>>;
+        routines.kernels[static_cast<size>(Code::log)] = &unary<pack, Operation<Code::log>>;
+        routines.kernels[static_cast<size>(Code::sin)] = &unary<pack, Operation<Code::sin>>;
+        routines.kernels[static_cast<size>(Code::cos)] = &unary<pack, Operation<Code::cos>>;
+        routines.kernels[static_cast<size>(Code::add)] = &binary<pack, Operation<Code::add>>;
+        routines.kernels[static_cast<size>(Code::sub)] = &binary<pack, Operation<Code::sub>>;
+        routines.kernels[static_cast<size>(Code::mul)] = &binary<pack, Operation<Code::mul>>;
+        routines.kernels[static_cast<size>(Code::div)] = &binary<pack, Operation<Code::div>>;
+        routines.kernels[static_cast<size>(Code::min)] = &binary<pack, Operation<Code::min>>;
+        routines.kernels[static_cast<size>(Code::max)] = &binary<pack, Operation<Code::max>>;
+        routines.kernels[static_cast<size>(Code::fma)] = &ternary<pack>;
         routines.folds[static_cast<size>(Fold::sum)] = &sum<pack>;
-        routines.folds[static_cast<size>(Fold::min)] = &extreme<pack, Operation<Opcode::min>>;
-        routines.folds[static_cast<size>(Fold::max)] = &extreme<pack, Operation<Opcode::max>>;
+        routines.folds[static_cast<size>(Fold::min)] = &extreme<pack, Operation<Code::min>>;
+        routines.folds[static_cast<size>(Fold::max)] = &extreme<pack, Operation<Code::max>>;
         routines.dot = &dot<pack>;
         return routines;
     }

@@ -12,7 +12,7 @@
 //     auto c = sci::ones({1024}, gpu);
 //     auto d = sci::arange(10);                  // 0, 1, ..., 9
 
-namespace sci::ops {
+namespace sci::operations {
 
     using array::Device;
     using array::NDArray;

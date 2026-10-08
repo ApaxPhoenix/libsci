@@ -91,7 +91,7 @@ namespace sci::array {
     private:
         [[nodiscard]] static element* acquire(const core::size total) {
             if (total == 0) return nullptr;
-            return static_cast<element*>(::operator new(total * sizeof(element), std::align_val_t{core::arch::line}));
+            return static_cast<element*>(operator new(total * sizeof(element), std::align_val_t{core::arch::line}));
         }
 
         void release() noexcept {

@@ -5,7 +5,7 @@
 #include "core/bytecode/chunk.hpp"
 #include "core/bytecode/dtype.hpp"
 #include "core/bytecode/instruction.hpp"
-#include "core/bytecode/opcode.hpp"
+#include "core/bytecode/code.hpp"
 #include "core/types.hpp"
 
 #include <asmjit/a64.h>
@@ -78,28 +78,28 @@ namespace sci::core::drivers::cpu::jit {
         };
 
         for (uint8 step = 0; step < chunk.length; ++step) {
-            const Instruction& instruction = chunk.code[step];
-            const a64::Vec first = value(instruction.sources[0]);
+            const auto&[opcode, target, sources] = chunk.code[step];
+            const a64::Vec first = value(sources[0]);
             a64::Vec result = compiler.new_vec128("value");
-            switch (instruction.opcode) {
-                case Opcode::copy: result = first; break;
-                case Opcode::neg: compiler.fneg(shape(result), shape(first)); break;
-                case Opcode::abs: compiler.fabs(shape(result), shape(first)); break;
-                case Opcode::sqrt: compiler.fsqrt(shape(result), shape(first)); break;
-                case Opcode::add: compiler.fadd(shape(result), shape(first), shape(value(instruction.sources[1]))); break;
-                case Opcode::sub: compiler.fsub(shape(result), shape(first), shape(value(instruction.sources[1]))); break;
-                case Opcode::mul: compiler.fmul(shape(result), shape(first), shape(value(instruction.sources[1]))); break;
-                case Opcode::div: compiler.fdiv(shape(result), shape(first), shape(value(instruction.sources[1]))); break;
+            switch (opcode) {
+                case Code::copy: result = first; break;
+                case Code::neg: compiler.fneg(shape(result), shape(first)); break;
+                case Code::abs: compiler.fabs(shape(result), shape(first)); break;
+                case Code::sqrt: compiler.fsqrt(shape(result), shape(first)); break;
+                case Code::add: compiler.fadd(shape(result), shape(first), shape(value(sources[1]))); break;
+                case Code::sub: compiler.fsub(shape(result), shape(first), shape(value(sources[1]))); break;
+                case Code::mul: compiler.fmul(shape(result), shape(first), shape(value(sources[1]))); break;
+                case Code::div: compiler.fdiv(shape(result), shape(first), shape(value(sources[1]))); break;
                 // FMIN and FMAX propagate NaN, like the NEON kernels.
-                case Opcode::min: compiler.fmin(shape(result), shape(first), shape(value(instruction.sources[1]))); break;
-                case Opcode::max: compiler.fmax(shape(result), shape(first), shape(value(instruction.sources[1]))); break;
-                case Opcode::fma:
-                    compiler.mov(result.b16(), value(instruction.sources[2]).b16());
-                    compiler.fmla(shape(result), shape(first), shape(value(instruction.sources[1])));
+                case Code::min: compiler.fmin(shape(result), shape(first), shape(value(sources[1]))); break;
+                case Code::max: compiler.fmax(shape(result), shape(first), shape(value(sources[1]))); break;
+                case Code::fma:
+                    compiler.mov(result.b16(), value(sources[2]).b16());
+                    compiler.fmla(shape(result), shape(first), shape(value(sources[1])));
                     break;
                 default: return false;
             }
-            values[instruction.target] = result;
+            values[target] = result;
         }
 
         compiler.str(value(chunk.result).q(), a64::ptr(output));

@@ -2,7 +2,7 @@
 #include "core/bytecode/chunk.hpp"
 #include "core/bytecode/dtype.hpp"
 #include "core/bytecode/instruction.hpp"
-#include "core/bytecode/opcode.hpp"
+#include "core/bytecode/code.hpp"
 #include "core/drivers/vulkan/context.hpp"
 #include "core/drivers/vulkan/kernel.hpp"
 #include "core/drivers/vulkan/pipeline.hpp"
@@ -45,20 +45,20 @@ namespace sci::core::drivers::vulkan {
             const std::string& c = names[instruction.sources[2]];
             std::string expression;
             switch (instruction.opcode) {
-                case Opcode::copy: expression = a; break;
-                case Opcode::neg: expression = std::format("-{}", a); break;
-                case Opcode::abs: expression = std::format("abs({})", a); break;
-                case Opcode::sqrt: expression = std::format("sqrt({})", a); break;
-                case Opcode::exp: expression = std::format("exp({})", a); break;
-                case Opcode::log: expression = std::format("log({})", a); break;
-                case Opcode::sin: expression = std::format("sin({})", a); break;
-                case Opcode::cos: expression = std::format("cos({})", a); break;
-                case Opcode::add: expression = std::format("{} + {}", a, b); break;
-                case Opcode::sub: expression = std::format("{} - {}", a, b); break;
-                case Opcode::mul: expression = std::format("{} * {}", a, b); break;
-                case Opcode::div: expression = std::format("{} / {}", a, b); break;
-                case Opcode::min: expression = std::format("lesser({}, {})", a, b); break;
-                case Opcode::max: expression = std::format("greater({}, {})", a, b); break;
+                case Code::copy: expression = a; break;
+                case Code::neg: expression = std::format("-{}", a); break;
+                case Code::abs: expression = std::format("abs({})", a); break;
+                case Code::sqrt: expression = std::format("sqrt({})", a); break;
+                case Code::exp: expression = std::format("exp({})", a); break;
+                case Code::log: expression = std::format("log({})", a); break;
+                case Code::sin: expression = std::format("sin({})", a); break;
+                case Code::cos: expression = std::format("cos({})", a); break;
+                case Code::add: expression = std::format("{} + {}", a, b); break;
+                case Code::sub: expression = std::format("{} - {}", a, b); break;
+                case Code::mul: expression = std::format("{} * {}", a, b); break;
+                case Code::div: expression = std::format("{} / {}", a, b); break;
+                case Code::min: expression = std::format("lesser({}, {})", a, b); break;
+                case Code::max: expression = std::format("greater({}, {})", a, b); break;
                 default: expression = std::format("fma({}, {}, {})", a, b, c); break;
             }
             body += std::format("    const float4 v{} = {};\n", step, expression);

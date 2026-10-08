@@ -22,10 +22,10 @@
 #include "linalg/decompose.hpp"
 #include "linalg/matmul.hpp"
 #include "linalg/solve.hpp"
-#include "ops/binary.hpp"
-#include "ops/creation.hpp"
-#include "ops/reduce.hpp"
-#include "ops/unary.hpp"
+#include "operations/binary.hpp"
+#include "operations/creation.hpp"
+#include "operations/reduce.hpp"
+#include "operations/unary.hpp"
 
 namespace sci {
 
@@ -34,32 +34,63 @@ namespace sci {
     using core::drivers::Device;
     using core::drivers::Target;
 
-    using ops::arange;
-    using ops::empty;
-    using ops::full;
-    using ops::ones;
-    using ops::zeros;
+    using operations::arange;
+    using operations::empty;
+    using operations::full;
+    using operations::ones;
+    using operations::zeros;
 
-    using ops::add;
-    using ops::copy;
-    using ops::divide;
-    using ops::maximum;
-    using ops::minimum;
-    using ops::multiply;
-    using ops::subtract;
+    using operations::add;
+    using operations::divide;
+    using operations::multiply;
+    using operations::subtract;
 
-    using ops::abs;
-    using ops::cos;
-    using ops::exp;
-    using ops::log;
-    using ops::negative;
-    using ops::sin;
-    using ops::sqrt;
+    using operations::sin;
+    using operations::cos;
+    using operations::tan;
+    using operations::asin;
+    using operations::acos;
+    using operations::atan;
+    using operations::asinh;
+    using operations::acosh;
+    using operations::atanh;
 
-    using ops::max;
-    using ops::mean;
-    using ops::min;
-    using ops::sum;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    using operations::copy;
+    using operations::maximum;
+    using operations::minimum;
+
+
+
+    using operations::abs;
+    using operations::exp;
+    using operations::log;
+    using operations::negative;
+    using operations::sqrt;
+
+    using operations::max;
+    using operations::mean;
+    using operations::min;
+    using operations::sum;
 
     using linalg::dot;
     using linalg::matmul;

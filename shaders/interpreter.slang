@@ -33,12 +33,22 @@ float4 apply(uint code, float4 a, float4 b, float4 c) {
         case 5: return log(a);
         case 6: return sin(a);
         case 7: return cos(a);
-        case 8: return a + b;
-        case 9: return a - b;
-        case 10: return a * b;
-        case 11: return a / b;
-        case 12: return lesser(a, b);
-        case 13: return greater(a, b);
+        case 8: return tan(a);
+        case 9: return asin(a);
+        case 10: return acos(a);
+        case 11: return atan(a);
+        case 12: return sinh(a);
+        case 13: return cosh(a);
+        case 14: return tanh(a);
+        case 15: return asinh(a);
+        case 16: return acosh(a);
+        case 17: return atanh(a);
+        case 18: return a + b;
+        case 19: return a - b;
+        case 20: return a * b;
+        case 21: return a / b;
+        case 22: return lesser(a, b);
+        case 23: return greater(a, b);
         default: return fma(a, b, c);
     }
 }

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <array/shape.hpp>
 
-namespace sci::ops {
+namespace sci::operations {
 
     // Shape two same-rank shapes broadcast to: the larger extent in each dimension.
     template <core::size rank>

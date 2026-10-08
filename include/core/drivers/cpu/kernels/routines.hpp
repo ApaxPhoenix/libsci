@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/bytecode/fold.hpp"
-#include "core/bytecode/opcode.hpp"
+#include "core/bytecode/code.hpp"
 #include "core/types.hpp"
 
 namespace sci::core::drivers::cpu::kernels {
@@ -18,7 +18,7 @@ namespace sci::core::drivers::cpu::kernels {
         // Sum of products of two runs: sum(a * b) without materialising a * b.
         using Contraction = type (*)(const type* left, const type* right, size count) noexcept;
 
-        Kernel kernels[static_cast<size>(Opcode::count)]{};
+        Kernel kernels[static_cast<size>(Code::count)]{};
         Reduction folds[static_cast<size>(Fold::count)]{};
         Contraction dot{nullptr};
     };
