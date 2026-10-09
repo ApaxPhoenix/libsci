@@ -126,7 +126,7 @@ namespace sci::core::drivers {
             layout.result = chunk.result;
             for (uint8 index = 0; index < chunk.length; ++index) {
                 const Instruction& step = chunk.code[index];
-                layout.code[index][0] = static_cast<uint32>(step.opcode) | uint32{step.target} << 8 |
+                layout.code[index][0] = static_cast<uint32>(step.code) | uint32{step.target} << 8 |
                                        uint32{step.sources[0]} << 16 | uint32{step.sources[1]} << 24;
                 layout.code[index][1] = step.sources[2];
             }

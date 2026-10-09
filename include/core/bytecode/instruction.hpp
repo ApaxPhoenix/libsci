@@ -17,7 +17,7 @@ namespace sci::core {
 
     // target = code(sources...), all value ids.
     struct Instruction {
-        Code opcode;
+        Code code;
         uint8 target;
         uint8 sources[3];
     };

@@ -51,6 +51,9 @@ namespace sci {
     using operations::asin;
     using operations::acos;
     using operations::atan;
+    using operations::sinh;
+    using operations::cosh;
+    using operations::tanh;
     using operations::asinh;
     using operations::acosh;
     using operations::atanh;

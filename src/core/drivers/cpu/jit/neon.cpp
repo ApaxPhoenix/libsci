@@ -78,10 +78,10 @@ namespace sci::core::drivers::cpu::jit {
         };
 
         for (uint8 step = 0; step < chunk.length; ++step) {
-            const auto&[opcode, target, sources] = chunk.code[step];
+            const auto&[code, target, sources] = chunk.code[step];
             const a64::Vec first = value(sources[0]);
             a64::Vec result = compiler.new_vec128("value");
-            switch (opcode) {
+            switch (code) {
                 case Code::copy: result = first; break;
                 case Code::neg: compiler.fneg(shape(result), shape(first)); break;
                 case Code::abs: compiler.fabs(shape(result), shape(first)); break;

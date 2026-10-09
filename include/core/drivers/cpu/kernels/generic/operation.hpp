@@ -7,7 +7,7 @@
 
 namespace sci::core::drivers::cpu::kernels {
 
-    // What one opcode does to a pack. The loops in elementwise.hpp and reductions.hpp call apply()
+    // What one code does to a pack. The loops in elementwise.hpp and reductions.hpp call apply()
     // with the ISA's pack, and with its one-lane Scalar pack for the tail.
     template <Code code>
     struct Operation;
@@ -58,6 +58,66 @@ namespace sci::core::drivers::cpu::kernels {
     struct Operation<Code::cos> {
         template <typename pack>
         static pack::value apply(const pack::value item) noexcept { return Trigonometry<pack>::cos(item); }
+    };
+
+    template <>
+    struct Operation<Code::tan> {
+        template <typename pack>
+        static pack::value apply(const pack::value item) noexcept { return Trigonometry<pack>::tan(item); }
+    };
+
+    template <>
+    struct Operation<Code::asin> {
+        template <typename pack>
+        static pack::value apply(const pack::value item) noexcept { return Trigonometry<pack>::asin(item); }
+    };
+
+    template <>
+    struct Operation<Code::acos> {
+        template <typename pack>
+        static pack::value apply(const pack::value item) noexcept { return Trigonometry<pack>::acos(item); }
+    };
+
+    template <>
+    struct Operation<Code::atan> {
+        template <typename pack>
+        static pack::value apply(const pack::value item) noexcept { return Trigonometry<pack>::atan(item); }
+    };
+
+    template <>
+    struct Operation<Code::sinh> {
+        template <typename pack>
+        static pack::value apply(const pack::value item) noexcept { return Trigonometry<pack>::sinh(item); }
+    };
+
+    template <>
+    struct Operation<Code::cosh> {
+        template <typename pack>
+        static pack::value apply(const pack::value item) noexcept { return Trigonometry<pack>::cosh(item); }
+    };
+
+    template <>
+    struct Operation<Code::tanh> {
+        template <typename pack>
+        static pack::value apply(const pack::value item) noexcept { return Trigonometry<pack>::tanh(item); }
+    };
+
+    template <>
+    struct Operation<Code::asinh> {
+        template <typename pack>
+        static pack::value apply(const pack::value item) noexcept { return Trigonometry<pack>::asinh(item); }
+    };
+
+    template <>
+    struct Operation<Code::acosh> {
+        template <typename pack>
+        static pack::value apply(const pack::value item) noexcept { return Trigonometry<pack>::acosh(item); }
+    };
+
+    template <>
+    struct Operation<Code::atanh> {
+        template <typename pack>
+        static pack::value apply(const pack::value item) noexcept { return Trigonometry<pack>::atanh(item); }
     };
 
     template <>

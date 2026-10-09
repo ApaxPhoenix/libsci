@@ -49,10 +49,10 @@ namespace sci::core {
 
         // Sources are consumed: expression trees use every temporary exactly once, so a temporary
         // returns to the free list as soon as its consumer is recorded.
-        [[nodiscard]] uint8 emit(const Code opcode, const uint8 first, const uint8 second = slot::none, const uint8 third = slot::none) noexcept {
+        [[nodiscard]] uint8 emit(const Code code, const uint8 first, const uint8 second = slot::none, const uint8 third = slot::none) noexcept {
             if (overflow) return slot::none;
 
-            if (opcode == Code::add) {
+            if (code == Code::add) {
                 if (const uint8 merged = contract(second, first); merged != slot::none) return merged;
                 if (const uint8 merged = contract(first, second); merged != slot::none) return merged;
             }
@@ -66,7 +66,7 @@ namespace sci::core {
             const uint8 target = acquire();
             if (target == slot::none) return fail();
 
-            code[length++] = Instruction{.opcode = opcode, .target = target, .sources = {first, second, third}};
+            this->code[length++] = Instruction{.code = code, .target = target, .sources = {first, second, third}};
             return target;
         }
 
@@ -76,7 +76,7 @@ namespace sci::core {
             if (length > 0 && code[length - 1].target == value && (value & slot::kinds) == slot::temporary) {
                 code[length - 1].target = slot::output;
             } else if (length < capacity) {
-                code[length++] = Instruction{.opcode = Code::copy, .target = slot::output, .sources = {value, slot::none, slot::none}};
+                code[length++] = Instruction{.code = Code::copy, .target = slot::output, .sources = {value, slot::none, slot::none}};
             } else {
                 fail();
             }
@@ -100,13 +100,23 @@ namespace sci::core {
         [[nodiscard]] uint32 cost() const noexcept {
             uint32 total = arguments + 1;
             for (uint8 index = 0; index < length; ++index) {
-                switch (code[index].opcode) {
+                switch (code[index].code) {
                     case Code::div:
                     case Code::sqrt: total += 4; break;
                     case Code::exp:
                     case Code::log: total += 12; break;
                     case Code::sin:
-                    case Code::cos: total += 16; break;
+                    case Code::cos:
+                    case Code::tan: total += 16; break;
+                    case Code::asin:
+                    case Code::acos:
+                    case Code::atan:
+                    case Code::sinh:
+                    case Code::cosh:
+                    case Code::tanh:
+                    case Code::asinh:
+                    case Code::acosh:
+                    case Code::atanh: total += 24; break;
                     default: total += 1; break;
                 }
             }
@@ -124,8 +134,8 @@ namespace sci::core {
             key += static_cast<char>(temporaries);
             key += static_cast<char>(result);
             for (uint8 index = 0; index < length; ++index) {
-                const auto&[opcode, target, sources] = code[index];
-                key += static_cast<char>(opcode);
+                const auto&[code, target, sources] = this->code[index];
+                key += static_cast<char>(code);
                 key += static_cast<char>(target);
                 for (const uint8 source : sources) {
                     key += static_cast<char>(source);
@@ -151,8 +161,8 @@ namespace sci::core {
         uint8 contract(const uint8 product, const uint8 addend) noexcept {
             if (length == 0 || (product & slot::kinds) != slot::temporary) return slot::none;
             Instruction& last = code[length - 1];
-            if (last.opcode != Code::mul || last.target != product) return slot::none;
-            last.opcode = Code::fma;
+            if (last.code != Code::mul || last.target != product) return slot::none;
+            last.code = Code::fma;
             last.sources[2] = addend;
             release(addend);
             return product;

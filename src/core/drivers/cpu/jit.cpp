@@ -46,15 +46,26 @@ namespace sci::core::drivers::cpu {
         return 0;
     }
 
-    // exp, log, sin and cos run best as kernel loops over whole blocks (a call per register costs
-    // more than the temporaries it saves), so chunks that use them stay on the kernels.
+    // exp, log and the trigonometric functions run best as kernel loops over whole blocks (a call
+    // per register costs more than the temporaries it saves), so chunks that use them stay on the
+    // kernels.
     static bool compilable(const Chunk& chunk) noexcept {
         for (uint8 index = 0; index < chunk.length; ++index) {
-            switch (chunk.code[index].opcode) {
+            switch (chunk.code[index].code) {
                 case Code::exp:
                 case Code::log:
                 case Code::sin:
-                case Code::cos: return false;
+                case Code::cos:
+                case Code::tan:
+                case Code::asin:
+                case Code::acos:
+                case Code::atan:
+                case Code::sinh:
+                case Code::cosh:
+                case Code::tanh:
+                case Code::asinh:
+                case Code::acosh:
+                case Code::atanh: return false;
                 default: break;
             }
         }
