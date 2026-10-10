@@ -1,24 +1,24 @@
- #pragma once
+#pragma once
 
-#include "core/bytecode/dtype.hpp"
+#include "core/bytecode/precision.hpp"
 
 namespace sci::core {
 
-    // Maps a C++ element type to its Dtype.
+    // Maps a C++ element type to its Precision.
     template <typename element>
     struct Traits;
 
     template <>
     struct Traits<float> {
-        static constexpr auto type = Dtype::float32;
+        static constexpr auto precision = Precision::single;
     };
 
     template <>
     struct Traits<double> {
-        static constexpr auto type = Dtype::float64;
+        static constexpr auto precision = Precision::wide;
     };
 
     template <typename element>
-    concept native = requires { Traits<element>::type; };
+    concept native = requires { Traits<element>::precision; };
 
 }
