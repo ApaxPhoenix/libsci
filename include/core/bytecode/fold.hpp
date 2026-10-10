@@ -7,8 +7,8 @@ namespace sci::core {
     // Reductions over a chunk's result.
     enum class Fold : uint8 {
         sum,
-        min,
-        max,
+        minimum,
+        maximum,
         count
     };
 
