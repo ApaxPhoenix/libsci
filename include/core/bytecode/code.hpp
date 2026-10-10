@@ -8,31 +8,37 @@ namespace sci::core {
     // shaders/interpreter.slang, so append new operations at the end (before count).
     enum class Code : uint8 {
         copy,
-        neg,
-        abs,
-        sqrt,
-        exp,
-        log,
-        sin,
-        cos,
-        tan,
-        asin,
-        acos,
-        atan,
-        sinh,
-        cosh,
-        tanh,
-        asinh,
-        acosh,
-        atanh,
-        add,
-        sub,
-        mul,
-        div,
-        min,
-        max,
-        fma,
+        negate,
+        absolute,
+        root,
+        exponential,
+        logarithm,
+        sine,
+        cosine,
+        tangent,
+        arcsine,
+        arccosine,
+        arctangent,
+        // 12 to 17 are the hyperbolic functions, below.
+        add = 18,
+        subtract,
+        multiply,
+        divide,
+        minimum,
+        maximum,
+        fuse,
         count
     };
+
+    // The hyperbolic functions share their names with the circular ones, so they get a namespace of
+    // their own. They are never `case` labels: compilers warn about values without an enumerator.
+    namespace hyperbolic {
+        inline constexpr Code sine{12};
+        inline constexpr Code cosine{13};
+        inline constexpr Code tangent{14};
+        inline constexpr Code arcsine{15};
+        inline constexpr Code arccosine{16};
+        inline constexpr Code arctangent{17};
+    }
 
 }
