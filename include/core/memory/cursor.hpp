@@ -16,10 +16,6 @@ namespace sci::core::memory {
             pointer += offset;
         }
 
-        constexpr void jump(const size index, const size stride) noexcept {
-            pointer += index * stride;
-        }
-
         [[nodiscard]] constexpr type& get() noexcept {
             return *pointer;
         }
