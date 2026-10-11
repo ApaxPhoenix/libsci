@@ -6,7 +6,7 @@
 // linker could share between ISA files (see compose.hpp).
 #include <math.h> // NOLINT(modernize-deprecated-headers)
 
-namespace sci::core::drivers::cpu::kernels {
+namespace sci::core::drivers::processor::kernels {
 
     // One-lane pack over plain scalars: the fallback ISA and every loop tail. `tag` is the owning
     // ISA's pack (Neon<float>, ...), which keeps each file's instantiations apart.
@@ -26,13 +26,13 @@ namespace sci::core::drivers::cpu::kernels {
         static bits fill(const integer item) noexcept { return item; }
 
         static value add(const value left, const value right) noexcept { return left + right; }
-        static value sub(const value left, const value right) noexcept { return left - right; }
-        static value mul(const value left, const value right) noexcept { return left * right; }
-        static value div(const value left, const value right) noexcept { return left / right; }
+        static value subtract(const value left, const value right) noexcept { return left - right; }
+        static value multiply(const value left, const value right) noexcept { return left * right; }
+        static value divide(const value left, const value right) noexcept { return left / right; }
 
         // Without a fused multiply-add instruction a float fma is still exact enough through double (the product
-        // is exact there), which the trig range reduction relies on. Doubles fall back to two roundings.
-        static value fma(const value left, const value right, const value addend) noexcept {
+        // is exact there), which the range reduction of sine and cosine relies on. Doubles fall back to two roundings.
+        static value fuse(const value left, const value right, const value addend) noexcept {
             #if defined(__FMA__) || defined(__aarch64__)
                 if constexpr (sizeof(type) == 4) {
                     return __builtin_fmaf(left, right, addend);
@@ -48,13 +48,9 @@ namespace sci::core::drivers::cpu::kernels {
             #endif
         }
 
-        static value fnma(const value left, const value right, const value addend) noexcept {
-            return fma(-left, right, addend);
-        }
-
-        static value neg(const value item) noexcept { return -item; }
-        static value abs(const value item) noexcept { return cast(band(tobits(item), ~sign)); }
-        static value sqrt(const value item) noexcept {
+        static value negate(const value item) noexcept { return -item; }
+        static value absolute(const value item) noexcept { return cast(intersect(raw(item), ~sign)); }
+        static value root(const value item) noexcept {
             if constexpr (sizeof(type) == 4) {
                 return ::sqrtf(item);
             } else {
@@ -62,12 +58,12 @@ namespace sci::core::drivers::cpu::kernels {
             }
         }
 
-        static value min(const value left, const value right) noexcept {
+        static value minimum(const value left, const value right) noexcept {
             if (__builtin_isnan(left) || __builtin_isnan(right)) return left + right;
             return right < left ? right : left;
         }
 
-        static value max(const value left, const value right) noexcept {
+        static value maximum(const value left, const value right) noexcept {
             if (__builtin_isnan(left) || __builtin_isnan(right)) return left + right;
             return right > left ? right : left;
         }
@@ -83,18 +79,22 @@ namespace sci::core::drivers::cpu::kernels {
             return choice ? left : right;
         }
 
-        static bits tobits(const value item) noexcept { return __builtin_bit_cast(integer, item); }
+        static bits raw(const value item) noexcept { return __builtin_bit_cast(integer, item); }
         static value cast(const bits item) noexcept { return __builtin_bit_cast(type, item); }
 
-        static bits band(const bits left, const bits right) noexcept { return left & right; }
-        static bits bor(const bits left, const bits right) noexcept { return left | right; }
-        static bits bxor(const bits left, const bits right) noexcept { return left ^ right; }
+        static bits intersect(const bits left, const bits right) noexcept { return left & right; }
+        static bits unite(const bits left, const bits right) noexcept { return left | right; }
+        static bits toggle(const bits left, const bits right) noexcept { return left ^ right; }
 
+        // Every lane shifted left by `count` bits, or right by -count when it is negative.
         template <int count>
-        static bits shl(const bits item) noexcept { return item << count; }
-
-        template <int count>
-        static bits shr(const bits item) noexcept { return item >> count; }
+        static bits shift(const bits item) noexcept {
+            if constexpr (count > 0) {
+                return item << count;
+            } else {
+                return item >> -count;
+            }
+        }
 
     private:
         static constexpr integer sign = integer{1} << (sizeof(integer) * 8 - 1);
