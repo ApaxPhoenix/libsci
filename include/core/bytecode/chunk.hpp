@@ -1,8 +1,9 @@
 #pragma once
 
-#include "core/bytecode/dtype.hpp"
+#include "core/bytecode/precision.hpp"
 #include "core/bytecode/instruction.hpp"
 #include "core/bytecode/code.hpp"
+#include "core/bytecode/fold.hpp"
 #include "core/types.hpp"
 
 #include <algorithm>
@@ -12,8 +13,8 @@
 // Bytecode for array expressions. Writing `a * b + c` does not compute anything yet: the expression
 // is translated into a Chunk (a short list of instructions, like a chunk of Lua bytecode), and the
 // chunk runs when the result is needed, in a single loop over the arrays with no temporary arrays.
-// The CPU engine, the GPU interpreter (shaders/interpreter.slang) and the JITs (cpu::Jit,
-// vulkan::Jit) all run the same Chunk.
+// The CPU engine, the GPU interpreter (shaders/interpreter.slang) and the JITs (processor::Compiler,
+// vulkan::Compiler) all run the same Chunk.
 
 namespace sci::core {
 
@@ -25,8 +26,8 @@ namespace sci::core {
     public:
         static constexpr size capacity = 64;
 
-        explicit Chunk(const Dtype type) noexcept
-            : type(type) {}
+        explicit Chunk(const Precision precision) noexcept
+            : precision(precision) {}
 
         // Recording. Each call returns the value id of what it added.
         [[nodiscard]] uint8 input(const void* pointer) noexcept {
@@ -100,27 +101,27 @@ namespace sci::core {
         [[nodiscard]] uint32 cost() const noexcept {
             uint32 total = arguments + 1;
             for (uint8 index = 0; index < length; ++index) {
-                switch (code[index].code) {
-                    case Code::div:
-                    case Code::sqrt: total += 4; break;
-                    case Code::exp:
-                    case Code::log: total += 12; break;
-                    case Code::sin:
-                    case Code::cos:
-                    case Code::tan: total += 16; break;
-                    case Code::asin:
-                    case Code::acos:
-                    case Code::atan:
-                    case Code::sinh:
-                    case Code::cosh:
-                    case Code::tanh:
-                    case Code::asinh:
-                    case Code::acosh:
-                    case Code::atanh: total += 24; break;
-                    default: total += 1; break;
+                const Code operation = code[index].code;
+                if (operation == Code::divide || operation == Code::root) {
+                    total += 4;
+                } else if (operation == Code::exponential || operation == Code::logarithm) {
+                    total += 12;
+                } else if (operation >= Code::sine && operation <= Code::tangent) {
+                    total += 16;
+                } else if (operation >= Code::arcsine && operation <= hyperbolic::arctangent) {
+                    total += 24;
+                } else {
+                    total += 1;
                 }
             }
             return total;
+        }
+
+        // A sum whose last instruction multiplies into the result, sum(... * ...): the reduction can
+        // skip that multiply and contract its operands directly (a dot product), so the product
+        // never round-trips through memory.
+        [[nodiscard]] bool contracted(const Fold fold) const noexcept {
+            return fold == Fold::sum && length > 0 && code[length - 1].code == Code::multiply && code[length - 1].target == result;
         }
 
         // The instructions and value counts without the input addresses or constant values: chunks
@@ -128,7 +129,7 @@ namespace sci::core {
         [[nodiscard]] std::string signature() const {
             std::string key;
             key.reserve(5 + 5 * size{length});
-            key += static_cast<char>(type);
+            key += static_cast<char>(precision);
             key += static_cast<char>(arguments);
             key += static_cast<char>(literals);
             key += static_cast<char>(temporaries);
@@ -146,7 +147,7 @@ namespace sci::core {
 
         // The recorded chunk, read by the executors. Only the first length / arguments / literals
         // entries are meaningful.
-        Dtype type;
+        Precision precision;
         uint8 length{0};
         uint8 arguments{0};
         uint8 literals{0};
@@ -161,16 +162,16 @@ namespace sci::core {
         uint8 contract(const uint8 product, const uint8 addend) noexcept {
             if (length == 0 || (product & slot::kinds) != slot::temporary) return slot::none;
             Instruction& last = code[length - 1];
-            if (last.code != Code::mul || last.target != product) return slot::none;
-            last.code = Code::fma;
+            if (last.code != Code::multiply || last.target != product) return slot::none;
+            last.code = Code::fuse;
             last.sources[2] = addend;
             release(addend);
             return product;
         }
 
-        void release(const uint8 id) noexcept {
-            if ((id & slot::kinds) == slot::temporary) {
-                busy &= ~(uint64{1} << (id & ~slot::kinds));
+        void release(const uint8 value) noexcept {
+            if ((value & slot::kinds) == slot::temporary) {
+                busy &= ~(uint64{1} << (value & ~slot::kinds));
             }
         }
 
