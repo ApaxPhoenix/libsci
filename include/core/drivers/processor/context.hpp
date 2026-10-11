@@ -2,7 +2,7 @@
 
 #include "core/types.hpp"
 
-namespace sci::core::drivers::cpu {
+namespace sci::core::drivers::processor {
 
     // What this CPU offers, detected at runtime.
     struct Context {
