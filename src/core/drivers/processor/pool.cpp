@@ -1,4 +1,4 @@
-#include "core/drivers/cpu/pool.hpp"
+#include "core/drivers/processor/pool.hpp"
 
 #include "core/types.hpp"
 
@@ -13,7 +13,7 @@
 #include <intrin.h>
 #endif
 
-namespace sci::core::drivers::cpu {
+namespace sci::core::drivers::processor {
 
     // Set on pool threads and on a caller while it helps: nested run() calls execute inline.
     static thread_local bool nested = false;
@@ -21,7 +21,7 @@ namespace sci::core::drivers::cpu {
     // Polls before an idle worker parks on the condition variable (a few hundred microseconds).
     constexpr size patience = size{1} << 17;
 
-    static void relax() noexcept {
+    void Pool::relax() noexcept {
         #if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
             _mm_pause();
         #elif defined(__aarch64__)
@@ -31,9 +31,8 @@ namespace sci::core::drivers::cpu {
         #endif
     }
 
-    // Spins on a condition, then starts yielding the core so a preempted peer can finish.
     template <typename predicate>
-    static void await(predicate&& ready) noexcept {
+    void Pool::await(predicate&& ready) noexcept {
         for (size spin = 0; !ready(); ++spin) {
             if (spin < 4096) {
                 relax();

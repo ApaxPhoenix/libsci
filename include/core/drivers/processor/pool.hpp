@@ -9,7 +9,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace sci::core::drivers::cpu {
+namespace sci::core::drivers::processor {
 
     // Fork-join thread pool: run() hands out indices [0, count) to the workers and the calling
     // thread, and returns once every index has been processed.
@@ -31,8 +31,8 @@ namespace sci::core::drivers::cpu {
         // At most `limit` threads (the caller included) take part; 0 means all of them.
         template <typename action>
         void run(const size count, action&& work, const size limit = 0) {
-            using functor = std::remove_reference_t<action>;
-            run(count, [](void* state, const size index) { (*static_cast<functor*>(state))(index); }, static_cast<void*>(&work), limit);
+            using callable = std::remove_reference_t<action>;
+            run(count, [](void* state, const size index) { (*static_cast<callable*>(state))(index); }, static_cast<void*>(&work), limit);
         }
 
         void run(size count, void (*routine)(void*, size), void* state, size limit);
@@ -41,6 +41,13 @@ namespace sci::core::drivers::cpu {
         [[nodiscard]] static Pool& global();
 
     private:
+        // Pauses the core for a moment inside a spin loop.
+        static void relax() noexcept;
+
+        // Spins on a condition, then starts yielding the core so a preempted peer can finish.
+        template <typename predicate>
+        static void await(predicate&& ready) noexcept;
+
         void loop(size seat);
         void drain(void (*routine)(void*, size), void* state, size count) noexcept;
 
