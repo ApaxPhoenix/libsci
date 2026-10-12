@@ -3,12 +3,12 @@
 
 #include <immintrin.h>
 
-#include "core/drivers/cpu/kernels/avx2.hpp"
-#include "core/drivers/cpu/kernels/generic/compose.hpp"
-#include "core/drivers/cpu/kernels/generic/scalar.hpp"
+#include "core/drivers/processor/kernels/avx2.hpp"
+#include "core/drivers/processor/kernels/generic/compose.hpp"
+#include "core/drivers/processor/kernels/generic/scalar.hpp"
 #include "core/types.hpp"
 
-namespace sci::core::drivers::cpu::kernels {
+namespace sci::core::drivers::processor::kernels {
 
     // AVX2 registers: eight floats or four doubles.
 
@@ -31,21 +31,20 @@ namespace sci::core::drivers::cpu::kernels {
         static bits fill(const uint32 item) noexcept { return _mm256_set1_epi32(static_cast<int>(item)); }
 
         static value add(const value left, const value right) noexcept { return _mm256_add_ps(left, right); }
-        static value sub(const value left, const value right) noexcept { return _mm256_sub_ps(left, right); }
-        static value mul(const value left, const value right) noexcept { return _mm256_mul_ps(left, right); }
-        static value div(const value left, const value right) noexcept { return _mm256_div_ps(left, right); }
-        static value fma(const value left, const value right, const value addend) noexcept { return _mm256_fmadd_ps(left, right, addend); }
-        static value fnma(const value left, const value right, const value addend) noexcept { return _mm256_fnmadd_ps(left, right, addend); }
+        static value subtract(const value left, const value right) noexcept { return _mm256_sub_ps(left, right); }
+        static value multiply(const value left, const value right) noexcept { return _mm256_mul_ps(left, right); }
+        static value divide(const value left, const value right) noexcept { return _mm256_div_ps(left, right); }
+        static value fuse(const value left, const value right, const value addend) noexcept { return _mm256_fmadd_ps(left, right, addend); }
 
-        static value neg(const value item) noexcept { return _mm256_xor_ps(item, _mm256_set1_ps(-0.0f)); }
-        static value abs(const value item) noexcept { return _mm256_andnot_ps(_mm256_set1_ps(-0.0f), item); }
-        static value sqrt(const value item) noexcept { return _mm256_sqrt_ps(item); }
+        static value negate(const value item) noexcept { return _mm256_xor_ps(item, _mm256_set1_ps(-0.0f)); }
+        static value absolute(const value item) noexcept { return _mm256_andnot_ps(_mm256_set1_ps(-0.0f), item); }
+        static value root(const value item) noexcept { return _mm256_sqrt_ps(item); }
 
-        static value min(const value left, const value right) noexcept {
+        static value minimum(const value left, const value right) noexcept {
             return _mm256_blendv_ps(_mm256_min_ps(left, right), left, unordered(left));
         }
 
-        static value max(const value left, const value right) noexcept {
+        static value maximum(const value left, const value right) noexcept {
             return _mm256_blendv_ps(_mm256_max_ps(left, right), left, unordered(left));
         }
 
@@ -65,18 +64,22 @@ namespace sci::core::drivers::cpu::kernels {
             return _mm256_blendv_ps(right, left, choice);
         }
 
-        static bits tobits(const value item) noexcept { return _mm256_castps_si256(item); }
+        static bits raw(const value item) noexcept { return _mm256_castps_si256(item); }
         static value cast(const bits item) noexcept { return _mm256_castsi256_ps(item); }
 
-        static bits band(const bits left, const bits right) noexcept { return _mm256_and_si256(left, right); }
-        static bits bor(const bits left, const bits right) noexcept { return _mm256_or_si256(left, right); }
-        static bits bxor(const bits left, const bits right) noexcept { return _mm256_xor_si256(left, right); }
+        static bits intersect(const bits left, const bits right) noexcept { return _mm256_and_si256(left, right); }
+        static bits unite(const bits left, const bits right) noexcept { return _mm256_or_si256(left, right); }
+        static bits toggle(const bits left, const bits right) noexcept { return _mm256_xor_si256(left, right); }
 
+        // Every lane shifted left by `count` bits, or right by -count when it is negative.
         template <int count>
-        static bits shl(const bits item) noexcept { return _mm256_slli_epi32(item, count); }
-
-        template <int count>
-        static bits shr(const bits item) noexcept { return _mm256_srli_epi32(item, count); }
+        static bits shift(const bits item) noexcept {
+            if constexpr (count > 0) {
+                return _mm256_slli_epi32(item, count);
+            } else {
+                return _mm256_srli_epi32(item, -count);
+            }
+        }
     };
 
     template <>
@@ -95,21 +98,20 @@ namespace sci::core::drivers::cpu::kernels {
         static bits fill(const uint64 item) noexcept { return _mm256_set1_epi64x(static_cast<long long>(item)); }
 
         static value add(const value left, const value right) noexcept { return _mm256_add_pd(left, right); }
-        static value sub(const value left, const value right) noexcept { return _mm256_sub_pd(left, right); }
-        static value mul(const value left, const value right) noexcept { return _mm256_mul_pd(left, right); }
-        static value div(const value left, const value right) noexcept { return _mm256_div_pd(left, right); }
-        static value fma(const value left, const value right, const value addend) noexcept { return _mm256_fmadd_pd(left, right, addend); }
-        static value fnma(const value left, const value right, const value addend) noexcept { return _mm256_fnmadd_pd(left, right, addend); }
+        static value subtract(const value left, const value right) noexcept { return _mm256_sub_pd(left, right); }
+        static value multiply(const value left, const value right) noexcept { return _mm256_mul_pd(left, right); }
+        static value divide(const value left, const value right) noexcept { return _mm256_div_pd(left, right); }
+        static value fuse(const value left, const value right, const value addend) noexcept { return _mm256_fmadd_pd(left, right, addend); }
 
-        static value neg(const value item) noexcept { return _mm256_xor_pd(item, _mm256_set1_pd(-0.0)); }
-        static value abs(const value item) noexcept { return _mm256_andnot_pd(_mm256_set1_pd(-0.0), item); }
-        static value sqrt(const value item) noexcept { return _mm256_sqrt_pd(item); }
+        static value negate(const value item) noexcept { return _mm256_xor_pd(item, _mm256_set1_pd(-0.0)); }
+        static value absolute(const value item) noexcept { return _mm256_andnot_pd(_mm256_set1_pd(-0.0), item); }
+        static value root(const value item) noexcept { return _mm256_sqrt_pd(item); }
 
-        static value min(const value left, const value right) noexcept {
+        static value minimum(const value left, const value right) noexcept {
             return _mm256_blendv_pd(_mm256_min_pd(left, right), left, unordered(left));
         }
 
-        static value max(const value left, const value right) noexcept {
+        static value maximum(const value left, const value right) noexcept {
             return _mm256_blendv_pd(_mm256_max_pd(left, right), left, unordered(left));
         }
 
@@ -129,18 +131,22 @@ namespace sci::core::drivers::cpu::kernels {
             return _mm256_blendv_pd(right, left, choice);
         }
 
-        static bits tobits(const value item) noexcept { return _mm256_castpd_si256(item); }
+        static bits raw(const value item) noexcept { return _mm256_castpd_si256(item); }
         static value cast(const bits item) noexcept { return _mm256_castsi256_pd(item); }
 
-        static bits band(const bits left, const bits right) noexcept { return _mm256_and_si256(left, right); }
-        static bits bor(const bits left, const bits right) noexcept { return _mm256_or_si256(left, right); }
-        static bits bxor(const bits left, const bits right) noexcept { return _mm256_xor_si256(left, right); }
+        static bits intersect(const bits left, const bits right) noexcept { return _mm256_and_si256(left, right); }
+        static bits unite(const bits left, const bits right) noexcept { return _mm256_or_si256(left, right); }
+        static bits toggle(const bits left, const bits right) noexcept { return _mm256_xor_si256(left, right); }
 
+        // Every lane shifted left by `count` bits, or right by -count when it is negative.
         template <int count>
-        static bits shl(const bits item) noexcept { return _mm256_slli_epi64(item, count); }
-
-        template <int count>
-        static bits shr(const bits item) noexcept { return _mm256_srli_epi64(item, count); }
+        static bits shift(const bits item) noexcept {
+            if constexpr (count > 0) {
+                return _mm256_slli_epi64(item, count);
+            } else {
+                return _mm256_srli_epi64(item, -count);
+            }
+        }
     };
 
     constexpr Table table = compose<Avx2>("avx2");
@@ -153,9 +159,9 @@ namespace sci::core::drivers::cpu::kernels {
 
 #else
 
-#include "core/drivers/cpu/kernels/avx2.hpp"
+#include "core/drivers/processor/kernels/avx2.hpp"
 
-namespace sci::core::drivers::cpu::kernels {
+namespace sci::core::drivers::processor::kernels {
 
     const Table* avx2() noexcept {
         return nullptr;
