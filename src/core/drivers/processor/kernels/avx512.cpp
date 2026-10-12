@@ -3,12 +3,12 @@
 
 #include <immintrin.h>
 
-#include "core/drivers/cpu/kernels/avx512.hpp"
-#include "core/drivers/cpu/kernels/generic/compose.hpp"
-#include "core/drivers/cpu/kernels/generic/scalar.hpp"
+#include "core/drivers/processor/kernels/avx512.hpp"
+#include "core/drivers/processor/kernels/generic/compose.hpp"
+#include "core/drivers/processor/kernels/generic/scalar.hpp"
 #include "core/types.hpp"
 
-namespace sci::core::drivers::cpu::kernels {
+namespace sci::core::drivers::processor::kernels {
 
     // AVX-512 registers: sixteen floats or eight doubles; masks are k-registers.
 
@@ -31,21 +31,20 @@ namespace sci::core::drivers::cpu::kernels {
         static bits fill(const uint32 item) noexcept { return _mm512_set1_epi32(static_cast<int>(item)); }
 
         static value add(const value left, const value right) noexcept { return _mm512_add_ps(left, right); }
-        static value sub(const value left, const value right) noexcept { return _mm512_sub_ps(left, right); }
-        static value mul(const value left, const value right) noexcept { return _mm512_mul_ps(left, right); }
-        static value div(const value left, const value right) noexcept { return _mm512_div_ps(left, right); }
-        static value fma(const value left, const value right, const value addend) noexcept { return _mm512_fmadd_ps(left, right, addend); }
-        static value fnma(const value left, const value right, const value addend) noexcept { return _mm512_fnmadd_ps(left, right, addend); }
+        static value subtract(const value left, const value right) noexcept { return _mm512_sub_ps(left, right); }
+        static value multiply(const value left, const value right) noexcept { return _mm512_mul_ps(left, right); }
+        static value divide(const value left, const value right) noexcept { return _mm512_div_ps(left, right); }
+        static value fuse(const value left, const value right, const value addend) noexcept { return _mm512_fmadd_ps(left, right, addend); }
 
-        static value neg(const value item) noexcept { return cast(bxor(tobits(item), fill(0x80000000u))); }
-        static value abs(const value item) noexcept { return cast(band(tobits(item), fill(0x7fffffffu))); }
-        static value sqrt(const value item) noexcept { return _mm512_sqrt_ps(item); }
+        static value negate(const value item) noexcept { return cast(toggle(raw(item), fill(0x80000000u))); }
+        static value absolute(const value item) noexcept { return cast(intersect(raw(item), fill(0x7fffffffu))); }
+        static value root(const value item) noexcept { return _mm512_sqrt_ps(item); }
 
-        static value min(const value left, const value right) noexcept {
+        static value minimum(const value left, const value right) noexcept {
             return _mm512_mask_blend_ps(unordered(left), _mm512_min_ps(left, right), left);
         }
 
-        static value max(const value left, const value right) noexcept {
+        static value maximum(const value left, const value right) noexcept {
             return _mm512_mask_blend_ps(unordered(left), _mm512_max_ps(left, right), left);
         }
 
@@ -60,18 +59,22 @@ namespace sci::core::drivers::cpu::kernels {
             return _mm512_mask_blend_ps(choice, right, left);
         }
 
-        static bits tobits(const value item) noexcept { return _mm512_castps_si512(item); }
+        static bits raw(const value item) noexcept { return _mm512_castps_si512(item); }
         static value cast(const bits item) noexcept { return _mm512_castsi512_ps(item); }
 
-        static bits band(const bits left, const bits right) noexcept { return _mm512_and_si512(left, right); }
-        static bits bor(const bits left, const bits right) noexcept { return _mm512_or_si512(left, right); }
-        static bits bxor(const bits left, const bits right) noexcept { return _mm512_xor_si512(left, right); }
+        static bits intersect(const bits left, const bits right) noexcept { return _mm512_and_si512(left, right); }
+        static bits unite(const bits left, const bits right) noexcept { return _mm512_or_si512(left, right); }
+        static bits toggle(const bits left, const bits right) noexcept { return _mm512_xor_si512(left, right); }
 
+        // Every lane shifted left by `count` bits, or right by -count when it is negative.
         template <int count>
-        static bits shl(const bits item) noexcept { return _mm512_slli_epi32(item, count); }
-
-        template <int count>
-        static bits shr(const bits item) noexcept { return _mm512_srli_epi32(item, count); }
+        static bits shift(const bits item) noexcept {
+            if constexpr (count > 0) {
+                return _mm512_slli_epi32(item, count);
+            } else {
+                return _mm512_srli_epi32(item, -count);
+            }
+        }
     };
 
     template <>
@@ -90,21 +93,20 @@ namespace sci::core::drivers::cpu::kernels {
         static bits fill(const uint64 item) noexcept { return _mm512_set1_epi64(static_cast<long long>(item)); }
 
         static value add(const value left, const value right) noexcept { return _mm512_add_pd(left, right); }
-        static value sub(const value left, const value right) noexcept { return _mm512_sub_pd(left, right); }
-        static value mul(const value left, const value right) noexcept { return _mm512_mul_pd(left, right); }
-        static value div(const value left, const value right) noexcept { return _mm512_div_pd(left, right); }
-        static value fma(const value left, const value right, const value addend) noexcept { return _mm512_fmadd_pd(left, right, addend); }
-        static value fnma(const value left, const value right, const value addend) noexcept { return _mm512_fnmadd_pd(left, right, addend); }
+        static value subtract(const value left, const value right) noexcept { return _mm512_sub_pd(left, right); }
+        static value multiply(const value left, const value right) noexcept { return _mm512_mul_pd(left, right); }
+        static value divide(const value left, const value right) noexcept { return _mm512_div_pd(left, right); }
+        static value fuse(const value left, const value right, const value addend) noexcept { return _mm512_fmadd_pd(left, right, addend); }
 
-        static value neg(const value item) noexcept { return cast(bxor(tobits(item), fill(0x8000000000000000ull))); }
-        static value abs(const value item) noexcept { return cast(band(tobits(item), fill(0x7fffffffffffffffull))); }
-        static value sqrt(const value item) noexcept { return _mm512_sqrt_pd(item); }
+        static value negate(const value item) noexcept { return cast(toggle(raw(item), fill(0x8000000000000000ull))); }
+        static value absolute(const value item) noexcept { return cast(intersect(raw(item), fill(0x7fffffffffffffffull))); }
+        static value root(const value item) noexcept { return _mm512_sqrt_pd(item); }
 
-        static value min(const value left, const value right) noexcept {
+        static value minimum(const value left, const value right) noexcept {
             return _mm512_mask_blend_pd(unordered(left), _mm512_min_pd(left, right), left);
         }
 
-        static value max(const value left, const value right) noexcept {
+        static value maximum(const value left, const value right) noexcept {
             return _mm512_mask_blend_pd(unordered(left), _mm512_max_pd(left, right), left);
         }
 
@@ -119,18 +121,22 @@ namespace sci::core::drivers::cpu::kernels {
             return _mm512_mask_blend_pd(choice, right, left);
         }
 
-        static bits tobits(const value item) noexcept { return _mm512_castpd_si512(item); }
+        static bits raw(const value item) noexcept { return _mm512_castpd_si512(item); }
         static value cast(const bits item) noexcept { return _mm512_castsi512_pd(item); }
 
-        static bits band(const bits left, const bits right) noexcept { return _mm512_and_si512(left, right); }
-        static bits bor(const bits left, const bits right) noexcept { return _mm512_or_si512(left, right); }
-        static bits bxor(const bits left, const bits right) noexcept { return _mm512_xor_si512(left, right); }
+        static bits intersect(const bits left, const bits right) noexcept { return _mm512_and_si512(left, right); }
+        static bits unite(const bits left, const bits right) noexcept { return _mm512_or_si512(left, right); }
+        static bits toggle(const bits left, const bits right) noexcept { return _mm512_xor_si512(left, right); }
 
+        // Every lane shifted left by `count` bits, or right by -count when it is negative.
         template <int count>
-        static bits shl(const bits item) noexcept { return _mm512_slli_epi64(item, count); }
-
-        template <int count>
-        static bits shr(const bits item) noexcept { return _mm512_srli_epi64(item, count); }
+        static bits shift(const bits item) noexcept {
+            if constexpr (count > 0) {
+                return _mm512_slli_epi64(item, count);
+            } else {
+                return _mm512_srli_epi64(item, -count);
+            }
+        }
     };
 
     constexpr Table table = compose<Avx512>("avx512");
@@ -143,9 +149,9 @@ namespace sci::core::drivers::cpu::kernels {
 
 #else
 
-#include "core/drivers/cpu/kernels/avx512.hpp"
+#include "core/drivers/processor/kernels/avx512.hpp"
 
-namespace sci::core::drivers::cpu::kernels {
+namespace sci::core::drivers::processor::kernels {
 
     const Table* avx512() noexcept {
         return nullptr;
