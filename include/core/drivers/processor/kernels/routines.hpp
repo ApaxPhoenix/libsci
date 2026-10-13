@@ -4,7 +4,7 @@
 #include "core/bytecode/code.hpp"
 #include "core/types.hpp"
 
-namespace sci::core::drivers::cpu::kernels {
+namespace sci::core::drivers::processor::kernels {
 
     // Every kernel for one element type, indexed by code / fold.
     template <typename type>

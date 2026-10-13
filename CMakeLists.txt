@@ -67,7 +67,7 @@ add_library(sci STATIC ${SOURCES} ${HEADERS})
 
 # Each SIMD kernel file is compiled for its own ISA; the dispatcher picks one at runtime from cpuid,
 # so the rest of the library stays at the baseline ISA.
-set(SCI_KERNELS "${CMAKE_CURRENT_SOURCE_DIR}/src/core/drivers/cpu/kernels")
+set(SCI_KERNELS "${CMAKE_CURRENT_SOURCE_DIR}/src/core/drivers/processor/kernels")
 list(LENGTH CMAKE_OSX_ARCHITECTURES SCI_ARCH_COUNT)
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64|i[3-6]86" AND SCI_ARCH_COUNT LESS_EQUAL 1)
     if(MSVC)
