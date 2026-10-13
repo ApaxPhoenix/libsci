@@ -1,9 +1,9 @@
-#include "core/drivers/cpu/kernels/fallback.hpp"
-#include "core/drivers/cpu/kernels/generic/compose.hpp"
-#include "core/drivers/cpu/kernels/generic/scalar.hpp"
+#include "core/drivers/processor/kernels/fallback.hpp"
+#include "core/drivers/processor/kernels/generic/compose.hpp"
+#include "core/drivers/processor/kernels/generic/scalar.hpp"
 #include "core/types.hpp"
 
-namespace sci::core::drivers::cpu::kernels {
+namespace sci::core::drivers::processor::kernels {
 
     // Plain scalar code: any CPU, and the reference the vector paths are tested against.
     template <typename type>
