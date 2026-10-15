@@ -2,7 +2,7 @@
 
 #include "core/types.hpp"
 
-namespace sci::core::drivers::cpu::kernels {
+namespace sci::core::drivers::processor::kernels {
 
     // Four independent accumulators hide the add latency and give a partly pairwise summation order.
     template <typename pack>
@@ -53,13 +53,13 @@ namespace sci::core::drivers::cpu::kernels {
 
         size index = 0;
         for (; index + 4 * width <= count; index += 4 * width) {
-            first = pack::fma(pack::load(left + index), pack::load(right + index), first);
-            second = pack::fma(pack::load(left + index + width), pack::load(right + index + width), second);
-            third = pack::fma(pack::load(left + index + 2 * width), pack::load(right + index + 2 * width), third);
-            fourth = pack::fma(pack::load(left + index + 3 * width), pack::load(right + index + 3 * width), fourth);
+            first = pack::fuse(pack::load(left + index), pack::load(right + index), first);
+            second = pack::fuse(pack::load(left + index + width), pack::load(right + index + width), second);
+            third = pack::fuse(pack::load(left + index + 2 * width), pack::load(right + index + 2 * width), third);
+            fourth = pack::fuse(pack::load(left + index + 3 * width), pack::load(right + index + 3 * width), fourth);
         }
         for (; index + width <= count; index += width) {
-            first = pack::fma(pack::load(left + index), pack::load(right + index), first);
+            first = pack::fuse(pack::load(left + index), pack::load(right + index), first);
         }
         first = pack::add(pack::add(first, second), pack::add(third, fourth));
 
@@ -70,12 +70,12 @@ namespace sci::core::drivers::cpu::kernels {
             result += lanes[lane];
         }
         for (; index < count; ++index) {
-            result = narrow::fma(left[index], right[index], result);
+            result = narrow::fuse(left[index], right[index], result);
         }
         return result;
     }
 
-    template <typename pack, typename functor>
+    template <typename pack, typename operation>
     pack::element extreme(const typename pack::element* source, const size count) noexcept {
         using type = pack::element;
         using narrow = pack::narrow;
@@ -89,21 +89,21 @@ namespace sci::core::drivers::cpu::kernels {
             auto third = pack::load(source + 2 * width);
             auto fourth = pack::load(source + 3 * width);
             for (index = 4 * width; index + 4 * width <= count; index += 4 * width) {
-                first = functor::template apply<pack>(first, pack::load(source + index));
-                second = functor::template apply<pack>(second, pack::load(source + index + width));
-                third = functor::template apply<pack>(third, pack::load(source + index + 2 * width));
-                fourth = functor::template apply<pack>(fourth, pack::load(source + index + 3 * width));
+                first = operation::template apply<pack>(first, pack::load(source + index));
+                second = operation::template apply<pack>(second, pack::load(source + index + width));
+                third = operation::template apply<pack>(third, pack::load(source + index + 2 * width));
+                fourth = operation::template apply<pack>(fourth, pack::load(source + index + 3 * width));
             }
-            first = functor::template apply<pack>(functor::template apply<pack>(first, second), functor::template apply<pack>(third, fourth));
+            first = operation::template apply<pack>(operation::template apply<pack>(first, second), operation::template apply<pack>(third, fourth));
 
             type lanes[width];
             pack::store(lanes, first);
             for (size lane = 0; lane < width; ++lane) {
-                result = functor::template apply<narrow>(result, lanes[lane]);
+                result = operation::template apply<narrow>(result, lanes[lane]);
             }
         }
         for (; index < count; ++index) {
-            result = functor::template apply<narrow>(result, source[index]);
+            result = operation::template apply<narrow>(result, source[index]);
         }
         return result;
     }
