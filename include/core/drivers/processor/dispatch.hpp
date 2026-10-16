@@ -1,19 +1,19 @@
 #pragma once
 
-#include "core/drivers/cpu/context.hpp"
+#include "core/drivers/processor/context.hpp"
 #include "core/bytecode/chunk.hpp"
-#include "core/bytecode/dtype.hpp"
+#include "core/bytecode/precision.hpp"
 #include "core/bytecode/fold.hpp"
 #include "core/types.hpp"
 
-namespace sci::core::drivers::cpu {
+namespace sci::core::drivers::processor {
 
     namespace kernels {
         struct Table;
     }
 
-    // Runs bytecode chunks on the CPU: block by block, so an expression's temporaries stay in L1, and across the
-    // global pool once a chunk carries enough work to pay for the fork.
+    // Runs bytecode chunks on the CPU: block by block, so an expression's temporaries stay in L1, and
+    // across the global pool once a chunk carries enough work to pay for the fork.
     class Dispatch {
     public:
         explicit Dispatch(Context context = Context::probe()) noexcept;
@@ -29,11 +29,11 @@ namespace sci::core::drivers::cpu {
 
         void execute(const Chunk& chunk, void* output, size count) const;
 
-        // Sum, min or max of the chunk result. Min and max of nothing are NaN.
-        [[nodiscard]] double reduce(const Chunk& chunk, Fold kind, size count) const;
+        // Sum, minimum or maximum of the chunk result. The minimum and maximum of nothing are NaN.
+        [[nodiscard]] double reduce(const Chunk& chunk, Fold fold, size count) const;
 
         // Row-major output = left * right, with left rows x depth and right depth x columns.
-        static void matmul(Dtype type, const void* left, const void* right, void* output, size rows, size columns, size depth);
+        static void product(Precision precision, const void* left, const void* right, void* output, size rows, size columns, size depth);
 
     private:
         const kernels::Table* table{nullptr};
