@@ -6,7 +6,7 @@
 
 namespace sci::core::drivers::vulkan {
 
-    // The shader the Jit compiled for one chunk: both entry points of shaders/common/entries.slang,
+    // The shader the Compiler compiled for one chunk: both entry points of shaders/common/entries.slang,
     // evaluate (writes the output array) and reduce (one partial per workgroup), taking the same
     // arguments as shaders/interpreter.slang.
     struct Kernel {

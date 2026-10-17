@@ -1,6 +1,6 @@
-#include "core/drivers/vulkan/jit.hpp"
+#include "core/drivers/vulkan/compiler.hpp"
 #include "core/bytecode/chunk.hpp"
-#include "core/bytecode/dtype.hpp"
+#include "core/bytecode/precision.hpp"
 #include "core/bytecode/instruction.hpp"
 #include "core/bytecode/code.hpp"
 #include "core/drivers/vulkan/context.hpp"
@@ -26,65 +26,58 @@ namespace sci::core::drivers::vulkan {
     // Distinct chunks compiled at most; later ones keep running on the interpreter.
     constexpr size limit = 1024;
 
-    // A shader for one chunk: shaders/common/ around a `run` in which every value is a named float4.
-    static std::string generate(const Chunk& chunk) {
+    // Slang's name for each one-operand function, by code (absolute through hyperbolic::arctangent).
+    constexpr const char* functions[] = {
+        nullptr, nullptr, "abs", "sqrt", "exp", "log", "sin", "cos", "tan", "asin", "acos", "atan",
+        "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
+    };
+
+    std::string Compiler::generate(const Chunk& chunk) {
         std::string names[256];
         std::string body;
         for (uint8 index = 0; index < chunk.arguments; ++index) {
-            names[slot::input | index] = std::format("i{}", index);
-            body += std::format("    const float4 i{0} = load(chunk, {0}, index);\n", index);
+            names[slot::input | index] = std::format("input{}", index);
+            body += std::format("    const float4 input{0} = load(chunk, {0}, index);\n", index);
         }
         for (uint8 index = 0; index < chunk.literals; ++index) {
-            names[slot::literal | index] = std::format("l{}", index);
-            body += std::format("    const float4 l{0} = float4(chunk.constants[{0}]);\n", index);
+            names[slot::literal | index] = std::format("literal{}", index);
+            body += std::format("    const float4 literal{0} = float4(chunk.constants[{0}]);\n", index);
         }
         for (uint8 step = 0; step < chunk.length; ++step) {
             const Instruction& instruction = chunk.code[step];
-            const std::string& a = names[instruction.sources[0]];
-            const std::string& b = names[instruction.sources[1]];
-            const std::string& c = names[instruction.sources[2]];
+            const std::string& first = names[instruction.sources[0]];
+            const std::string& second = names[instruction.sources[1]];
+            const std::string& third = names[instruction.sources[2]];
             std::string expression;
-            switch (instruction.code) {
-                case Code::copy: expression = a; break;
-                case Code::neg: expression = std::format("-{}", a); break;
-                case Code::abs: expression = std::format("abs({})", a); break;
-                case Code::sqrt: expression = std::format("sqrt({})", a); break;
-                case Code::exp: expression = std::format("exp({})", a); break;
-                case Code::log: expression = std::format("log({})", a); break;
-                case Code::sin: expression = std::format("sin({})", a); break;
-                case Code::cos: expression = std::format("cos({})", a); break;
-                case Code::tan: expression = std::format("tan({})", a); break;
-                case Code::asin: expression = std::format("asin({})", a); break;
-                case Code::acos: expression = std::format("acos({})", a); break;
-                case Code::atan: expression = std::format("atan({})", a); break;
-                case Code::sinh: expression = std::format("sinh({})", a); break;
-                case Code::cosh: expression = std::format("cosh({})", a); break;
-                case Code::tanh: expression = std::format("tanh({})", a); break;
-                case Code::asinh: expression = std::format("asinh({})", a); break;
-                case Code::acosh: expression = std::format("acosh({})", a); break;
-                case Code::atanh: expression = std::format("atanh({})", a); break;
-                case Code::add: expression = std::format("{} + {}", a, b); break;
-                case Code::sub: expression = std::format("{} - {}", a, b); break;
-                case Code::mul: expression = std::format("{} * {}", a, b); break;
-                case Code::div: expression = std::format("{} / {}", a, b); break;
-                case Code::min: expression = std::format("lesser({}, {})", a, b); break;
-                case Code::max: expression = std::format("greater({}, {})", a, b); break;
-                default: expression = std::format("fma({}, {}, {})", a, b, c); break;
+            if (instruction.code == Code::copy) {
+                expression = first;
+            } else if (instruction.code == Code::negate) {
+                expression = std::format("-{}", first);
+            } else if (instruction.code < Code::add) {
+                expression = std::format("{}({})", functions[static_cast<size>(instruction.code)], first);
+            } else {
+                switch (instruction.code) {
+                    case Code::add: expression = std::format("{} + {}", first, second); break;
+                    case Code::subtract: expression = std::format("{} - {}", first, second); break;
+                    case Code::multiply: expression = std::format("{} * {}", first, second); break;
+                    case Code::divide: expression = std::format("{} / {}", first, second); break;
+                    case Code::minimum: expression = std::format("lesser({}, {})", first, second); break;
+                    case Code::maximum: expression = std::format("greater({}, {})", first, second); break;
+                    default: expression = std::format("fma({}, {}, {})", first, second, third); break;
+                }
             }
-            body += std::format("    const float4 v{} = {};\n", step, expression);
+            body += std::format("    const float4 value{} = {};\n", step, expression);
             if (instruction.target == slot::output) {
-                body += std::format("    store(index, live, v{});\n", step);
+                body += std::format("    store(index, live, value{});\n", step);
             }
-            names[instruction.target] = std::format("v{}", step);
+            names[instruction.target] = std::format("value{}", step);
         }
         body += std::format("    return {};\n", names[chunk.result]);
         return std::format("{}\nfloat4 run(Chunk* chunk, uint4 index, bool4 live) {{\n{}}}\n\n{}",
                            shaders::sources::layout, body, shaders::sources::entries);
     }
 
-    // SPIR-V for each entry point of a generated shader, compiled with the options CMake gives slangc.
-    // Empty on failure, with Slang's messages in `diagnostics`.
-    static std::vector<std::vector<uint32>> compile(slang::IGlobalSession* global, const std::string& source, std::string& diagnostics) {
+    std::vector<std::vector<uint32>> Compiler::compile(slang::IGlobalSession* global, const std::string& source, std::string& diagnostics) {
         slang::TargetDesc target{};
         target.format = SLANG_SPIRV;
         slang::CompilerOptionEntry options[2]{};
@@ -140,7 +133,7 @@ namespace sci::core::drivers::vulkan {
         return modules;
     }
 
-    Jit::Jit(const Context& context, const uint32 bytes)
+    Compiler::Compiler(const Context& context, const uint32 bytes)
         : context(context), bytes(bytes) {
         if (const char* setting = std::getenv("SCI_JIT")) {
             enabled = std::strcmp(setting, "0") != 0;
@@ -148,7 +141,7 @@ namespace sci::core::drivers::vulkan {
         }
     }
 
-    Jit::~Jit() {
+    Compiler::~Compiler() {
         {
             std::scoped_lock lock(guard);
             stopping = true;
@@ -157,8 +150,8 @@ namespace sci::core::drivers::vulkan {
         if (worker.joinable()) worker.join();
     }
 
-    const Kernel* Jit::find(const Chunk& chunk) {
-        if (!enabled || !chunk.valid() || chunk.length == 0 || chunk.type != Dtype::float32) return nullptr;
+    const Kernel* Compiler::find(const Chunk& chunk) {
+        if (!enabled || !chunk.valid() || chunk.length == 0 || chunk.precision != Precision::single) return nullptr;
 
         std::string signature = chunk.signature();
         std::scoped_lock lock(guard);
@@ -172,7 +165,7 @@ namespace sci::core::drivers::vulkan {
         return nullptr;
     }
 
-    void Jit::loop() {
+    void Compiler::loop() {
         // Loads Slang's core module, which takes a while, so it happens here rather than in find().
         Slang::ComPtr<slang::IGlobalSession> global;
         if (SLANG_FAILED(slang_createGlobalSession(SLANG_API_VERSION, global.writeRef()))) {
