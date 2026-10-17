@@ -1,9 +1,9 @@
-#include "core/drivers/cpu/jit/avx2.hpp"
+#include "core/drivers/processor/compiler/avx2.hpp"
 
 #if defined(__x86_64__) || defined(_M_X64)
 
 #include "core/bytecode/chunk.hpp"
-#include "core/bytecode/dtype.hpp"
+#include "core/bytecode/precision.hpp"
 #include "core/bytecode/instruction.hpp"
 #include "core/bytecode/code.hpp"
 #include "core/types.hpp"
@@ -12,12 +12,12 @@
 
 #include <cstdint>
 
-namespace sci::core::drivers::cpu::jit {
+namespace sci::core::drivers::processor::compiler {
 
     bool avx2(asmjit::CodeHolder& code, const Chunk& chunk) {
         using namespace asmjit;
 
-        const bool wide = chunk.type == Dtype::float64;
+        const bool wide = chunk.precision == Precision::wide;
         const uint32 bytes = wide ? sizeof(double) : sizeof(float);
         const uint32 lanes = 32 / bytes;
 
@@ -37,12 +37,12 @@ namespace sci::core::drivers::cpu::jit {
         // Every input the chunk reads gets a pointer that walks its array.
         bool reads[Chunk::capacity]{};
         bool signs = false;
-        const auto note = [&](const uint8 id) {
-            if (id != slot::none && (id & slot::kinds) == slot::input) reads[id & ~slot::kinds] = true;
+        const auto note = [&](const uint8 identifier) {
+            if (identifier != slot::none && (identifier & slot::kinds) == slot::input) reads[identifier & ~slot::kinds] = true;
         };
         for (uint8 step = 0; step < chunk.length; ++step) {
             for (const uint8 source : chunk.code[step].sources) note(source);
-            signs = signs || chunk.code[step].code == Code::neg || chunk.code[step].code == Code::abs;
+            signs = signs || chunk.code[step].code == Code::negate || chunk.code[step].code == Code::absolute;
         }
         note(chunk.result);
         x86::Gp pointers[Chunk::capacity];
@@ -79,18 +79,18 @@ namespace sci::core::drivers::cpu::jit {
         compiler.jz(done);
         compiler.bind(loop);
 
-        // Values of this iteration by value id; inputs are loaded the first time they are read.
+        // Values of this iteration by value identifier; inputs are loaded the first time they are read.
         x86::Vec values[256];
         bool loaded[Chunk::capacity]{};
-        const auto value = [&](const uint8 id) -> x86::Vec {
-            const uint8 index = id & ~slot::kinds;
-            if ((id & slot::kinds) == slot::literal) return literals[index];
-            if ((id & slot::kinds) == slot::input && !loaded[index]) {
-                values[id] = compiler.new_vec256("input");
-                compiler.vmovups(values[id], x86::ptr(pointers[index]));
+        const auto value = [&](const uint8 identifier) -> x86::Vec {
+            const uint8 index = identifier & ~slot::kinds;
+            if ((identifier & slot::kinds) == slot::literal) return literals[index];
+            if ((identifier & slot::kinds) == slot::input && !loaded[index]) {
+                values[identifier] = compiler.new_vec256("input");
+                compiler.vmovups(values[identifier], x86::ptr(pointers[index]));
                 loaded[index] = true;
             }
-            return values[id];
+            return values[identifier];
         };
 
         // NaN-propagating min / max, as the AVX2 kernels compute them: where `left` is NaN take it,
@@ -115,30 +115,30 @@ namespace sci::core::drivers::cpu::jit {
             x86::Vec result = compiler.new_vec256("value");
             switch (instruction.code) {
                 case Code::copy: result = first; break;
-                case Code::neg:
+                case Code::negate:
                     if (wide) compiler.vxorpd(result, first, sign); else compiler.vxorps(result, first, sign);
                     break;
-                case Code::abs:
+                case Code::absolute:
                     if (wide) compiler.vandnpd(result, sign, first); else compiler.vandnps(result, sign, first);
                     break;
-                case Code::sqrt:
+                case Code::root:
                     if (wide) compiler.vsqrtpd(result, first); else compiler.vsqrtps(result, first);
                     break;
                 case Code::add:
                     if (wide) compiler.vaddpd(result, first, value(instruction.sources[1])); else compiler.vaddps(result, first, value(instruction.sources[1]));
                     break;
-                case Code::sub:
+                case Code::subtract:
                     if (wide) compiler.vsubpd(result, first, value(instruction.sources[1])); else compiler.vsubps(result, first, value(instruction.sources[1]));
                     break;
-                case Code::mul:
+                case Code::multiply:
                     if (wide) compiler.vmulpd(result, first, value(instruction.sources[1])); else compiler.vmulps(result, first, value(instruction.sources[1]));
                     break;
-                case Code::div:
+                case Code::divide:
                     if (wide) compiler.vdivpd(result, first, value(instruction.sources[1])); else compiler.vdivps(result, first, value(instruction.sources[1]));
                     break;
-                case Code::min: extreme(result, first, value(instruction.sources[1]), true); break;
-                case Code::max: extreme(result, first, value(instruction.sources[1]), false); break;
-                case Code::fma:
+                case Code::minimum: extreme(result, first, value(instruction.sources[1]), true); break;
+                case Code::maximum: extreme(result, first, value(instruction.sources[1]), false); break;
+                case Code::fuse:
                     compiler.vmovaps(result, value(instruction.sources[2]));
                     if (wide) {
                         compiler.vfmadd231pd(result, first, value(instruction.sources[1]));
@@ -167,7 +167,7 @@ namespace sci::core::drivers::cpu::jit {
 
 #else
 
-namespace sci::core::drivers::cpu::jit {
+namespace sci::core::drivers::processor::compiler {
 
     bool avx2(asmjit::CodeHolder&, const Chunk&) {
         return false;
