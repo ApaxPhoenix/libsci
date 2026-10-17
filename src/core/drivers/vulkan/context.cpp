@@ -1,46 +1,14 @@
 #include "core/drivers/vulkan/context.hpp"
 #include "core/types.hpp"
 
+#include <algorithm>
 #include <cstring>
 #include <utility>
 #include <vector>
 
 namespace sci::core::drivers::vulkan {
 
-    // A zeroed Vulkan query struct with its type tag and extension-chain pointer set.
-    template <typename structure>
-    static structure tagged(const VkStructureType type, void* next = nullptr) noexcept {
-        structure result{};
-        result.sType = type;
-        result.pNext = next;
-        return result;
-    }
-
-    static bool offers(const std::vector<VkExtensionProperties>& extensions, const char* name) noexcept {
-        for (const auto& extension : extensions) {
-            if (std::strcmp(extension.extensionName, name) == 0) return true;
-        }
-        return false;
-    }
-
-    // Shaders need 64-bit device pointers and subgroup reductions in compute.
-    static bool capable(VkPhysicalDevice physical) noexcept {
-        VkPhysicalDeviceProperties properties{};
-        vkGetPhysicalDeviceProperties(physical, &properties);
-        if (properties.apiVersion < VK_API_VERSION_1_2) return false;
-
-        auto modern = tagged<VkPhysicalDeviceVulkan12Features>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES);
-        auto features = tagged<VkPhysicalDeviceFeatures2>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &modern);
-        vkGetPhysicalDeviceFeatures2(physical, &features);
-        if (!modern.bufferDeviceAddress || !features.features.shaderInt64) return false;
-
-        auto subgroup = tagged<VkPhysicalDeviceSubgroupProperties>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES);
-        auto extended = tagged<VkPhysicalDeviceProperties2>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, &subgroup);
-        vkGetPhysicalDeviceProperties2(physical, &extended);
-        constexpr VkSubgroupFeatureFlags needed = VK_SUBGROUP_FEATURE_BASIC_BIT | VK_SUBGROUP_FEATURE_VOTE_BIT | VK_SUBGROUP_FEATURE_ARITHMETIC_BIT;
-        return (subgroup.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT) && (subgroup.supportedOperations & needed) == needed;
-    }
-
+    // Query structs below are zeroed, then given their type tag and extension-chain pointer.
     Context Context::compose(const uint32 ordinal) {
         Context context{};
         context.index = ordinal;
@@ -53,12 +21,14 @@ namespace sci::core::drivers::vulkan {
         // Portability drivers (MoltenVK on macOS) are only listed when the instance opts in.
         std::vector<const char*> extensions;
         VkInstanceCreateFlags flags = 0;
-        if (offers(available, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        if (std::ranges::any_of(available, [](const VkExtensionProperties& extension) {
+                return std::strcmp(extension.extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) == 0;
+            })) {
             extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
             flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
         }
 
-        constexpr VkApplicationInfo app{
+        constexpr VkApplicationInfo application{
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
             .pNext = nullptr,
             .pApplicationName = nullptr,
@@ -72,7 +42,7 @@ namespace sci::core::drivers::vulkan {
             .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
             .pNext = nullptr,
             .flags = flags,
-            .pApplicationInfo = &app,
+            .pApplicationInfo = &application,
             .enabledLayerCount = 0,
             .ppEnabledLayerNames = nullptr,
             .enabledExtensionCount = static_cast<uint32>(extensions.size()),
@@ -86,9 +56,31 @@ namespace sci::core::drivers::vulkan {
         std::vector<VkPhysicalDevice> devices(total);
         vkEnumeratePhysicalDevices(context.instance, &total, devices.data());
 
+        // Shaders need Vulkan 1.2, 64-bit device pointers and subgroup reductions in compute.
         std::vector<VkPhysicalDevice> usable;
         for (VkPhysicalDevice candidate : devices) {
-            if (capable(candidate)) usable.push_back(candidate);
+            VkPhysicalDeviceProperties properties{};
+            vkGetPhysicalDeviceProperties(candidate, &properties);
+            if (properties.apiVersion < VK_API_VERSION_1_2) continue;
+
+            VkPhysicalDeviceVulkan12Features modern{};
+            modern.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+            VkPhysicalDeviceFeatures2 features{};
+            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+            features.pNext = &modern;
+            vkGetPhysicalDeviceFeatures2(candidate, &features);
+            if (!modern.bufferDeviceAddress || !features.features.shaderInt64) continue;
+
+            VkPhysicalDeviceSubgroupProperties subgroup{};
+            subgroup.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
+            VkPhysicalDeviceProperties2 extended{};
+            extended.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+            extended.pNext = &subgroup;
+            vkGetPhysicalDeviceProperties2(candidate, &extended);
+            constexpr VkSubgroupFeatureFlags needed = VK_SUBGROUP_FEATURE_BASIC_BIT | VK_SUBGROUP_FEATURE_VOTE_BIT | VK_SUBGROUP_FEATURE_ARITHMETIC_BIT;
+            if ((subgroup.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT) && (subgroup.supportedOperations & needed) == needed) {
+                usable.push_back(candidate);
+            }
         }
         if (ordinal >= usable.size()) return context;
 
@@ -118,17 +110,22 @@ namespace sci::core::drivers::vulkan {
 
         // Required whenever a portability driver exposes it.
         std::vector<const char*> enabled;
-        if (offers(supported, "VK_KHR_portability_subset")) {
+        if (std::ranges::any_of(supported, [](const VkExtensionProperties& extension) {
+                return std::strcmp(extension.extensionName, "VK_KHR_portability_subset") == 0;
+            })) {
             enabled.push_back("VK_KHR_portability_subset");
         }
 
-        auto modern = tagged<VkPhysicalDeviceVulkan12Features>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES);
+        VkPhysicalDeviceVulkan12Features modern{};
+        modern.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
         modern.bufferDeviceAddress = VK_TRUE;
-        auto features = tagged<VkPhysicalDeviceFeatures2>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &modern);
+        VkPhysicalDeviceFeatures2 features{};
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features.pNext = &modern;
         features.features.shaderInt64 = VK_TRUE;
 
         float priority{1.0f};
-        const VkDeviceQueueCreateInfo config{
+        const VkDeviceQueueCreateInfo queue{
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
@@ -142,7 +139,7 @@ namespace sci::core::drivers::vulkan {
             .pNext = &features,
             .flags = 0,
             .queueCreateInfoCount = 1,
-            .pQueueCreateInfos = &config,
+            .pQueueCreateInfos = &queue,
             .enabledLayerCount = 0,
             .ppEnabledLayerNames = nullptr,
             .enabledExtensionCount = static_cast<uint32>(enabled.size()),
@@ -150,8 +147,11 @@ namespace sci::core::drivers::vulkan {
             .pEnabledFeatures = nullptr
         };
 
-        auto controls = tagged<VkPhysicalDeviceFloatControlsProperties>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES);
-        auto extended = tagged<VkPhysicalDeviceProperties2>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, &controls);
+        VkPhysicalDeviceFloatControlsProperties controls{};
+        controls.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES;
+        VkPhysicalDeviceProperties2 extended{};
+        extended.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        extended.pNext = &controls;
         vkGetPhysicalDeviceProperties2(candidate, &extended);
         context.preserving = controls.shaderSignedZeroInfNanPreserveFloat32 == VK_TRUE;
 
