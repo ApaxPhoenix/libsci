@@ -13,6 +13,11 @@
 #include <thread>
 #include <unordered_map>
 #include <utility>
+#include <vector>
+
+namespace slang {
+    struct IGlobalSession;
+}
 
 namespace sci::core::drivers::vulkan {
 
@@ -25,20 +30,28 @@ namespace sci::core::drivers::vulkan {
     // ready, and on the kernel from then on. Float32 only, like the interpreter.
     //
     // SCI_JIT=0 turns the compiler off and SCI_JIT=trace reports every compile.
-    class Jit {
+    class Compiler {
     public:
         // `bytes`: size of the push-constant block the shaders take.
-        Jit(const Context& context, uint32 bytes);
-        ~Jit();
+        Compiler(const Context& context, uint32 bytes);
+        ~Compiler();
 
-        Jit(const Jit&) = delete;
-        Jit& operator=(const Jit&) = delete;
+        Compiler(const Compiler&) = delete;
+        Compiler& operator=(const Compiler&) = delete;
 
         // The chunk's kernel once it is compiled. Null before that (the first call queues the
         // compile) and when it cannot be compiled.
         [[nodiscard]] const Kernel* find(const Chunk& chunk);
 
     private:
+        // A shader for one chunk: shaders/common/ around a `run` in which every value is a named float4.
+        [[nodiscard]] static std::string generate(const Chunk& chunk);
+
+        // SPIR-V for each entry point of a generated shader, compiled with the options CMake gives
+        // slangc. Empty on failure, with Slang's messages in `diagnostics`.
+        [[nodiscard]] static std::vector<std::vector<uint32>> compile(slang::IGlobalSession* global, const std::string& source, std::string& diagnostics);
+
+        // The compiler thread: takes jobs off the queue until the Compiler is destroyed.
         void loop();
 
         const Context& context;
