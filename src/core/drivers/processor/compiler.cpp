@@ -1,12 +1,12 @@
-#include "core/drivers/cpu/jit.hpp"
+#include "core/drivers/processor/compiler.hpp"
 #include "core/bytecode/chunk.hpp"
-#include "core/bytecode/dtype.hpp"
+#include "core/bytecode/precision.hpp"
 #include "core/bytecode/code.hpp"
-#include "core/drivers/cpu/jit/avx2.hpp"
-#include "core/drivers/cpu/jit/neon.hpp"
-#include "core/drivers/cpu/kernels/avx2.hpp"
-#include "core/drivers/cpu/kernels/neon.hpp"
-#include "core/drivers/cpu/kernels/table.hpp"
+#include "core/drivers/processor/compiler/avx2.hpp"
+#include "core/drivers/processor/compiler/neon.hpp"
+#include "core/drivers/processor/kernels/avx2.hpp"
+#include "core/drivers/processor/kernels/neon.hpp"
+#include "core/drivers/processor/kernels/table.hpp"
 #include "core/types.hpp"
 
 #include <cstdio>
@@ -15,7 +15,7 @@
 #include <print>
 #include <utility>
 
-namespace sci::core::drivers::cpu {
+namespace sci::core::drivers::processor {
 
     // Below this many elements a call is over before compiled code would make a difference.
     constexpr size smallest = 256;
@@ -27,55 +27,37 @@ namespace sci::core::drivers::cpu {
     // Distinct chunks compiled at most; later ones keep running on the kernels.
     constexpr size limit = 4096;
 
-    Jit::Jit() {
+    Compiler::Compiler() {
         if (const char* setting = std::getenv("SCI_JIT")) {
             enabled = std::strcmp(setting, "0") != 0;
             tracing = std::strcmp(setting, "trace") == 0;
         }
     }
 
-    Jit& Jit::global() {
-        static Jit jit;
-        return jit;
+    Compiler& Compiler::global() {
+        static Compiler compiler;
+        return compiler;
     }
 
-    size Jit::width(const kernels::Table& table, const Dtype type) noexcept {
-        const size bytes = type == Dtype::float32 ? sizeof(float) : sizeof(double);
+    size Compiler::width(const kernels::Table& table, const Precision precision) noexcept {
+        const size bytes = precision == Precision::single ? sizeof(float) : sizeof(double);
         if (&table == kernels::neon()) return 16 / bytes;
         if (&table == kernels::avx2()) return 32 / bytes;
         return 0;
     }
 
-    // exp, log and the trigonometric functions run best as kernel loops over whole blocks (a call
-    // per register costs more than the temporaries it saves), so chunks that use them stay on the
-    // kernels.
-    static bool compilable(const Chunk& chunk) noexcept {
-        for (uint8 index = 0; index < chunk.length; ++index) {
-            switch (chunk.code[index].code) {
-                case Code::exp:
-                case Code::log:
-                case Code::sin:
-                case Code::cos:
-                case Code::tan:
-                case Code::asin:
-                case Code::acos:
-                case Code::atan:
-                case Code::sinh:
-                case Code::cosh:
-                case Code::tanh:
-                case Code::asinh:
-                case Code::acosh:
-                case Code::atanh: return false;
-                default: break;
-            }
-        }
-        return true;
-    }
-
-    Jit::Function Jit::compile(const Chunk& chunk, const kernels::Table& table, const size count) {
+    Compiler::Function Compiler::compile(const Chunk& chunk, const kernels::Table& table, const size count) {
         // A single instruction already runs as one kernel loop.
-        if (!enabled || count < smallest || chunk.length < 2 || !chunk.valid() || width(table, chunk.type) == 0 || !compilable(chunk)) {
+        if (!enabled || count < smallest || chunk.length < 2 || !chunk.valid() || width(table, chunk.precision) == 0) {
             return nullptr;
+        }
+
+        // The exponential, logarithm, circular and hyperbolic functions (codes exponential through
+        // hyperbolic::arctangent) run best as kernel loops over whole blocks: a call per register
+        // costs more than the temporaries it saves, so chunks that use them stay on the kernels.
+        for (uint8 index = 0; index < chunk.length; ++index) {
+            const Code code = chunk.code[index].code;
+            if (code >= Code::exponential && code <= hyperbolic::arctangent) return nullptr;
         }
 
         std::string key = chunk.signature();
@@ -90,16 +72,16 @@ namespace sci::core::drivers::cpu {
         functions.emplace(std::move(key), function);
         if (tracing) {
             std::println(stderr, "[sci] jit: {} {} instructions for {} ({})", function ? "compiled" : "could not compile",
-                         chunk.length, table.name, chunk.type == Dtype::float32 ? "float32" : "float64");
+                         chunk.length, table.name, chunk.precision == Precision::single ? "float32" : "float64");
         }
         return function;
     }
 
-    Jit::Function Jit::build(const Chunk& chunk, const kernels::Table& table) {
+    Compiler::Function Compiler::build(const Chunk& chunk, const kernels::Table& table) {
         if (!runtime) runtime.emplace();
         asmjit::CodeHolder code;
         if (code.init(runtime->environment(), runtime->cpu_features()) != asmjit::Error::kOk) return nullptr;
-        const bool emitted = &table == kernels::neon() ? jit::neon(code, chunk) : jit::avx2(code, chunk);
+        const bool emitted = &table == kernels::neon() ? compiler::neon(code, chunk) : compiler::avx2(code, chunk);
         if (!emitted) return nullptr;
         Function function = nullptr;
         if (runtime->add(&function, &code) != asmjit::Error::kOk) return nullptr;

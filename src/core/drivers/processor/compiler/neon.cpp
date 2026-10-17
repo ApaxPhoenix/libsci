@@ -1,21 +1,21 @@
-#include "core/drivers/cpu/jit/neon.hpp"
+#include "core/drivers/processor/compiler/neon.hpp"
 
 #if defined(__aarch64__) || defined(_M_ARM64)
 
 #include "core/bytecode/chunk.hpp"
-#include "core/bytecode/dtype.hpp"
+#include "core/bytecode/precision.hpp"
 #include "core/bytecode/instruction.hpp"
 #include "core/bytecode/code.hpp"
 #include "core/types.hpp"
 
 #include <asmjit/a64.h>
 
-namespace sci::core::drivers::cpu::jit {
+namespace sci::core::drivers::processor::compiler {
 
     bool neon(asmjit::CodeHolder& code, const Chunk& chunk) {
         using namespace asmjit;
 
-        const bool wide = chunk.type == Dtype::float64;
+        const bool wide = chunk.precision == Precision::wide;
         const uint32 bytes = wide ? sizeof(double) : sizeof(float);
         const uint32 lanes = 16 / bytes;
 
@@ -35,8 +35,8 @@ namespace sci::core::drivers::cpu::jit {
 
         // Every input the chunk reads gets a pointer that walks its array.
         bool reads[Chunk::capacity]{};
-        const auto note = [&](const uint8 id) {
-            if (id != slot::none && (id & slot::kinds) == slot::input) reads[id & ~slot::kinds] = true;
+        const auto note = [&](const uint8 identifier) {
+            if (identifier != slot::none && (identifier & slot::kinds) == slot::input) reads[identifier & ~slot::kinds] = true;
         };
         for (uint8 step = 0; step < chunk.length; ++step) {
             for (const uint8 source : chunk.code[step].sources) note(source);
@@ -63,18 +63,18 @@ namespace sci::core::drivers::cpu::jit {
         compiler.cbz(count, done);
         compiler.bind(loop);
 
-        // Values of this iteration by value id; inputs are loaded the first time they are read.
+        // Values of this iteration by value identifier; inputs are loaded the first time they are read.
         a64::Vec values[256];
         bool loaded[Chunk::capacity]{};
-        const auto value = [&](const uint8 id) -> a64::Vec {
-            const uint8 index = id & ~slot::kinds;
-            if ((id & slot::kinds) == slot::literal) return literals[index];
-            if ((id & slot::kinds) == slot::input && !loaded[index]) {
-                values[id] = compiler.new_vec128("input");
-                compiler.ldr(values[id].q(), a64::ptr(pointers[index]));
+        const auto value = [&](const uint8 identifier) -> a64::Vec {
+            const uint8 index = identifier & ~slot::kinds;
+            if ((identifier & slot::kinds) == slot::literal) return literals[index];
+            if ((identifier & slot::kinds) == slot::input && !loaded[index]) {
+                values[identifier] = compiler.new_vec128("input");
+                compiler.ldr(values[identifier].q(), a64::ptr(pointers[index]));
                 loaded[index] = true;
             }
-            return values[id];
+            return values[identifier];
         };
 
         for (uint8 step = 0; step < chunk.length; ++step) {
@@ -83,17 +83,17 @@ namespace sci::core::drivers::cpu::jit {
             a64::Vec result = compiler.new_vec128("value");
             switch (code) {
                 case Code::copy: result = first; break;
-                case Code::neg: compiler.fneg(shape(result), shape(first)); break;
-                case Code::abs: compiler.fabs(shape(result), shape(first)); break;
-                case Code::sqrt: compiler.fsqrt(shape(result), shape(first)); break;
+                case Code::negate: compiler.fneg(shape(result), shape(first)); break;
+                case Code::absolute: compiler.fabs(shape(result), shape(first)); break;
+                case Code::root: compiler.fsqrt(shape(result), shape(first)); break;
                 case Code::add: compiler.fadd(shape(result), shape(first), shape(value(sources[1]))); break;
-                case Code::sub: compiler.fsub(shape(result), shape(first), shape(value(sources[1]))); break;
-                case Code::mul: compiler.fmul(shape(result), shape(first), shape(value(sources[1]))); break;
-                case Code::div: compiler.fdiv(shape(result), shape(first), shape(value(sources[1]))); break;
+                case Code::subtract: compiler.fsub(shape(result), shape(first), shape(value(sources[1]))); break;
+                case Code::multiply: compiler.fmul(shape(result), shape(first), shape(value(sources[1]))); break;
+                case Code::divide: compiler.fdiv(shape(result), shape(first), shape(value(sources[1]))); break;
                 // FMIN and FMAX propagate NaN, like the NEON kernels.
-                case Code::min: compiler.fmin(shape(result), shape(first), shape(value(sources[1]))); break;
-                case Code::max: compiler.fmax(shape(result), shape(first), shape(value(sources[1]))); break;
-                case Code::fma:
+                case Code::minimum: compiler.fmin(shape(result), shape(first), shape(value(sources[1]))); break;
+                case Code::maximum: compiler.fmax(shape(result), shape(first), shape(value(sources[1]))); break;
+                case Code::fuse:
                     compiler.mov(result.b16(), value(sources[2]).b16());
                     compiler.fmla(shape(result), shape(first), shape(value(sources[1])));
                     break;
@@ -118,7 +118,7 @@ namespace sci::core::drivers::cpu::jit {
 
 #else
 
-namespace sci::core::drivers::cpu::jit {
+namespace sci::core::drivers::processor::compiler {
 
     bool neon(asmjit::CodeHolder&, const Chunk&) {
         return false;
