@@ -15,8 +15,8 @@ namespace sci::array {
 
     using core::drivers::Device;
 
-    template <typename element, core::size rank>
-    class NDArray;
+    template <typename type, core::size order>
+    class Array;
 
     // Leaf: a temporary array moved into the expression, kept alive with it.
     template <typename type, core::size order>
@@ -24,9 +24,9 @@ namespace sci::array {
         using element = type;
         static constexpr core::size rank = order;
 
-        std::shared_ptr<const NDArray<type, order>> source;
+        std::shared_ptr<const Array<type, order>> source;
 
-        explicit Owner(std::shared_ptr<const NDArray<type, order>> source) noexcept : source(std::move(source)) {}
+        explicit Owner(std::shared_ptr<const Array<type, order>> source) noexcept : source(std::move(source)) {}
 
         [[nodiscard]] Shape<order> shape() const noexcept { return source->shape(); }
         [[nodiscard]] Device* device() const noexcept { return source->device(); }
