@@ -31,7 +31,7 @@ namespace sci::core::drivers::vulkan {
 
         // `work` estimates the dispatch's cost (see device.cpp); a batch is submitted once it carries
         // enough work, since macOS aborts command buffers that hold the GPU for too long.
-        void record(const Pipeline& pipeline, const void* constants, uint64 work, uint32 x, uint32 y = 1, uint32 z = 1);
+        void record(const Pipeline& pipeline, const void* constants, uint64 work, uint32 columns, uint32 rows = 1, uint32 layers = 1);
 
         // Submits the recorded batch without waiting for it.
         void flush();

@@ -23,17 +23,6 @@ namespace sci::core::drivers::vulkan {
     // Estimated work per batch (on the order of 100 ms on an M1) before it is submitted.
     constexpr uint64 budget = uint64{1} << 30;
 
-    // Makes everything compute shaders have written so far visible to `read` accesses in the `after` stage.
-    static void order(VkCommandBuffer commands, const VkPipelineStageFlags after, const VkAccessFlags read) noexcept {
-        const VkMemoryBarrier barrier{
-            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
-            .pNext = nullptr,
-            .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
-            .dstAccessMask = read
-        };
-        vkCmdPipelineBarrier(commands, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, after, 0, 1, &barrier, 0, nullptr, 0, nullptr);
-    }
-
     Stream::Stream(const Context& context, Allocator& allocator)
         : context(context), allocator(allocator) {
         const VkCommandPoolCreateInfo command{
@@ -87,15 +76,15 @@ namespace sci::core::drivers::vulkan {
         return region;
     }
 
-    void Stream::record(const Pipeline& pipeline, const void* constants, const uint64 work, const uint32 x, const uint32 y, const uint32 z) {
+    void Stream::record(const Pipeline& pipeline, const void* constants, const uint64 work, const uint32 columns, const uint32 rows, const uint32 layers) {
         if (!batches[current].open) begin();
         Batch& batch = batches[current];
 
         // Each dispatch may read anything an earlier dispatch (in this or a previous batch) wrote.
-        order(batch.commands, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+        batch.barrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
         vkCmdBindPipeline(batch.commands, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.native());
         vkCmdPushConstants(batch.commands, pipeline.schema(), VK_SHADER_STAGE_COMPUTE_BIT, 0, pipeline.constants(), constants);
-        vkCmdDispatch(batch.commands, x, y, z);
+        vkCmdDispatch(batch.commands, columns, rows, layers);
         batch.work += work;
         if (++batch.recorded >= batching || batch.work >= budget) flush();
     }
@@ -105,7 +94,7 @@ namespace sci::core::drivers::vulkan {
         if (!batch.open) return;
 
         // Make shader writes visible to the host once the fence signals.
-        order(batch.commands, VK_PIPELINE_STAGE_HOST_BIT, VK_ACCESS_HOST_READ_BIT);
+        batch.barrier(VK_PIPELINE_STAGE_HOST_BIT, VK_ACCESS_HOST_READ_BIT);
         vkEndCommandBuffer(batch.commands);
 
         const VkSubmitInfo submit{
