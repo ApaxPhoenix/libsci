@@ -37,7 +37,16 @@ namespace sci::array {
         // operand gives it, and every other array operand must match.
         [[nodiscard]] Shape<rank> shape() const noexcept {
             const Shape<rank> result = std::get<lead>(children).shape();
-            ASSERT(std::apply([&](const auto&... child) { return (matches(child, result) && ...); }, children));
+            // Scalars match any shape.
+            ASSERT(std::apply([&](const auto&... child) {
+                return ([&] {
+                    if constexpr (std::remove_cvref_t<decltype(child)>::rank > 0) {
+                        return child.shape() == result;
+                    } else {
+                        return true;
+                    }
+                }() && ...);
+            }, children));
             return result;
         }
 
@@ -50,13 +59,13 @@ namespace sci::array {
 
         [[nodiscard]] core::uint8 record(core::Chunk& chunk) const noexcept {
             return std::apply([&](const auto&... child) {
-                const core::uint8 ids[] = {child.record(chunk)...};
+                const core::uint8 slots[] = {child.record(chunk)...};
                 if constexpr (sizeof...(operands) == 1) {
-                    return chunk.emit(code, ids[0]);
+                    return chunk.emit(code, slots[0]);
                 } else if constexpr (sizeof...(operands) == 2) {
-                    return chunk.emit(code, ids[0], ids[1]);
+                    return chunk.emit(code, slots[0], slots[1]);
                 } else {
-                    return chunk.emit(code, ids[0], ids[1], ids[2]);
+                    return chunk.emit(code, slots[0], slots[1], slots[2]);
                 }
             }, children);
         }
@@ -73,16 +82,6 @@ namespace sci::array {
             while (!arrays[index]) ++index;
             return index;
         }();
-
-        // Scalars match any shape.
-        template <typename child>
-        static bool matches(const child& item, const Shape<rank>& expected) noexcept {
-            if constexpr (child::rank > 0) {
-                return item.shape() == expected;
-            } else {
-                return true;
-            }
-        }
     };
 
     template <core::Code code, typename... operands>
