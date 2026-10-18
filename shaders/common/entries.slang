@@ -36,20 +36,20 @@ void reduce(uint3 group : SV_GroupID, uint3 local : SV_GroupThreadID) {
     const float identity = mode == 0 ? 0.0 : (mode == 1 ? infinity : -infinity);
 
     float total = identity;
-    bool nan = false;
+    bool invalid = false;
     for (uint first = group.x * stride + local.x; first < count; first += arguments.groups * stride) {
         const uint4 index = first + uint4(0, threads, 2 * threads, 3 * threads);
         const bool4 live = index < count;
         const float4 value = run(arguments.chunk, select(live, index, uint4(0)), live);
         for (uint lane = 0; lane < lanes; ++lane) {
             const float item = live[lane] ? value[lane] : identity;
-            nan = nan || isnan(item);
+            invalid = invalid || isnan(item);
             total = isnan(item) ? total : combine(mode, total, item);
         }
     }
 
     const float folded = mode == 0 ? WaveActiveSum(total) : (mode == 1 ? WaveActiveMin(total) : WaveActiveMax(total));
-    const bool poisoned = WaveActiveAnyTrue(nan);
+    const bool poisoned = WaveActiveAnyTrue(invalid);
     const uint width = WaveGetLaneCount();
     if (WaveIsFirstLane()) {
         partial[local.x / width] = folded;
