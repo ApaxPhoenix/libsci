@@ -6,16 +6,14 @@
 
 namespace sci::array {
 
-    template <typename element, core::size rank>
-    class NDArray;
+    template <typename type, core::size order>
+    class Array;
 
-    // Marks NDArray, with its number of dimensions as `order`.
+    // Marks Array, as Deferred marks expressions.
     template <typename type>
     struct Dense : std::false_type {};
 
-    template <typename element, core::size rank>
-    struct Dense<NDArray<element, rank>> : std::true_type {
-        static constexpr core::size order = rank;
-    };
+    template <typename type, core::size order>
+    struct Dense<Array<type, order>> : std::true_type {};
 
 }

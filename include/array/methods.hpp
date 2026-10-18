@@ -1,25 +1,24 @@
 #pragma once
 
-#include "array/elementof.hpp"
 #include "core/bytecode/fold.hpp"
 #include "core/types.hpp"
 
 namespace sci::array {
 
-    template <typename element, core::size rank>
-    class NDArray;
+    template <typename type, core::size order>
+    class Array;
 
     // Defined in expression.hpp.
     template <typename source>
-    element_t<source> reduce(const source& input, core::Fold fold);
+    typename source::element reduce(const source& input, core::Fold fold);
 
     // Array-like members shared by every expression node.
     template <typename derived>
     struct Methods {
         [[nodiscard]] core::size size() const noexcept { return self().shape().total(); }
         [[nodiscard]] auto sum() const { return reduce(self(), core::Fold::sum); }
-        [[nodiscard]] auto min() const { return reduce(self(), core::Fold::min); }
-        [[nodiscard]] auto max() const { return reduce(self(), core::Fold::max); }
+        [[nodiscard]] auto minimum() const { return reduce(self(), core::Fold::minimum); }
+        [[nodiscard]] auto maximum() const { return reduce(self(), core::Fold::maximum); }
 
         [[nodiscard]] auto mean() const {
             using element = derived::element;
@@ -27,7 +26,7 @@ namespace sci::array {
         }
 
         // Computes the expression into a new array (numpy.copy).
-        [[nodiscard]] auto copy() const { return NDArray<typename derived::element, derived::rank>(self()); }
+        [[nodiscard]] auto copy() const { return Array<typename derived::element, derived::rank>(self()); }
 
     private:
         Methods() = default;

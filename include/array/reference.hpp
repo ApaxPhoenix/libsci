@@ -13,8 +13,8 @@ namespace sci::array {
 
     using core::drivers::Device;
 
-    template <typename element, core::size rank>
-    class NDArray;
+    template <typename type, core::size order>
+    class Array;
 
     // Leaf: an array the expression reads.
     template <typename type, core::size order>
@@ -22,9 +22,9 @@ namespace sci::array {
         using element = type;
         static constexpr core::size rank = order;
 
-        const NDArray<type, order>* source;
+        const Array<type, order>* source;
 
-        explicit Reference(const NDArray<type, order>* source) noexcept : source(source) {}
+        explicit Reference(const Array<type, order>* source) noexcept : source(source) {}
 
         [[nodiscard]] Shape<order> shape() const noexcept { return source->shape(); }
         [[nodiscard]] Device* device() const noexcept { return source->device(); }
