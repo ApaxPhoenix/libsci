@@ -13,23 +13,25 @@ namespace sci::core::drivers::vulkan {
     // Upper bound on memory parked in the cache.
     constexpr size budget = size{1} << 30;
 
-    // Host-visible and coherent is mandatory; device-local on top of it (unified memory) wins.
-    static uint32 choose(VkPhysicalDevice physical) noexcept {
+    Allocator::Allocator(const Context& context)
+        : context(context) {
+        // The memory type: host-visible and coherent is mandatory; device-local on top of it
+        // (unified memory) wins.
         VkPhysicalDeviceMemoryProperties memory{};
-        vkGetPhysicalDeviceMemoryProperties(physical, &memory);
+        vkGetPhysicalDeviceMemoryProperties(context.physical, &memory);
         constexpr VkMemoryPropertyFlags required = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         uint32 best = UINT32_MAX;
         for (uint32 index = 0; index < memory.memoryTypeCount; ++index) {
             const VkMemoryPropertyFlags flags = memory.memoryTypes[index].propertyFlags;
             if ((flags & required) != required) continue;
             if (best == UINT32_MAX) best = index;
-            if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) return index;
+            if (flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+                best = index;
+                break;
+            }
         }
-        return best == UINT32_MAX ? 0 : best;
+        type = best == UINT32_MAX ? 0 : best;
     }
-
-    Allocator::Allocator(const Context& context)
-        : context(context), type(choose(context.physical)) {}
 
     Allocator::~Allocator() noexcept {
         for (const Buffer& buffer : std::views::values(live)) destroy(buffer);
@@ -86,7 +88,7 @@ namespace sci::core::drivers::vulkan {
         Buffer buffer{};
         buffer.bytes = bytes;
 
-        const VkBufferCreateInfo info{
+        const VkBufferCreateInfo description{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
@@ -97,7 +99,7 @@ namespace sci::core::drivers::vulkan {
             .queueFamilyIndexCount = 0,
             .pQueueFamilyIndices = nullptr
         };
-        if (vkCreateBuffer(context.device, &info, nullptr, &buffer.handle) != VK_SUCCESS) return {};
+        if (vkCreateBuffer(context.device, &description, nullptr, &buffer.handle) != VK_SUCCESS) return {};
 
         VkMemoryRequirements requirements{};
         vkGetBufferMemoryRequirements(context.device, buffer.handle, &requirements);
