@@ -34,7 +34,7 @@ groupshared float rights[slab][tile];
 // Rows [first, first + 64 * groups.y) of C; the host splits tall products into several dispatches.
 [shader("compute")]
 [numthreads(16, 16, 1)]
-void matmul(uint3 group : SV_GroupID, uint3 local : SV_GroupThreadID) {
+void product(uint3 group : SV_GroupID, uint3 local : SV_GroupThreadID) {
     const uint rows = arguments.rows;
     const uint columns = arguments.columns;
     const uint depth = arguments.depth;
@@ -43,9 +43,9 @@ void matmul(uint3 group : SV_GroupID, uint3 local : SV_GroupThreadID) {
     const uint member = local.y * side + local.x;
 
     float sums[block][block];
-    for (uint i = 0; i < block; ++i) {
-        for (uint j = 0; j < block; ++j) {
-            sums[i][j] = 0.0;
+    for (uint down = 0; down < block; ++down) {
+        for (uint over = 0; over < block; ++over) {
+            sums[down][over] = 0.0;
         }
     }
 
@@ -55,27 +55,29 @@ void matmul(uint3 group : SV_GroupID, uint3 local : SV_GroupThreadID) {
         const uint along = (member % (slab / 4)) * 4;
         const uint down = member / (tile / 4);
         const uint over = (member % (tile / 4)) * 4;
-        float4* a = (float4*)arguments.left;
-        float4* b = (float4*)arguments.right;
+        float4* lefthand = (float4*)arguments.left;
+        float4* righthand = (float4*)arguments.right;
 
-        float4 nextA = top + across < rows && along < depth ? a[((top + across) * depth + along) / 4] : float4(0.0);
-        float4 nextB = down < depth && left + over < columns ? b[(down * columns + left + over) / 4] : float4(0.0);
+        // The slab after the current one: upcoming[0] from A, upcoming[1] from B.
+        float4 upcoming[2];
+        upcoming[0] = top + across < rows && along < depth ? lefthand[((top + across) * depth + along) / 4] : float4(0.0);
+        upcoming[1] = down < depth && left + over < columns ? righthand[(down * columns + left + over) / 4] : float4(0.0);
 
         for (uint start = 0; start < depth; start += slab) {
-            lefts[along][across] = nextA.x;
-            lefts[along + 1][across] = nextA.y;
-            lefts[along + 2][across] = nextA.z;
-            lefts[along + 3][across] = nextA.w;
-            rights[down][over] = nextB.x;
-            rights[down][over + 1] = nextB.y;
-            rights[down][over + 2] = nextB.z;
-            rights[down][over + 3] = nextB.w;
+            lefts[along][across] = upcoming[0].x;
+            lefts[along + 1][across] = upcoming[0].y;
+            lefts[along + 2][across] = upcoming[0].z;
+            lefts[along + 3][across] = upcoming[0].w;
+            rights[down][over] = upcoming[1].x;
+            rights[down][over + 1] = upcoming[1].y;
+            rights[down][over + 2] = upcoming[1].z;
+            rights[down][over + 3] = upcoming[1].w;
             GroupMemoryBarrierWithGroupSync();
 
             // Fetch the following slab while this one is multiplied.
             const uint ahead = start + slab;
-            nextA = top + across < rows && ahead + along < depth ? a[((top + across) * depth + ahead + along) / 4] : float4(0.0);
-            nextB = ahead + down < depth && left + over < columns ? b[((ahead + down) * columns + left + over) / 4] : float4(0.0);
+            upcoming[0] = top + across < rows && ahead + along < depth ? lefthand[((top + across) * depth + ahead + along) / 4] : float4(0.0);
+            upcoming[1] = ahead + down < depth && left + over < columns ? righthand[((ahead + down) * columns + left + over) / 4] : float4(0.0);
 
             multiply(local, sums);
             GroupMemoryBarrierWithGroupSync();
@@ -99,13 +101,13 @@ void matmul(uint3 group : SV_GroupID, uint3 local : SV_GroupThreadID) {
         }
     }
 
-    for (uint i = 0; i < block; ++i) {
-        const uint row = top + local.y * block + i;
+    for (uint down = 0; down < block; ++down) {
+        const uint row = top + local.y * block + down;
         if (row >= rows) continue;
-        for (uint j = 0; j < block; ++j) {
-            const uint column = left + local.x * block + j;
+        for (uint over = 0; over < block; ++over) {
+            const uint column = left + local.x * block + over;
             if (column < columns) {
-                arguments.output[row * columns + column] = sums[i][j];
+                arguments.output[row * columns + column] = sums[down][over];
             }
         }
     }
@@ -113,15 +115,16 @@ void matmul(uint3 group : SV_GroupID, uint3 local : SV_GroupThreadID) {
 
 void multiply(uint3 local, inout float sums[block][block]) {
     for (uint inner = 0; inner < slab; ++inner) {
-        float a[block];
-        float b[block];
-        for (uint i = 0; i < block; ++i) {
-            a[i] = lefts[inner][local.y * block + i];
-            b[i] = rights[inner][local.x * block + i];
+        // This thread's four rows of A and four columns of B at depth `inner`.
+        float column[block];
+        float row[block];
+        for (uint offset = 0; offset < block; ++offset) {
+            column[offset] = lefts[inner][local.y * block + offset];
+            row[offset] = rights[inner][local.x * block + offset];
         }
-        for (uint i = 0; i < block; ++i) {
-            for (uint j = 0; j < block; ++j) {
-                sums[i][j] = fma(a[i], b[j], sums[i][j]);
+        for (uint down = 0; down < block; ++down) {
+            for (uint over = 0; over < block; ++over) {
+                sums[down][over] = fma(column[down], row[over], sums[down][over]);
             }
         }
     }

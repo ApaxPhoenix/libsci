@@ -1,5 +1,5 @@
 // Shared by shaders/interpreter.slang and the kernels the GPU JIT generates
-// (src/core/drivers/vulkan/jit.cpp): the chunk block, the arguments, and the helpers that load and
+// (src/core/drivers/vulkan/compiler.cpp): the chunk block, the arguments, and the helpers that load and
 // store four elements per thread.
 
 // Mirrors `Layout` in src/core/drivers/device.cpp. Input addresses are plain 64-bit integers:
