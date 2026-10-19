@@ -1,9 +1,9 @@
 #pragma once
 
-#include <array/ndarray.hpp>
+#include <array/array.hpp>
 
-// Elementwise functions of one array, named as in numpy and lazy like the binary ones. On float and
-// double arrays, exp and log are within 1 ulp and sin and cos within 2 ulp (3 on the GPU).
+// Elementwise functions of one array, lazy like the binary ones. On float and double arrays the
+// exponential and logarithm are within 1 ulp, and sine and cosine within 2 ulp (3 on the GPU).
 
 namespace sci::operations {
 
@@ -11,87 +11,92 @@ namespace sci::operations {
 
     template <operand source>
     auto negative(source&& input) {
-        return array::apply<core::Code::neg>(std::forward<source>(input));
+        return array::apply<core::Code::negate>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto abs(source&& input) {
-        return array::apply<core::Code::abs>(std::forward<source>(input));
+    auto absolute(source&& input) {
+        return array::apply<core::Code::absolute>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto sqrt(source&& input) {
-        return array::apply<core::Code::sqrt>(std::forward<source>(input));
+    auto root(source&& input) {
+        return array::apply<core::Code::root>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto exp(source&& input) {
-        return array::apply<core::Code::exp>(std::forward<source>(input));
+    auto exponential(source&& input) {
+        return array::apply<core::Code::exponential>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto log(source&& input) {
-        return array::apply<core::Code::log>(std::forward<source>(input));
+    auto logarithm(source&& input) {
+        return array::apply<core::Code::logarithm>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto sin(source&& input) {
-        return array::apply<core::Code::sin>(std::forward<source>(input));
+    auto sine(source&& input) {
+        return array::apply<core::Code::sine>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto cos(source&& input) {
-        return array::apply<core::Code::cos>(std::forward<source>(input));
+    auto cosine(source&& input) {
+        return array::apply<core::Code::cosine>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto tan(source&& input) {
-        return array::apply<core::Code::tan>(std::forward<source>(input));
+    auto tangent(source&& input) {
+        return array::apply<core::Code::tangent>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto asin(source&& input) {
-        return array::apply<core::Code::asin>(std::forward<source>(input));
+    auto arcsine(source&& input) {
+        return array::apply<core::Code::arcsine>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto acos(source&& input) {
-        return array::apply<core::Code::acos>(std::forward<source>(input));
+    auto arccosine(source&& input) {
+        return array::apply<core::Code::arccosine>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto atan(source&& input) {
-        return array::apply<core::Code::atan>(std::forward<source>(input));
+    auto arctangent(source&& input) {
+        return array::apply<core::Code::arctangent>(std::forward<source>(input));
     }
 
-    template <operand source>
-    auto sinh(source&& input) {
-        return array::apply<core::Code::sinh>(std::forward<source>(input));
-    }
+    // sinh, cosh, tanh and their inverses: sci::hyperbolic::sine and so on.
+    namespace hyperbolic {
 
-    template <operand source>
-    auto cosh(source&& input) {
-        return array::apply<core::Code::cosh>(std::forward<source>(input));
-    }
+        template <operand source>
+        auto sine(source&& input) {
+            return array::apply<core::hyperbolic::sine>(std::forward<source>(input));
+        }
 
-    template <operand source>
-    auto tanh(source&& input) {
-        return array::apply<core::Code::tanh>(std::forward<source>(input));
-    }
+        template <operand source>
+        auto cosine(source&& input) {
+            return array::apply<core::hyperbolic::cosine>(std::forward<source>(input));
+        }
 
-    template <operand source>
-    auto asinh(source&& input) {
-        return array::apply<core::Code::asinh>(std::forward<source>(input));
-    }
+        template <operand source>
+        auto tangent(source&& input) {
+            return array::apply<core::hyperbolic::tangent>(std::forward<source>(input));
+        }
 
-    template <operand source>
-    auto acosh(source&& input) {
-        return array::apply<core::Code::acosh>(std::forward<source>(input));
-    }
+        template <operand source>
+        auto arcsine(source&& input) {
+            return array::apply<core::hyperbolic::arcsine>(std::forward<source>(input));
+        }
 
-    template <operand source>
-    auto atanh(source&& input) {
-        return array::apply<core::Code::atanh>(std::forward<source>(input));
+        template <operand source>
+        auto arccosine(source&& input) {
+            return array::apply<core::hyperbolic::arccosine>(std::forward<source>(input));
+        }
+
+        template <operand source>
+        auto arctangent(source&& input) {
+            return array::apply<core::hyperbolic::arctangent>(std::forward<source>(input));
+        }
+
     }
 
 }

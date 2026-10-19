@@ -1,34 +1,36 @@
 #pragma once
 
-#include <array/ndarray.hpp>
+#include <array/array.hpp>
 
-// Whole-array reductions, named as in numpy. Reducing an expression fuses it into the reduction,
-// so sum(a * b) never materialises a * b.
+// Whole-array reductions, named as in numpy (numpy.min and numpy.max become minimum and maximum
+// with one operand). Reducing an expression fuses it into the reduction, so sum(a * b) never
+// materialises a * b.
 
 namespace sci::operations {
 
     using array::operand;
 
     template <operand source>
-    array::element_t<source> sum(const source& input) {
+    typename source::element sum(const source& input) {
         return array::reduce(input, core::Fold::sum);
     }
 
     template <operand source>
-    array::element_t<source> mean(const source& input) {
-        const core::size count = array::wrap(input).shape().total();
-        return count == 0 ? array::element_t<source>{} : sum(input) / static_cast<array::element_t<source>>(count);
+    typename source::element mean(const source& input) {
+        using element = source::element;
+        const core::size count = input.shape().total();
+        return count == 0 ? element{} : sum(input) / static_cast<element>(count);
     }
 
     // NaN anywhere gives NaN, as in numpy.min / numpy.max.
     template <operand source>
-    array::element_t<source> min(const source& input) {
-        return array::reduce(input, core::Fold::min);
+    typename source::element minimum(const source& input) {
+        return array::reduce(input, core::Fold::minimum);
     }
 
     template <operand source>
-    array::element_t<source> max(const source& input) {
-        return array::reduce(input, core::Fold::max);
+    typename source::element maximum(const source& input) {
+        return array::reduce(input, core::Fold::maximum);
     }
 
 }
