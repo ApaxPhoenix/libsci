@@ -4,24 +4,25 @@
 //
 //     #include <sci.hpp>
 //
-//     auto a = sci::arange(0.0f, 1.0f, 0.001f);     // NDArray<float, 1>
-//     auto b = sci::ones({1000});
-//     sci::NDArray<float, 1> c = a * b + 2.0f;       // computed in a single loop
-//     float total = sci::sum(sci::sin(c));            // or c.sum()
+//     auto first = sci::range(0.0f, 1.0f, 0.001f);           // Array<float, 1>
+//     auto second = sci::ones({1000});
+//     sci::Array<float, 1> third = first * second + 2.0f;    // computed in a single loop
+//     float total = sci::sum(sci::sine(third));              // or third.sum()
 //
-//     sci::Device gpu(sci::Target::gpu);             // like torch.device / cupy
-//     auto d = c.to(gpu);                            // expressions on d run on the GPU
-//     auto m = sci::matmul(x.to(gpu), y.to(gpu));
+//     sci::Device graphics(sci::Target::graphics);           // like torch.device / cupy
+//     auto fourth = third.to(graphics);                      // expressions on it run on the GPU
+//     auto matrix = sci::product(left.to(graphics), right.to(graphics));
 //
-// Expressions are lazy: `a * b + 2.0f` is computed when it is stored in an NDArray, reduced, or
-// copied, in a single loop with no temporary arrays. Reading a GPU array on the host waits for the GPU.
+// Expressions are lazy: `first * second + 2.0f` is computed when it is stored in an Array, reduced,
+// or copied, in a single loop with no temporary arrays. Reading a GPU array on the host waits for
+// the GPU.
 
-#include "array/ndarray.hpp"
+#include "array/array.hpp"
 #include "core/drivers/device.hpp"
 #include "core/drivers/target.hpp"
-#include "linalg/decompose.hpp"
-#include "linalg/matmul.hpp"
-#include "linalg/solve.hpp"
+#include "linear/decompose.hpp"
+#include "linear/product.hpp"
+#include "linear/solve.hpp"
 #include "operations/binary.hpp"
 #include "operations/creation.hpp"
 #include "operations/reduce.hpp"
@@ -29,15 +30,15 @@
 
 namespace sci {
 
-    using array::NDArray;
+    using array::Array;
     using array::Shape;
     using core::drivers::Device;
     using core::drivers::Target;
 
-    using operations::arange;
     using operations::empty;
     using operations::full;
     using operations::ones;
+    using operations::range;
     using operations::zeros;
 
     using operations::add;
@@ -45,57 +46,32 @@ namespace sci {
     using operations::multiply;
     using operations::subtract;
 
-    using operations::sin;
-    using operations::cos;
-    using operations::tan;
-    using operations::asin;
-    using operations::acos;
-    using operations::atan;
-    using operations::sinh;
-    using operations::cosh;
-    using operations::tanh;
-    using operations::asinh;
-    using operations::acosh;
-    using operations::atanh;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     using operations::copy;
+
+    // With two operands elementwise (numpy.minimum), with one a reduction (numpy.min).
     using operations::maximum;
     using operations::minimum;
 
-
-
-    using operations::abs;
-    using operations::exp;
-    using operations::log;
+    using operations::absolute;
+    using operations::exponential;
+    using operations::logarithm;
     using operations::negative;
-    using operations::sqrt;
+    using operations::root;
 
-    using operations::max;
+    using operations::sine;
+    using operations::cosine;
+    using operations::tangent;
+    using operations::arcsine;
+    using operations::arccosine;
+    using operations::arctangent;
+
+    // sci::hyperbolic::sine (sinh), ::cosine, ::tangent, ::arcsine, ::arccosine, ::arctangent.
+    namespace hyperbolic = operations::hyperbolic;
+
     using operations::mean;
-    using operations::min;
     using operations::sum;
 
-    using linalg::dot;
-    using linalg::matmul;
+    using linear::dot;
+    using linear::product;
 
 }
