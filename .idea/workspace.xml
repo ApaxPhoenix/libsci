@@ -30,21 +30,85 @@
   <component name="ChangeListManager">
     <list default="true" id="da230a09-af73-4e1a-8554-6505e2456f7c" name="Changes" comment="Introduced CPU single-loop JIT vectorization and background GPU shader compilation to double performance on long expressions">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bin/libsci" beforeDir="false" afterPath="$PROJECT_DIR$/bin/libsci" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/array/calculate.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/calculate.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/dense.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/dense.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/elementof.hpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/expression.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/expression.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/methods.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/methods.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/ndarray.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/array.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/node.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/node.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/owner.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/owner.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/reference.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/reference.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/storage.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/storage.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/arch/alignment.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/alignment.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/arch/traits.hpp" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/include/core/bytecode/chunk.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/bytecode/chunk.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/bytecode/instruction.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/bytecode/instruction.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/compose.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/compose.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/operation.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/operation.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/trigonometry.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/trigonometry.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/routines.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/routines.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/bytecode/code.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/bytecode/code.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/bytecode/dtype.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/bytecode/precision.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/bytecode/fold.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/bytecode/fold.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/bytecode/traits.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/bytecode/traits.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/context.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/context.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/dispatch.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/dispatch.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/jit.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/compiler.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/jit/avx2.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/compiler/avx2.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/jit/neon.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/compiler/neon.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/avx2.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/avx2.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/avx512.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/avx512.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/fallback.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/fallback.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/compose.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/compose.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/constants.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/constants.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/elementwise.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/elementwise.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/exponential.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/exponential.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/logarithm.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/logarithm.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/operation.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/operation.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/polynomial.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/polynomial.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/reductions.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/reductions.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/scalar.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/scalar.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/generic/trigonometry.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/trigonometry.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/neon.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/neon.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/routines.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/routines.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/kernels/table.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/table.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/cpu/pool.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/pool.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/device.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/device.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/memory.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/memory.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/target.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/target.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/vulkan/batch.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/vulkan/batch.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/vulkan/jit.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/vulkan/compiler.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/drivers/vulkan/kernel.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/vulkan/kernel.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/memory/arena.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/memory/arena.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/memory/block.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/memory/block.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/memory/cursor.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/memory/cursor.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/memory/slice.hpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/linalg/decompose.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/linear/decompose.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/linalg/factors.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/linear/factors.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/linalg/matmul.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/linear/product.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/linalg/solve.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/linear/solve.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/operations/binary.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/operations/binary.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/operations/broadcast.hpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/operations/creation.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/operations/creation.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/operations/reduce.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/operations/reduce.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/operations/unary.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/operations/unary.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/sci.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/sci.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/dispatch.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/cpu/dispatch.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/jit.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/cpu/jit.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/jit/avx2.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/cpu/jit/avx2.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/jit/neon.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/cpu/jit/neon.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/common/entries.slang" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/common/entries.slang" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/interpreter.slang" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/interpreter.slang" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/matmul.slang" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/product.slang" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/context.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/processor/context.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/dispatch.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/processor/dispatch.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/jit.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/processor/compiler.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/jit/avx2.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/processor/compiler/avx2.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/jit/neon.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/processor/compiler/neon.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/avx2.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/processor/kernels/avx2.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/avx512.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/processor/kernels/avx512.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/fallback.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/processor/kernels/fallback.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/kernels/neon.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/processor/kernels/neon.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/cpu/pool.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/processor/pool.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/core/drivers/device.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/device.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/vulkan/jit.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/vulkan/jit.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/vulkan/allocator.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/vulkan/allocator.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/vulkan/context.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/vulkan/context.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/vulkan/jit.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/vulkan/compiler.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/vulkan/pipeline.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/vulkan/pipeline.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/drivers/vulkan/stream.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/vulkan/stream.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -144,6 +208,11 @@
     </key>
   </component>
   <component name="RunManager" selected="CMake Application.libsci">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="asmjit" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="libsci" TARGET_NAME="asmjit" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -193,7 +262,7 @@
       <workItem from="1792808454322" duration="1432000" />
       <workItem from="1792809901620" duration="6757000" />
       <workItem from="1792861507489" duration="3272000" />
-      <workItem from="1793018441918" duration="1009000" />
+      <workItem from="1793018441918" duration="2603000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Commit">
       <option name="closed" value="true" />
@@ -250,7 +319,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/include/sci.hpp</url>
-          <line>18</line>
+          <line>19</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
       </breakpoints>
