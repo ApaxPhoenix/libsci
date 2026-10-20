@@ -44,9 +44,30 @@ version in `CMakeLists.txt` is 0.1.0.
 - `SCI_JIT` environment variable: `0` turns both JITs off, `trace` reports every compile.
 - `Chunk::signature()`, the key both JITs cache compiled code under.
 - `CHANGELOG.md` and `SECURITY.md`.
+- `tangent`, `arcsine`, `arccosine` and `arctangent`, and the hyperbolic functions and their
+  inverses as `sci::hyperbolic::sine`, `cosine`, `tangent`, `arcsine`, `arccosine` and
+  `arctangent`, on the CPU kernels, the scalar fallback and the GPU.
+- `memory::Allocation`: aligned host memory that frees itself, now behind host arrays, arena
+  blocks, CPU device memory and the per-thread scratch space of the CPU dispatcher.
+- `Accumulator` (folds reduction partials, shared by the CPU and GPU paths), `processor::Plan`,
+  `processor::Range` and `processor::Program`, replacing free helper functions in `dispatch.cpp`.
 
 ### Changed
 
+- Every name is a single English word, with no abbreviations: in the public API `NDArray` is now
+  `Array`, `arange` → `range`, `abs`/`sqrt`/`exp`/`log` → `absolute`/`root`/`exponential`/
+  `logarithm`, `sin`/`cos`/`tan`/`asin`/`acos`/`atan` → `sine`/`cosine`/`tangent`/`arcsine`/
+  `arccosine`/`arctangent`, the reductions `min`/`max` → `minimum`/`maximum` (the elementwise
+  versions take two operands), `linalg::matmul` → `linear::product`, `linalg::lu` →
+  `linear::decompose`, `Target::cpu`/`gpu` → `Target::processor`/`graphics`, `Array::cpu()` →
+  `host()`, and `ndim()` → the constant `Array::rank`.
+- Internally `Code` and `Fold` use the same words, `Dtype {float32, float64}` is
+  `Precision {single, wide}`, `cpu::` is `processor::`, both `Jit` classes are `Compiler`, and the
+  SIMD packs use `subtract`, `multiply`, `divide`, `fuse`, `negate`, `absolute`, `root`,
+  `minimum`, `maximum`, `raw`, `intersect`, `unite`, `toggle` and `shift<n>`.
+- Single-use helper functions are written into their callers, and the rest became members of
+  the class that uses them (for example `Batch::barrier`, `Polynomial::evaluate`, `Library` for
+  the C-library fallbacks).
 - Class names are capitalised: `NDArray`, `Shape`, `Device`, `Target` (previously `ndarray`,
   `shape`, `device`, `target`).
 - Operations use numpy's names, such as `multiply` instead of `mul`.
@@ -74,9 +95,15 @@ version in `CMakeLists.txt` is 0.1.0.
 
 - Unused headers: `core/meta/traits.hpp`, `core/meta/concepts.hpp` and `core/memory/pool.hpp`.
 - The test suite (`tests/main.cpp` and the `sci_tests` target), for now.
+- Unused code: `memory::Slice`, `Cursor::jump`, `Arena::acquire`, `operations::broadcast`,
+  `core/arch/traits.hpp`, the unused `arch::gpu` and `arch::atom` alignments, and the packs'
+  `fnma` (callers use `fuse(negate(a), b, c)`, which rounds the same).
 
 ### Fixed
 
+- The scalar fallback for `sin`, `tan`, `asinh`, `acosh` and `atanh` (element types the engine
+  does not run natively) called the wrong C++ function.
+- The GPU JIT compiled the new trigonometric functions as a fused multiply-add.
 - Clang-Tidy and CLion warnings: `const` on Vulkan handle typedefs, constant arguments to the
   stream's memory-barrier helper, `Stream::complete` changing a batch it received by reference,
   and a flag in `Node::shape()` that looked unused.
