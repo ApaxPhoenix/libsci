@@ -1,6 +1,11 @@
 // Shared by shaders/interpreter.slang and the kernels the GPU JIT generates
 // (src/core/drivers/vulkan/compiler.cpp): the chunk block, the arguments, and the helpers that load and
 // store four elements per thread.
+//
+// LAYOUT guards against a second copy: interpreter.slang includes this file before entries.slang
+// does, and the GPU JIT pastes it in front of the generated code.
+#ifndef LAYOUT
+#define LAYOUT
 
 // Mirrors `Layout` in src/core/drivers/device.cpp. Input addresses are plain 64-bit integers:
 // SPIRV-Cross (and so MoltenVK) mistranslates arrays of pointers inside pointed-to structs.
@@ -63,3 +68,5 @@ void store(uint4 index, bool4 live, float4 value) {
     if (live.z) destination[index.z] = value.z;
     if (live.w) destination[index.w] = value.w;
 }
+
+#endif
