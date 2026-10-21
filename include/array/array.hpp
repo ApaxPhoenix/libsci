@@ -85,10 +85,11 @@ namespace sci::array {
         Array(Device& device, Shape<rank> shape, Uninitialized)
             : store(&device, shape.total(), Uninitialized{}), bounds(shape), layout(Stride<rank>::contiguous(shape)) {}
 
-        // Computes an expression in a single pass, on the device its arrays live on.
+        // Computes an expression in a single pass, on the device its arrays live on. Implicit on
+        // purpose, so `Array<float, 2> c = a * b;` works as it does in numpy.
         template <expression source>
         requires (std::is_same_v<typename source::element, element> && source::rank == rank)
-        Array(const source& item)
+        Array(const source& item) // NOLINT(google-explicit-constructor, hicpp-explicit-conversions)
             : store(item.device(), item.shape().total(), Uninitialized{}), bounds(item.shape()), layout(Stride<rank>::contiguous(item.shape())) {
             assign(*this, item);
         }
