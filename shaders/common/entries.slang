@@ -2,6 +2,16 @@
 // call `run(chunk, index, live)`, which computes four elements per thread (and writes them when the
 // chunk has an output) and returns the chunk's result.
 
+// The chunk block, the arguments and the thread counts, unless the including file already has them.
+// Including them here also lets an editor check this file on its own.
+#ifndef LAYOUT
+#include "layout.slang"
+#endif
+
+// Defined by the file that includes this one: the interpreter's bytecode loop, or the code the GPU
+// JIT generates for one chunk.
+float4 run(Chunk* chunk, uint4 index, bool4 live);
+
 // Workgroups sweep the array together: each step covers threads * lanes elements per group. Lanes
 // past the end read element 0, which always exists, and are masked off.
 [shader("compute")]
