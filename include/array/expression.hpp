@@ -6,7 +6,6 @@
 #include "array/literal.hpp"
 #include "array/methods.hpp"
 #include "array/node.hpp"
-#include "array/owner.hpp"
 #include "array/reference.hpp"
 #include "core/assert.hpp"
 #include "core/drivers/processor/dispatch.hpp"
@@ -55,7 +54,7 @@ namespace sci::array {
     template <typename type>
     concept scalar = std::is_arithmetic_v<std::remove_cvref_t<type>>;
 
-    // Turns an operand into an expression leaf: arrays by reference (or by ownership when they are
+    // Turns an operand into an expression leaf: arrays by pointer (or by shared pointer when they are
     // temporaries), expressions by value.
     template <operand type>
     auto capture(type&& item) {
@@ -63,9 +62,9 @@ namespace sci::array {
         if constexpr (expression<type>) {
             return bare(std::forward<type>(item));
         } else if constexpr (std::is_lvalue_reference_v<type>) {
-            return Reference<typename bare::element, bare::rank>(&item);
+            return Reference<const bare*>(&item);
         } else {
-            return Owner<typename bare::element, bare::rank>(std::make_shared<const bare>(std::forward<type>(item)));
+            return Reference<std::shared_ptr<const bare>>(std::make_shared<const bare>(std::forward<type>(item)));
         }
     }
 
