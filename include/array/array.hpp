@@ -8,7 +8,6 @@
 #include "array/uninitialized.hpp"
 #include "core/assert.hpp"
 #include "core/drivers/device.hpp"
-#include "core/drivers/target.hpp"
 #include "core/types.hpp"
 
 #include <algorithm>
@@ -110,11 +109,9 @@ namespace sci::array {
 
         [[nodiscard]] Shape<rank> shape() const noexcept { return bounds; }
         [[nodiscard]] Stride<rank> strides() const noexcept { return layout; }
-        [[nodiscard]] bool empty() const noexcept { return store.size() == 0; }
 
         // The device the array lives on (null for host and arena memory); the array does not own it.
         [[nodiscard]] Device* device() const noexcept { return store.device(); }
-        [[nodiscard]] Target target() const noexcept { return store.target(); }
 
         // Raw element pointer. For GPU arrays, call device()->synchronize() before using it on the host.
         [[nodiscard]] element* data() noexcept { return store.data(); }
@@ -218,16 +215,11 @@ namespace sci::array {
 
     };
 
-    // Same shape and every element equal.
+    // Same shape and every element equal; `!=` is derived from it.
     template <typename element, core::size rank>
     bool operator==(const Array<element, rank>& left, const Array<element, rank>& right) {
         if (left.shape() != right.shape()) return false;
         return std::equal(left.begin(), left.end(), right.begin());
-    }
-
-    template <typename element, core::size rank>
-    bool operator!=(const Array<element, rank>& left, const Array<element, rank>& right) {
-        return !(left == right);
     }
 
     // Prints the elements in row-major order: [1, 2, 3].

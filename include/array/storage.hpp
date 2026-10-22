@@ -3,7 +3,6 @@
 #include "core/alignment.hpp"
 #include "core/drivers/device.hpp"
 #include "core/drivers/memory.hpp"
-#include "core/drivers/target.hpp"
 #include "core/memory/allocation.hpp"
 #include "core/memory/arena.hpp"
 #include "core/types.hpp"
@@ -15,7 +14,6 @@
 namespace sci::array {
 
     using core::drivers::Device;
-    using core::drivers::Target;
 
     // Where an array can live besides plain host memory.
     template <typename place>
@@ -79,7 +77,6 @@ namespace sci::array {
 
         [[nodiscard]] core::size size() const noexcept { return count; }
         [[nodiscard]] Device* device() const noexcept { return owner; }
-        [[nodiscard]] Target target() const noexcept { return owner ? memory.target : Target::processor; }
 
         // Lets the host touch the memory: waits for queued GPU work on the storage's device.
         void synchronize() const noexcept {
