@@ -1,6 +1,7 @@
 #pragma once
 
 #include "array/expression.hpp"
+#include "array/methods.hpp"
 #include "array/shape.hpp"
 #include "array/storage.hpp"
 #include "array/stride.hpp"
@@ -26,10 +27,12 @@ namespace sci::array {
     //     Array<float, 2> c = a * b + 1.0f;    // computed in a single loop
     //     float total = c.sum();
     //
-    // Arrays can live on a Device (a.to(graphics)); expressions then run there, and reading an element
-    // on the host waits for the GPU first, so a GPU array reads like any other array.
+    // Arrays can live on a Device (a.to(graphics)) or in an Arena; expressions then run there, and
+    // reading an element on the host waits for the GPU first, so a GPU array reads like any other
+    // array. store.size(), sum(), mean(), minimum(), maximum() and copy() come from Methods, which
+    // expressions share.
     template <typename type, core::size order>
-    class Array {
+    class Array : public Methods<Array<type, order>> {
     public:
         using element = type;
 
@@ -57,24 +60,24 @@ namespace sci::array {
         // Every element set to value.
         Array(Shape<rank> shape, const element& value)
             : store(nullptr, shape.total(), Uninitialized{}), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
-            std::fill_n(data(), size(), value);
+            std::fill_n(data(), store.size(), value);
         }
 
         Array(Device& device, Shape<rank> shape, const element& value)
             : store(&device, shape.total(), Uninitialized{}), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
-            std::fill_n(data(), size(), value);
+            std::fill_n(data(), store.size(), value);
         }
 
         // Values in row-major order; missing trailing values are zero.
         Array(Shape<rank> shape, std::initializer_list<element> values)
             : store(nullptr, shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
-            ASSERT(values.size() <= size());
+            ASSERT(values.size() <= store.size());
             std::copy(values.begin(), values.end(), data());
         }
 
         Array(core::memory::Arena& arena, Shape<rank> shape, std::initializer_list<element> values)
             : store(arena, shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
-            ASSERT(values.size() <= size());
+            ASSERT(values.size() <= store.size());
             std::copy(values.begin(), values.end(), data());
         }
 
@@ -113,7 +116,6 @@ namespace sci::array {
 
         [[nodiscard]] Shape<rank> shape() const noexcept { return bounds; }
         [[nodiscard]] Stride<rank> strides() const noexcept { return layout; }
-        [[nodiscard]] core::size size() const noexcept { return store.size(); }
         [[nodiscard]] bool empty() const noexcept { return store.size() == 0; }
 
         // The device the array lives on (null for plain host memory); the array does not own it.
@@ -136,12 +138,12 @@ namespace sci::array {
 
         element* end() {
             store.synchronize();
-            return data() + size();
+            return data() + store.size();
         }
 
         const element* end() const {
             store.synchronize();
-            return data() + size();
+            return data() + store.size();
         }
 
         // a[i, j] (multi-dimensional) or a[i] (flat).
@@ -173,14 +175,14 @@ namespace sci::array {
         [[nodiscard]] Array to(Device& destination) const {
             Array result(destination, bounds, Uninitialized{});
             store.synchronize();
-            std::copy_n(data(), size(), result.data());
+            std::copy_n(data(), store.size(), result.data());
             return result;
         }
 
         [[nodiscard]] Array to(core::memory::Arena& arena) const {
             Array result(arena, bounds);
             store.synchronize();
-            std::copy_n(data(), size(), result.data());
+            std::copy_n(data(), store.size(), result.data());
             return result;
         }
 
@@ -188,19 +190,14 @@ namespace sci::array {
         [[nodiscard]] Array host() const {
             Array result(bounds, Uninitialized{});
             store.synchronize();
-            std::copy_n(data(), size(), result.data());
+            std::copy_n(data(), store.size(), result.data());
             return result;
-        }
-
-        // A copy on the same device (numpy.ndarray.copy).
-        [[nodiscard]] Array copy() const {
-            return Array(capture(*this));
         }
 
         // Sets every element (numpy.ndarray.fill).
         void fill(const element& value) {
             store.synchronize();
-            std::fill_n(data(), size(), value);
+            std::fill_n(data(), store.size(), value);
         }
 
         template <typename source>
@@ -229,14 +226,6 @@ namespace sci::array {
         Array& operator/=(source&& other) {
             assign(*this, *this / std::forward<source>(other));
             return *this;
-        }
-
-        [[nodiscard]] element sum() const { return reduce(*this, core::Fold::sum); }
-        [[nodiscard]] element minimum() const { return reduce(*this, core::Fold::minimum); }
-        [[nodiscard]] element maximum() const { return reduce(*this, core::Fold::maximum); }
-
-        [[nodiscard]] element mean() const {
-            return size() == 0 ? element{} : sum() / static_cast<element>(size());
         }
 
     };

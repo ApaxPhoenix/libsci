@@ -12,7 +12,7 @@ namespace sci::array {
     template <typename source>
     typename source::element reduce(const source& input, core::Fold fold);
 
-    // Array-like members shared by every expression node.
+    // Array-like members shared by Array and every expression node.
     template <typename derived>
     struct Methods {
         [[nodiscard]] core::size size() const noexcept { return self().shape().total(); }
@@ -25,8 +25,8 @@ namespace sci::array {
             return size() == 0 ? element{} : sum() / static_cast<element>(size());
         }
 
-        // Computes the expression into a new array (numpy.copy).
-        [[nodiscard]] auto copy() const { return Array<typename derived::element, derived::rank>(self()); }
+        // A new array holding the values (numpy.copy), on the device they live on.
+        [[nodiscard]] auto copy() const { return Array<typename derived::element, derived::rank>(capture(self())); }
 
     private:
         Methods() = default;
