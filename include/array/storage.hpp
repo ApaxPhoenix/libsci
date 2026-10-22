@@ -1,6 +1,5 @@
 #pragma once
 
-#include "array/uninitialized.hpp"
 #include "core/alignment.hpp"
 #include "core/drivers/device.hpp"
 #include "core/drivers/memory.hpp"
@@ -9,7 +8,7 @@
 #include "core/memory/arena.hpp"
 #include "core/types.hpp"
 
-#include <algorithm>
+#include <concepts>
 #include <memory>
 #include <utility>
 
@@ -18,34 +17,33 @@ namespace sci::array {
     using core::drivers::Device;
     using core::drivers::Target;
 
+    // Where an array can live besides plain host memory.
+    template <typename place>
+    concept location = std::same_as<place, Device> || std::same_as<place, core::memory::Arena>;
+
     // The memory behind an Array: host memory it owns, memory on a Device, or a slice of an Arena.
+    // The elements are left for the Array to fill.
     template <typename element>
     class Storage {
     public:
         Storage() = default;
 
-        // Zero-filled memory, on `device` when there is one and on the host otherwise.
-        Storage(Device* device, const core::size total)
-            : Storage(device, total, Uninitialized{}) {
-            std::fill_n(pointer, count, element{});
+        explicit Storage(const core::size total)
+            : pointer(static_cast<element*>(allocation.reserve(total * sizeof(element)))), count(total) {
+            std::uninitialized_default_construct_n(pointer, count);
         }
 
-        Storage(Device* device, const core::size total, Uninitialized)
-            : count(total), owner(device) {
+        Storage(Device& device, const core::size total)
+            : count(total), owner(&device) {
             if (count == 0) return;
-            if (owner) {
-                owner->allocate(count * sizeof(element), memory);
-                pointer = static_cast<element*>(memory.host);
-            } else {
-                pointer = static_cast<element*>(allocation.reserve(count * sizeof(element)));
-                std::uninitialized_default_construct_n(pointer, count);
-            }
+            device.allocate(count * sizeof(element), memory);
+            pointer = static_cast<element*>(memory.host);
         }
 
-        // Zero-filled memory from an arena, which keeps ownership.
+        // The arena keeps ownership.
         Storage(core::memory::Arena& arena, const core::size total)
             : pointer(arena.allocate<element>(total)), count(total) {
-            std::uninitialized_value_construct_n(pointer, count);
+            std::uninitialized_default_construct_n(pointer, count);
         }
 
         ~Storage() {

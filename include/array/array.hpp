@@ -9,7 +9,6 @@
 #include "core/assert.hpp"
 #include "core/drivers/device.hpp"
 #include "core/drivers/target.hpp"
-#include "core/memory/arena.hpp"
 #include "core/types.hpp"
 
 #include <algorithm>
@@ -29,7 +28,7 @@ namespace sci::array {
     //
     // Arrays can live on a Device (a.to(graphics)) or in an Arena; expressions then run there, and
     // reading an element on the host waits for the GPU first, so a GPU array reads like any other
-    // array. store.size(), sum(), mean(), minimum(), maximum() and copy() come from Methods, which
+    // array. size(), sum(), mean(), minimum(), maximum() and copy() come from Methods, which
     // expressions share.
     template <typename type, core::size order>
     class Array : public Methods<Array<type, order>> {
@@ -47,53 +46,48 @@ namespace sci::array {
     public:
         Array() = default;
 
-        // Zeros.
-        explicit Array(Shape<rank> shape)
-            : store(nullptr, shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {}
-
-        Array(Device& device, Shape<rank> shape)
-            : store(&device, shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {}
-
-        Array(core::memory::Arena& arena, Shape<rank> shape)
-            : store(arena, shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {}
-
-        // Every element set to value.
-        Array(Shape<rank> shape, const element& value)
-            : store(nullptr, shape.total(), Uninitialized{}), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
+        // Every element set to value, zeros unless one is given.
+        explicit Array(Shape<rank> shape, const element& value = element{})
+            : store(shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
             std::fill_n(data(), store.size(), value);
         }
 
-        Array(Device& device, Shape<rank> shape, const element& value)
-            : store(&device, shape.total(), Uninitialized{}), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
+        // The same on a Device or in an Arena.
+        template <location place>
+        Array(place& where, Shape<rank> shape, const element& value = element{})
+            : store(where, shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
             std::fill_n(data(), store.size(), value);
         }
 
         // Values in row-major order; missing trailing values are zero.
         Array(Shape<rank> shape, std::initializer_list<element> values)
-            : store(nullptr, shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
+            : store(shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
             ASSERT(values.size() <= store.size());
-            std::copy(values.begin(), values.end(), data());
+            std::fill(std::copy(values.begin(), values.end(), data()), data() + store.size(), element{});
         }
 
-        Array(core::memory::Arena& arena, Shape<rank> shape, std::initializer_list<element> values)
-            : store(arena, shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
+        template <location place>
+        Array(place& where, Shape<rank> shape, std::initializer_list<element> values)
+            : store(where, shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
             ASSERT(values.size() <= store.size());
-            std::copy(values.begin(), values.end(), data());
+            std::fill(std::copy(values.begin(), values.end(), data()), data() + store.size(), element{});
         }
 
         // Uninitialised (see sci::empty).
         Array(Shape<rank> shape, Uninitialized)
-            : store(nullptr, shape.total(), Uninitialized{}), bounds(shape), layout(Stride<rank>::contiguous(shape)) {}
+            : store(shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {}
 
-        Array(Device& device, Shape<rank> shape, Uninitialized)
-            : store(&device, shape.total(), Uninitialized{}), bounds(shape), layout(Stride<rank>::contiguous(shape)) {}
+        template <location place>
+        Array(place& where, Shape<rank> shape, Uninitialized)
+            : store(where, shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {}
 
         // Computes an expression in a single pass, on the device its arrays live on. Implicit on
         // purpose, so `Array<float, 2> c = a * b;` works as it does in numpy.
         template <expression source>
         requires (std::is_same_v<typename source::element, element> && source::rank == rank)
         Array(const source& item) // NOLINT(google-explicit-constructor, hicpp-explicit-conversions)
-            : store(item.device(), item.shape().total(), Uninitialized{}), bounds(item.shape()), layout(Stride<rank>::contiguous(item.shape())) {
+            : store(item.device() ? Storage<element>(*item.device(), item.shape().total()) : Storage<element>(item.shape().total())),
+              bounds(item.shape()), layout(Stride<rank>::contiguous(item.shape())) {
             assign(*this, item);
         }
 
@@ -118,7 +112,7 @@ namespace sci::array {
         [[nodiscard]] Stride<rank> strides() const noexcept { return layout; }
         [[nodiscard]] bool empty() const noexcept { return store.size() == 0; }
 
-        // The device the array lives on (null for plain host memory); the array does not own it.
+        // The device the array lives on (null for host and arena memory); the array does not own it.
         [[nodiscard]] Device* device() const noexcept { return store.device(); }
         [[nodiscard]] Target target() const noexcept { return store.target(); }
 
@@ -171,16 +165,10 @@ namespace sci::array {
             return data()[index];
         }
 
-        // A copy on another device (or from the GPU back to a CPU device).
-        [[nodiscard]] Array to(Device& destination) const {
-            Array result(destination, bounds, Uninitialized{});
-            store.synchronize();
-            std::copy_n(data(), store.size(), result.data());
-            return result;
-        }
-
-        [[nodiscard]] Array to(core::memory::Arena& arena) const {
-            Array result(arena, bounds);
+        // A copy on a Device (or from the GPU back to a CPU device), or in an Arena.
+        template <location place>
+        [[nodiscard]] Array to(place& where) const {
+            Array result(where, bounds, Uninitialized{});
             store.synchronize();
             std::copy_n(data(), store.size(), result.data());
             return result;
