@@ -38,37 +38,23 @@ namespace sci::linear {
         }
     }
 
-    // x with matrix * x = vector (numpy.linalg.solve). The result lives where the matrix does.
-    template <typename element>
-    Array<element, 1> solve(const Array<element, 2>& matrix, const Array<element, 1>& vector) {
-        static_assert(std::is_floating_point_v<element>, "solve needs a floating-point matrix");
-        const core::size order = vector.shape()[0];
-        ASSERT(matrix.shape()[0] == order && matrix.shape()[1] == order);
-
-        Array<element, 2> work = matrix.host();
-        const Array<element, 1> right = vector.host();
-        std::vector<core::size> rows(order);
-        factor(work.data(), rows.data(), order);
-
-        Array<element, 1> solution(Shape<1>{order}, array::Uninitialized{});
-        substitute(work.data(), rows.data(), right.data(), solution.data(), order, 1);
-        return matrix.device() ? solution.to(*matrix.device()) : std::move(solution);
-    }
-
-    // X with matrix * X = right, for several right-hand sides at once (the columns of `right`).
-    template <typename element>
-    Array<element, 2> solve(const Array<element, 2>& matrix, const Array<element, 2>& right) {
+    // x with matrix * x = right (numpy.linalg.solve). `right` is a vector, or a matrix whose columns
+    // are several right-hand sides solved at once. The result has right's shape and lives where the
+    // matrix does.
+    template <typename element, core::size rank>
+    requires (rank == 1 || rank == 2)
+    Array<element, rank> solve(const Array<element, 2>& matrix, const Array<element, rank>& right) {
         static_assert(std::is_floating_point_v<element>, "solve needs a floating-point matrix");
         const core::size order = right.shape()[0];
-        const core::size width = right.shape()[1];
+        const core::size width = rank == 1 ? 1 : right.shape()[rank - 1];
         ASSERT(matrix.shape()[0] == order && matrix.shape()[1] == order);
 
         Array<element, 2> work = matrix.host();
-        const Array<element, 2> values = right.host();
+        const Array<element, rank> values = right.host();
         std::vector<core::size> rows(order);
         factor(work.data(), rows.data(), order);
 
-        Array<element, 2> solution(Shape<2>{order, width}, array::Uninitialized{});
+        Array<element, rank> solution(right.shape(), array::Uninitialized{});
         substitute(work.data(), rows.data(), values.data(), solution.data(), order, width);
         return matrix.device() ? solution.to(*matrix.device()) : std::move(solution);
     }
