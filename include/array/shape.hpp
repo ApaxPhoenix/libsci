@@ -24,10 +24,6 @@ namespace sci::array {
             return extents[index];
         }
 
-        constexpr core::size& operator[](core::size index) noexcept {
-            return extents[index];
-        }
-
         constexpr bool operator==(const Shape&) const noexcept = default;
     };
 
