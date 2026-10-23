@@ -5,7 +5,7 @@
 #include <cmath>
 
 // Array creation, named as in numpy. The shape is a braced list and the element type defaults to
-// float; pass a Device to create the array there:
+// float; pass a Device (or an Arena) after the other arguments to create the array there:
 //
 //     auto a = sci::zeros({2, 3});               // Array<float, 2>
 //     auto b = sci::full<double>({4}, 2.5);
@@ -14,49 +14,33 @@
 
 namespace sci::operations {
 
-    using array::Device;
     using array::Array;
     using array::Shape;
+    using array::location;
 
-    template <typename element = float, core::size rank>
-    Array<element, rank> zeros(const core::size (&shape)[rank]) {
-        return Array<element, rank>(Shape<rank>{std::to_array(shape)});
+    template <typename element = float, core::size rank, location... place>
+    requires (sizeof...(place) <= 1)
+    Array<element, rank> zeros(const core::size (&shape)[rank], place&... where) {
+        return Array<element, rank>(where..., Shape<rank>{std::to_array(shape)});
     }
 
-    template <typename element = float, core::size rank>
-    Array<element, rank> zeros(const core::size (&shape)[rank], Device& device) {
-        return Array<element, rank>(device, Shape<rank>{std::to_array(shape)});
+    template <typename element = float, core::size rank, location... place>
+    requires (sizeof...(place) <= 1)
+    Array<element, rank> ones(const core::size (&shape)[rank], place&... where) {
+        return Array<element, rank>(where..., Shape<rank>{std::to_array(shape)}, element{1});
     }
 
-    template <typename element = float, core::size rank>
-    Array<element, rank> ones(const core::size (&shape)[rank]) {
-        return Array<element, rank>(Shape<rank>{std::to_array(shape)}, element{1});
-    }
-
-    template <typename element = float, core::size rank>
-    Array<element, rank> ones(const core::size (&shape)[rank], Device& device) {
-        return Array<element, rank>(device, Shape<rank>{std::to_array(shape)}, element{1});
-    }
-
-    template <typename element = float, core::size rank>
-    Array<element, rank> full(const core::size (&shape)[rank], const element value) {
-        return Array<element, rank>(Shape<rank>{std::to_array(shape)}, value);
-    }
-
-    template <typename element = float, core::size rank>
-    Array<element, rank> full(const core::size (&shape)[rank], const element value, Device& device) {
-        return Array<element, rank>(device, Shape<rank>{std::to_array(shape)}, value);
+    template <typename element = float, core::size rank, location... place>
+    requires (sizeof...(place) <= 1)
+    Array<element, rank> full(const core::size (&shape)[rank], const element value, place&... where) {
+        return Array<element, rank>(where..., Shape<rank>{std::to_array(shape)}, value);
     }
 
     // Contents are unspecified until written, which skips the zero-fill.
-    template <typename element = float, core::size rank>
-    Array<element, rank> empty(const core::size (&shape)[rank]) {
-        return Array<element, rank>(Shape<rank>{std::to_array(shape)}, array::Uninitialized{});
-    }
-
-    template <typename element = float, core::size rank>
-    Array<element, rank> empty(const core::size (&shape)[rank], Device& device) {
-        return Array<element, rank>(device, Shape<rank>{std::to_array(shape)}, array::Uninitialized{});
+    template <typename element = float, core::size rank, location... place>
+    requires (sizeof...(place) <= 1)
+    Array<element, rank> empty(const core::size (&shape)[rank], place&... where) {
+        return Array<element, rank>(where..., Shape<rank>{std::to_array(shape)}, array::Uninitialized{});
     }
 
     // start, start + step, ... up to (not including) stop.
