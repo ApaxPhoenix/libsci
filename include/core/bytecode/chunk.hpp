@@ -64,8 +64,12 @@ namespace sci::core {
             release(second);
             release(third);
 
-            const uint8 target = acquire();
-            if (target == slot::none) return fail();
+            // The lowest free temporary becomes the target.
+            if (~busy == 0) return fail();
+            const auto index = static_cast<uint8>(std::countr_one(busy));
+            busy |= uint64{1} << index;
+            temporaries = std::max<uint8>(temporaries, index + 1);
+            const uint8 target = slot::temporary | index;
 
             this->code[length++] = Instruction{.code = code, .target = target, .sources = {first, second, third}};
             return target;
@@ -173,14 +177,6 @@ namespace sci::core {
             if ((value & slot::kinds) == slot::temporary) {
                 busy &= ~(uint64{1} << (value & ~slot::kinds));
             }
-        }
-
-        uint8 acquire() noexcept {
-            if (~busy == 0) return slot::none;
-            const auto index = static_cast<uint8>(std::countr_one(busy));
-            busy |= uint64{1} << index;
-            temporaries = std::max<uint8>(temporaries, index + 1);
-            return slot::temporary | index;
         }
 
         uint8 fail() noexcept {
