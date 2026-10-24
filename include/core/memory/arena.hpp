@@ -5,6 +5,7 @@
 #include "core/memory/cursor.hpp"
 #include "core/types.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <utility>
@@ -21,11 +22,10 @@ namespace sci::core::memory {
         template <typename type>
         [[nodiscard]] type* allocate(const size count, const size bound = alignment::processor) {
             const size bytes = count * sizeof(type) + bound - 1 & ~(bound - 1);
-            const std::byte* end = static_cast<std::byte*>(active->allocation.data()) + active->allocation.capacity();
-            if (std::cmp_less(end - active->head.raw(), bytes)) {
-                const size scale = bytes > limit ? bytes : limit;
+            // Blocks kept from before a reset() can be too small for this piece; those are skipped.
+            while (std::cmp_less(static_cast<std::byte*>(active->allocation.data()) + active->allocation.capacity() - active->head.raw(), bytes)) {
                 if (!active->next) {
-                    active->next = std::make_unique<Block>(scale, bound);
+                    active->next = std::make_unique<Block>(std::max(bytes, limit), bound);
                 }
                 active = active->next.get();
             }
