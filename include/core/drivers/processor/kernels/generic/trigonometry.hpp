@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/drivers/processor/kernels/generic/constants.hpp"
-#include "core/drivers/processor/kernels/generic/library.hpp"
 #include "core/drivers/processor/kernels/generic/polynomial.hpp"
 #include "core/types.hpp"
 
@@ -11,42 +10,13 @@
 
 namespace sci::core::drivers::processor::kernels {
 
-    // The circular functions over a whole pack: sine and cosine through their own polynomials,
-    // tangent from both, and the inverses through the C library.
+    // Sine and cosine over a whole pack, each through its own polynomial. Tangent is their quotient
+    // and the inverses go through the C library (see Operation).
     template <typename pack>
     struct Trigonometry {
         using type = pack::element;
         using value = pack::value;
         using limit = Constants<type>;
-
-        static value sine(const value input) noexcept {
-            return evaluate<false>(input);
-        }
-
-        static value cosine(const value input) noexcept {
-            return evaluate<true>(input);
-        }
-
-        static value tangent(const value input) noexcept {
-            return pack::divide(sine(input), cosine(input));
-        }
-
-        static value arcsine(const value input) noexcept {
-            return Library<pack>::template apply<&::asinf, &::asin>(input);
-        }
-
-        static value arccosine(const value input) noexcept {
-            return Library<pack>::template apply<&::acosf, &::acos>(input);
-        }
-
-        static value arctangent(const value input) noexcept {
-            return Library<pack>::template apply<&::atanf, &::atan>(input);
-        }
-
-    private:
-        // Taylor series of sine (odd powers) and cosine (even powers), in powers of r^2.
-        static constexpr auto odd = Polynomial<type, limit::sine + 1>::template alternating<1>();
-        static constexpr auto even = Polynomial<type, limit::cosine + 1>::template alternating<0>();
 
         // `phase` false gives the sine, true the cosine (the sine a quarter turn later).
         template <bool phase>
@@ -95,6 +65,11 @@ namespace sci::core::drivers::processor::kernels {
             }
             return result;
         }
+
+    private:
+        // Taylor series of sine (odd powers) and cosine (even powers), in powers of r^2.
+        static constexpr auto odd = Polynomial<type, limit::sine + 1>::template alternating<1>();
+        static constexpr auto even = Polynomial<type, limit::cosine + 1>::template alternating<0>();
     };
 
 }
