@@ -4,6 +4,7 @@
 
 namespace sci::core::memory {
 
+    // A position in memory that only moves forward: where an arena block hands out its next piece.
     template <typename type>
     class Cursor {
     public:
@@ -14,14 +15,6 @@ namespace sci::core::memory {
 
         constexpr void advance(size offset) noexcept {
             pointer += offset;
-        }
-
-        [[nodiscard]] constexpr type& get() noexcept {
-            return *pointer;
-        }
-
-        [[nodiscard]] constexpr const type& get() const noexcept {
-            return *pointer;
         }
 
         [[nodiscard]] constexpr type* raw() noexcept {
