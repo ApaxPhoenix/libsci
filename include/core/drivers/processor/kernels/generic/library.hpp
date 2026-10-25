@@ -5,7 +5,7 @@
 namespace sci::core::drivers::processor::kernels {
 
     // Runs a C library function on every lane of a pack, the float or the double version to match
-    // the pack: the functions with no polynomial of their own (see Trigonometry and Hyperbolic).
+    // the pack: the functions with no polynomial of their own (see Operation).
     template <typename pack>
     struct Library {
         using type = pack::element;
