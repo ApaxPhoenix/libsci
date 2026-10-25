@@ -217,14 +217,14 @@ namespace sci::core::drivers::processor {
     }
 
     Dispatch::Dispatch(const Context context) noexcept {
-        if (context.avx512) table = kernels::avx512();
-        if (!table && context.avx2) table = kernels::avx2();
-        if (!table && context.neon) table = kernels::neon();
-        if (!table) table = kernels::fallback();
+        if (context.avx512) table = kernels::avx512;
+        if (!table && context.avx2) table = kernels::avx2;
+        if (!table && context.neon) table = kernels::neon;
+        if (!table) table = kernels::fallback;
     }
 
     Dispatch::Dispatch(const kernels::Table* table) noexcept
-        : table(table ? table : kernels::fallback()) {}
+        : table(table ? table : kernels::fallback) {}
 
     const Dispatch& Dispatch::global() noexcept {
         static const Dispatch instance = [] {
@@ -239,10 +239,10 @@ namespace sci::core::drivers::processor {
     const kernels::Table* Dispatch::select(const char* name) noexcept {
         if (!name) return nullptr;
         const Context context = Context::probe();
-        if (std::strcmp(name, "fallback") == 0) return kernels::fallback();
-        if (std::strcmp(name, "neon") == 0 && context.neon) return kernels::neon();
-        if (std::strcmp(name, "avx2") == 0 && context.avx2) return kernels::avx2();
-        if (std::strcmp(name, "avx512") == 0 && context.avx512) return kernels::avx512();
+        if (std::strcmp(name, "fallback") == 0) return kernels::fallback;
+        if (std::strcmp(name, "neon") == 0 && context.neon) return kernels::neon;
+        if (std::strcmp(name, "avx2") == 0 && context.avx2) return kernels::avx2;
+        if (std::strcmp(name, "avx512") == 0 && context.avx512) return kernels::avx512;
         return nullptr;
     }
 
