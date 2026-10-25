@@ -128,9 +128,7 @@ namespace sci::core::drivers::processor::kernels {
 
     constexpr Table table = compose<Neon>("neon");
 
-    const Table* neon() noexcept {
-        return &table;
-    }
+    const Table* const neon = &table;
 
 }
 
@@ -140,9 +138,7 @@ namespace sci::core::drivers::processor::kernels {
 
 namespace sci::core::drivers::processor::kernels {
 
-    const Table* neon() noexcept {
-        return nullptr;
-    }
+    const Table* const neon = nullptr;
 
 }
 

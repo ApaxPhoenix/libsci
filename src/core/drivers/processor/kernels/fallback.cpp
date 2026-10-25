@@ -17,8 +17,6 @@ namespace sci::core::drivers::processor::kernels {
 
     constexpr Table table = compose<Fallback>("fallback");
 
-    const Table* fallback() noexcept {
-        return &table;
-    }
+    const Table* const fallback = &table;
 
 }

@@ -41,8 +41,8 @@ namespace sci::core::drivers::processor {
 
     size Compiler::width(const kernels::Table& table, const Precision precision) noexcept {
         const size bytes = precision == Precision::single ? sizeof(float) : sizeof(double);
-        if (&table == kernels::neon()) return 16 / bytes;
-        if (&table == kernels::avx2()) return 32 / bytes;
+        if (&table == kernels::neon) return 16 / bytes;
+        if (&table == kernels::avx2) return 32 / bytes;
         return 0;
     }
 
@@ -81,7 +81,7 @@ namespace sci::core::drivers::processor {
         if (!runtime) runtime.emplace();
         asmjit::CodeHolder code;
         if (code.init(runtime->environment(), runtime->cpu_features()) != asmjit::Error::kOk) return nullptr;
-        const bool emitted = &table == kernels::neon() ? compiler::neon(code, chunk) : compiler::avx2(code, chunk);
+        const bool emitted = &table == kernels::neon ? compiler::neon(code, chunk) : compiler::avx2(code, chunk);
         if (!emitted) return nullptr;
         Function function = nullptr;
         if (runtime->add(&function, &code) != asmjit::Error::kOk) return nullptr;

@@ -151,9 +151,7 @@ namespace sci::core::drivers::processor::kernels {
 
     constexpr Table table = compose<Avx2>("avx2");
 
-    const Table* avx2() noexcept {
-        return &table;
-    }
+    const Table* const avx2 = &table;
 
 }
 
@@ -163,9 +161,7 @@ namespace sci::core::drivers::processor::kernels {
 
 namespace sci::core::drivers::processor::kernels {
 
-    const Table* avx2() noexcept {
-        return nullptr;
-    }
+    const Table* const avx2 = nullptr;
 
 }
 
