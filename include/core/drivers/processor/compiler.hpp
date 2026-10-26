@@ -42,8 +42,6 @@ namespace sci::core::drivers::processor {
     private:
         Compiler();
 
-        [[nodiscard]] Function build(const Chunk& chunk, const kernels::Table& table);
-
         // Created with the first compile: setting it up detects the CPU and reserves executable
         // memory, which small array operations should never pay for.
         std::optional<asmjit::JitRuntime> runtime;
