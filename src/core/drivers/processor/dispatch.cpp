@@ -216,38 +216,25 @@ namespace sci::core::drivers::processor {
         }
     }
 
-    Dispatch::Dispatch(const Context context) noexcept {
-        if (context.avx512) table = kernels::avx512;
-        if (!table && context.avx2) table = kernels::avx2;
-        if (!table && context.neon) table = kernels::neon;
-        if (!table) table = kernels::fallback;
-    }
-
     Dispatch::Dispatch(const kernels::Table* table) noexcept
         : table(table ? table : kernels::fallback) {}
 
     const Dispatch& Dispatch::global() noexcept {
         static const Dispatch instance = [] {
+            const Context context = Context::probe();
+            const kernels::Table* table = nullptr;
             if (const char* name = std::getenv("SCI_ISA")) {
-                if (const kernels::Table* chosen = select(name)) return Dispatch(chosen);
+                if (std::strcmp(name, "fallback") == 0) table = kernels::fallback;
+                if (std::strcmp(name, "neon") == 0 && context.neon) table = kernels::neon;
+                if (std::strcmp(name, "avx2") == 0 && context.avx2) table = kernels::avx2;
+                if (std::strcmp(name, "avx512") == 0 && context.avx512) table = kernels::avx512;
             }
-            return Dispatch(Context::probe());
+            if (!table && context.avx512) table = kernels::avx512;
+            if (!table && context.avx2) table = kernels::avx2;
+            if (!table && context.neon) table = kernels::neon;
+            return Dispatch(table);
         }();
         return instance;
-    }
-
-    const kernels::Table* Dispatch::select(const char* name) noexcept {
-        if (!name) return nullptr;
-        const Context context = Context::probe();
-        if (std::strcmp(name, "fallback") == 0) return kernels::fallback;
-        if (std::strcmp(name, "neon") == 0 && context.neon) return kernels::neon;
-        if (std::strcmp(name, "avx2") == 0 && context.avx2) return kernels::avx2;
-        if (std::strcmp(name, "avx512") == 0 && context.avx512) return kernels::avx512;
-        return nullptr;
-    }
-
-    const char* Dispatch::name() const noexcept {
-        return table->name;
     }
 
     void Dispatch::execute(const Chunk& chunk, void* output, const size count) const {
