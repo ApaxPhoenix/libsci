@@ -178,12 +178,6 @@ namespace sci::core::drivers {
         }
     }
 
-    bool Device::ready() const noexcept {
-        if (!graphics) return true;
-        std::scoped_lock lock(graphics->guard);
-        return graphics->stream.ready();
-    }
-
     void Device::allocate(const size bytes, Memory& memory) {
         memory.bytes = bytes;
         memory.target = kind;
