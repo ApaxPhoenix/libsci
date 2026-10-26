@@ -42,9 +42,6 @@ namespace sci::core::drivers::vulkan {
         // Hands a buffer back to the allocator once the GPU can no longer be using it.
         void retire(const Buffer& buffer);
 
-        // True when nothing is recorded or running.
-        [[nodiscard]] bool ready() const noexcept;
-
     private:
         static constexpr size depth = 4;
 

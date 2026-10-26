@@ -37,9 +37,6 @@ namespace sci::core::drivers {
         // Blocks until all queued GPU work has finished. Cheap when nothing is queued.
         void synchronize() noexcept;
 
-        // True when no GPU work is queued or running.
-        [[nodiscard]] bool ready() const noexcept;
-
         // Engine entry points, used by Array and the ops; GPU work falls back to the CPU (after a
         // synchronize) when the GPU cannot run it: float64, or arrays that live elsewhere.
         void allocate(size bytes, Memory& memory);

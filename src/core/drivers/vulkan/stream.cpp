@@ -8,7 +8,6 @@
 #include "core/drivers/vulkan/region.hpp"
 #include "core/types.hpp"
 
-#include <algorithm>
 #include <cstdint>
 
 namespace sci::core::drivers::vulkan {
@@ -136,14 +135,6 @@ namespace sci::core::drivers::vulkan {
         } else {
             allocator.release(buffer);
         }
-    }
-
-    bool Stream::ready() const noexcept {
-        return std::ranges::all_of(batches, [this](const Batch& batch) {
-            const bool queued = batch.open && batch.recorded > 0;
-            const bool running = batch.pending && vkGetFenceStatus(context.device, batch.fence) != VK_SUCCESS;
-            return !queued && !running;
-        });
     }
 
     void Stream::begin() {
