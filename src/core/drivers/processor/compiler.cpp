@@ -67,24 +67,20 @@ namespace sci::core::drivers::processor {
         if (functions.size() >= limit) return nullptr;
         if (++sightings[key] < 2 && count * chunk.cost() < worth) return nullptr;
 
-        const Function function = build(chunk, table);
+        if (!runtime) runtime.emplace();
+        Function function = nullptr;
+        asmjit::CodeHolder code;
+        if (code.init(runtime->environment(), runtime->cpu_features()) == asmjit::Error::kOk &&
+            (&table == kernels::neon ? compiler::neon(code, chunk) : compiler::avx2(code, chunk)) &&
+            runtime->add(&function, &code) != asmjit::Error::kOk) {
+            function = nullptr;
+        }
         sightings.erase(key);
         functions.emplace(std::move(key), function);
         if (tracing) {
             std::println(stderr, "[sci] jit: {} {} instructions for {} ({})", function ? "compiled" : "could not compile",
                          chunk.length, table.name, chunk.precision == Precision::single ? "float32" : "float64");
         }
-        return function;
-    }
-
-    Compiler::Function Compiler::build(const Chunk& chunk, const kernels::Table& table) {
-        if (!runtime) runtime.emplace();
-        asmjit::CodeHolder code;
-        if (code.init(runtime->environment(), runtime->cpu_features()) != asmjit::Error::kOk) return nullptr;
-        const bool emitted = &table == kernels::neon ? compiler::neon(code, chunk) : compiler::avx2(code, chunk);
-        if (!emitted) return nullptr;
-        Function function = nullptr;
-        if (runtime->add(&function, &code) != asmjit::Error::kOk) return nullptr;
         return function;
     }
 
