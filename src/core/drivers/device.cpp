@@ -108,10 +108,6 @@ namespace sci::core::drivers {
               compiler(context, sizeof(Evaluation)),
               stream(context, allocator) {}
 
-        [[nodiscard]] bool valid() const noexcept {
-            return evaluate.valid() && reduce.valid() && product.valid();
-        }
-
         // Translates a chunk for interpreter.slang and the JIT's kernels, which read the same block.
         // False when the GPU cannot run it: float64, more temporaries than the interpreter has
         // registers (unless the chunk is `compiled`), or an array that does not live on this device.
@@ -156,7 +152,7 @@ namespace sci::core::drivers {
 
         if (vulkan::Context context = vulkan::Context::compose(ordinal); context.valid()) {
             graphics = std::make_unique<Graphics>(std::move(context));
-            if (!graphics->valid()) graphics.reset();
+            if (!graphics->evaluate.valid() || !graphics->reduce.valid() || !graphics->product.valid()) graphics.reset();
         }
 
         if (!graphics) {
