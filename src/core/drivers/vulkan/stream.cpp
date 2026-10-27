@@ -81,8 +81,8 @@ namespace sci::core::drivers::vulkan {
 
         // Each dispatch may read anything an earlier dispatch (in this or a previous batch) wrote.
         batch.barrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-        vkCmdBindPipeline(batch.commands, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.native());
-        vkCmdPushConstants(batch.commands, pipeline.schema(), VK_SHADER_STAGE_COMPUTE_BIT, 0, pipeline.constants(), constants);
+        vkCmdBindPipeline(batch.commands, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.handle);
+        vkCmdPushConstants(batch.commands, pipeline.layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, pipeline.bytes, constants);
         vkCmdDispatch(batch.commands, columns, rows, layers);
         batch.work += work;
         if (++batch.recorded >= batching || batch.work >= budget) flush();
