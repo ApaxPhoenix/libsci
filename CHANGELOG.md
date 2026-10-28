@@ -90,6 +90,16 @@ version in `CMakeLists.txt` is 0.1.0.
   `entries.slang`), which the GPU JIT's shaders reuse; `cmake/sources.cmake` embeds them as text.
 - asmjit is fetched at a pinned commit and checked against its SHA-256; Slang's runtime library is
   now linked.
+- Fewer functions, with the same results to the bit. `Array` gets `size`, `sum`, `mean`,
+  `minimum`, `maximum` and `copy` from `Methods`, as expressions do. Its constructors and `to()`
+  take a Device or an Arena through one template each. `zeros`, `ones`, `full` and `empty` take an
+  optional Device or Arena in one function each. `linear::solve` is one function for vector and
+  matrix right-hand sides, and `Reference` also covers what `Owner` did. The 24 `Operation`
+  specializations are one template, which calls the C library for the functions `Hyperbolic` and
+  `Trigonometry` used to forward. The kernel tables are constants instead of functions, and
+  `Dispatch` has one constructor.
+- `Arena` frees its chain of blocks through `std::unique_ptr`, so it needs no destructor or move
+  operations of its own.
 
 ### Removed
 
@@ -98,6 +108,10 @@ version in `CMakeLists.txt` is 0.1.0.
 - Unused code: `memory::Slice`, `Cursor::jump`, `Arena::acquire`, `operations::broadcast`,
   `core/arch/traits.hpp`, the unused `arch::gpu` and `arch::atom` alignments, and the packs'
   `fnma` (callers use `fuse(negate(a), b, c)`, which rounds the same).
+- Unused functions: `Array::empty()`, `Array::target()`, `Device::ready()`, `Stream::ready()`,
+  `Dispatch::name()`, `Cursor::get()` and the writable `Shape::operator[]`. `operator!=` on arrays
+  is gone too, since C++20 derives it from `==`, and `Pipeline`'s getters, since its fields are
+  public.
 
 ### Fixed
 
@@ -109,6 +123,8 @@ version in `CMakeLists.txt` is 0.1.0.
   and a flag in `Node::shape()` that looked unused.
 - A GPU device destroyed its pipelines before waiting for queued GPU work that might still use
   them; the command stream now finishes first.
+- `Arena::allocate` could hand out memory past the end of a block kept from before `reset()` when
+  a later piece was larger than that block. It now skips blocks that are too small.
 
 ### Performance
 
