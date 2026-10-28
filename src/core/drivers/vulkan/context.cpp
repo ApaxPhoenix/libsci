@@ -162,7 +162,11 @@ namespace sci::core::drivers::vulkan {
     }
 
     Context::~Context() {
-        release();
+        if (device) {
+            vkDeviceWaitIdle(device);
+            vkDestroyDevice(device, nullptr);
+        }
+        if (instance) vkDestroyInstance(instance, nullptr);
     }
 
     Context::Context(Context&& context) noexcept
@@ -174,32 +178,5 @@ namespace sci::core::drivers::vulkan {
           index(context.index),
           properties(context.properties),
           preserving(context.preserving) {}
-
-    Context& Context::operator=(Context&& context) noexcept {
-        if (this != &context) {
-            release();
-            instance = std::exchange(context.instance, VK_NULL_HANDLE);
-            physical = std::exchange(context.physical, VK_NULL_HANDLE);
-            device = std::exchange(context.device, VK_NULL_HANDLE);
-            queue = std::exchange(context.queue, VK_NULL_HANDLE);
-            family = context.family;
-            index = context.index;
-            properties = context.properties;
-            preserving = context.preserving;
-        }
-        return *this;
-    }
-
-    void Context::release() noexcept {
-        if (device) {
-            vkDeviceWaitIdle(device);
-            vkDestroyDevice(device, nullptr);
-            device = VK_NULL_HANDLE;
-        }
-        if (instance) {
-            vkDestroyInstance(instance, nullptr);
-            instance = VK_NULL_HANDLE;
-        }
-    }
 
 }
