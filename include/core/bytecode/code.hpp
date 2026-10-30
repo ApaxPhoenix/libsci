@@ -19,8 +19,8 @@ namespace sci::core {
         arcsine,
         arccosine,
         arctangent,
-        // 12 to 17 are the hyperbolic functions, below.
-        add = 18,
+        // 12 to 23 are the hyperbolic functions, below.
+        add = 24,
         subtract,
         multiply,
         divide,
@@ -39,6 +39,12 @@ namespace sci::core {
         inline constexpr Code arcsine{15};
         inline constexpr Code arccosine{16};
         inline constexpr Code arctangent{17};
+        inline constexpr Code cosecant{18};
+        inline constexpr Code secant{19};
+        inline constexpr Code cotangent{20};
+        inline constexpr Code arccosecant{21};
+        inline constexpr Code arcsecant{22};
+        inline constexpr Code arccotangent{23};
     }
 
 }

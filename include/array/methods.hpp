@@ -10,7 +10,7 @@ namespace sci::array {
 
     // Defined in expression.hpp.
     template <typename source>
-    typename source::element reduce(const source& input, core::Fold fold);
+    source::element reduce(const source& input, core::Fold fold);
 
     // Array-like members shared by Array and every expression node.
     template <typename derived>
@@ -25,7 +25,7 @@ namespace sci::array {
             return size() == 0 ? element{} : sum() / static_cast<element>(size());
         }
 
-        // A new array holding the values (numpy.copy), on the device they live on.
+        // A new array holding the values (numpy.copy) on the device they live on.
         [[nodiscard]] auto copy() const { return Array<typename derived::element, derived::rank>(capture(self())); }
 
     private:

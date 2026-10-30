@@ -97,6 +97,35 @@ namespace sci::operations {
             return array::apply<core::hyperbolic::arctangent>(std::forward<source>(input));
         }
 
+        template <operand source>
+        auto cosecant(source&& input) {
+            return array::apply<core::hyperbolic::cosecant>(std::forward<source>(input));
+        }
+
+        template <operand source>
+        auto secant(source&& input) {
+            return array::apply<core::hyperbolic::secant>(std::forward<source>(input));
+        }
+
+        template <operand source>
+        auto cotangent(source&& input) {
+            return array::apply<core::hyperbolic::cotangent>(std::forward<source>(input));
+        }
+
+        template <operand source>
+        auto arccosecant(source&& input) {
+            return array::apply<core::hyperbolic::arccosecant>(std::forward<source>(input));
+        }
+
+        template <operand source>
+        auto arcsecant(source&& input) {
+            return array::apply<core::hyperbolic::arcsecant>(std::forward<source>(input));
+        }
+
+        template <operand source>
+        auto arccotangent(source&& input) {
+            return array::apply<core::hyperbolic::arccotangent>(std::forward<source>(input));
+        }
     }
 
 }

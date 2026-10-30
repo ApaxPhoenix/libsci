@@ -56,8 +56,7 @@ namespace sci::core::drivers::processor {
         // hyperbolic::arctangent) run best as kernel loops over whole blocks: a call per register
         // costs more than the temporaries it saves, so chunks that use them stay on the kernels.
         for (uint8 index = 0; index < chunk.length; ++index) {
-            const Code code = chunk.code[index].code;
-            if (code >= Code::exponential && code <= hyperbolic::arctangent) return nullptr;
+            if (const Code code = chunk.code[index].code; code >= Code::exponential && code <= hyperbolic::arctangent) return nullptr;
         }
 
         std::string key = chunk.signature();

@@ -46,7 +46,7 @@ namespace sci::core::drivers::processor::kernels {
 
         // sum c[k] x^(k - from) for k in [from, count), by Horner's rule.
         template <typename pack, size from>
-        pack::value evaluate(const typename pack::value input) const noexcept {
+        pack::value evaluate(const pack::value input) const noexcept {
             typename pack::value result = pack::splat(coefficients[count - 1]);
             for (size index = count - 1; index-- > from;) {
                 result = pack::fuse(result, input, pack::splat(coefficients[index]));

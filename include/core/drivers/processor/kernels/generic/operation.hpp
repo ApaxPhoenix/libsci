@@ -30,14 +30,29 @@ namespace sci::core::drivers::processor::kernels {
             else if constexpr (code == Code::tangent) {
                 return pack::divide(Trigonometry<pack>::template evaluate<false>(item), Trigonometry<pack>::template evaluate<true>(item));
             }
-            else if constexpr (code == Code::arcsine) return Library<pack>::template apply<&::asinf, &::asin>(item);
-            else if constexpr (code == Code::arccosine) return Library<pack>::template apply<&::acosf, &::acos>(item);
-            else if constexpr (code == Code::arctangent) return Library<pack>::template apply<&::atanf, &::atan>(item);
-            else if constexpr (code == hyperbolic::sine) return Library<pack>::template apply<&::sinhf, &::sinh>(item);
-            else if constexpr (code == hyperbolic::cosine) return Library<pack>::template apply<&::coshf, &::cosh>(item);
-            else if constexpr (code == hyperbolic::tangent) return Library<pack>::template apply<&::tanhf, &::tanh>(item);
-            else if constexpr (code == hyperbolic::arcsine) return Library<pack>::template apply<&::asinhf, &::asinh>(item);
-            else if constexpr (code == hyperbolic::arccosine) return Library<pack>::template apply<&::acoshf, &::acosh>(item);
+            else if constexpr (code == Code::arcsine) return Library<pack>::template apply<&asinf, &::asin>(item);
+            else if constexpr (code == Code::arccosine) return Library<pack>::template apply<&acosf, &::acos>(item);
+            else if constexpr (code == Code::arctangent) return Library<pack>::template apply<&atanf, &::atan>(item);
+            else if constexpr (code == hyperbolic::sine) return Library<pack>::template apply<&sinhf, &::sinh>(item);
+            else if constexpr (code == hyperbolic::cosine) return Library<pack>::template apply<&coshf, &::cosh>(item);
+            else if constexpr (code == hyperbolic::tangent) return Library<pack>::template apply<&tanhf, &::tanh>(item);
+            else if constexpr (code == hyperbolic::arcsine) return Library<pack>::template apply<&asinhf, &::asinh>(item);
+            else if constexpr (code == hyperbolic::arccosine) return Library<pack>::template apply<&acoshf, &::acosh>(item);
+            else if constexpr (code == hyperbolic::cosecant) {
+                return pack::divide(pack::splat(typename pack::element(1)), Operation<hyperbolic::sine>::apply<pack>(item));
+            }
+            else if constexpr (code == hyperbolic::secant) {
+                return pack::divide(pack::splat(typename pack::element(1)), Operation<hyperbolic::cosine>::apply<pack>(item));
+            }
+            else if constexpr (code == hyperbolic::cotangent) {
+                return pack::divide(pack::splat(typename pack::element(1)), Operation<hyperbolic::tangent>::apply<pack>(item));
+            }
+            else if constexpr (code == hyperbolic::arccosecant) {
+                return Operation<hyperbolic::arcsine>::apply<pack>(pack::divide(pack::splat(typename pack::element(1)), item));
+            }
+            else if constexpr (code == hyperbolic::arcsecant) {
+                return Operation<hyperbolic::arccosine>::apply<pack>(pack::divide(pack::splat(typename pack::element(1)), item));
+            }
             else {
                 static_assert(code == hyperbolic::arctangent, "every one-operand code needs a case here");
                 return Library<pack>::template apply<&::atanhf, &::atanh>(item);
