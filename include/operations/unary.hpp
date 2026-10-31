@@ -10,7 +10,7 @@ namespace sci::operations {
     using array::operand;
 
     template <operand source>
-    auto negative(source&& input) {
+    auto negate(source&& input) {
         return array::apply<core::Code::negate>(std::forward<source>(input));
     }
 
@@ -35,97 +35,124 @@ namespace sci::operations {
     }
 
     template <operand source>
-    auto sine(source&& input) {
-        return array::apply<core::Code::sine>(std::forward<source>(input));
+    auto sin(source&& input) {
+        return array::apply<core::Code::sin>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto cosine(source&& input) {
-        return array::apply<core::Code::cosine>(std::forward<source>(input));
+    auto cos(source&& input) {
+        return array::apply<core::Code::cos>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto tangent(source&& input) {
-        return array::apply<core::Code::tangent>(std::forward<source>(input));
+    auto tan(source&& input) {
+        return array::apply<core::Code::tan>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto arcsine(source&& input) {
-        return array::apply<core::Code::arcsine>(std::forward<source>(input));
+    auto asin(source&& input) {
+        return array::apply<core::Code::asin>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto arccosine(source&& input) {
-        return array::apply<core::Code::arccosine>(std::forward<source>(input));
+    auto acos(source&& input) {
+        return array::apply<core::Code::acos>(std::forward<source>(input));
     }
 
     template <operand source>
-    auto arctangent(source&& input) {
-        return array::apply<core::Code::arctangent>(std::forward<source>(input));
+    auto atan(source&& input) {
+        return array::apply<core::Code::atan>(std::forward<source>(input));
     }
 
-    // sinh, cosh, tanh and their inverses: sci::hyperbolic::sine and so on.
-    namespace hyperbolic {
+    template <operand source>
+    auto csc(source&& input) {
+        return array::apply<core::Code::csc>(std::forward<source>(input));
+    }
 
-        template <operand source>
-        auto sine(source&& input) {
-            return array::apply<core::hyperbolic::sine>(std::forward<source>(input));
-        }
+    template <operand source>
+    auto sec(source&& input) {
+        return array::apply<core::Code::sec>(std::forward<source>(input));
+    }
 
-        template <operand source>
-        auto cosine(source&& input) {
-            return array::apply<core::hyperbolic::cosine>(std::forward<source>(input));
-        }
+    template <operand source>
+    auto cot(source&& input) {
+        return array::apply<core::Code::cot>(std::forward<source>(input));
+    }
 
-        template <operand source>
-        auto tangent(source&& input) {
-            return array::apply<core::hyperbolic::tangent>(std::forward<source>(input));
-        }
+    template <operand source>
+    auto acsc(source&& input) {
+        return array::apply<core::Code::acsc>(std::forward<source>(input));
+    }
 
-        template <operand source>
-        auto arcsine(source&& input) {
-            return array::apply<core::hyperbolic::arcsine>(std::forward<source>(input));
-        }
+    template <operand source>
+    auto asec(source&& input) {
+        return array::apply<core::Code::asec>(std::forward<source>(input));
+    }
 
-        template <operand source>
-        auto arccosine(source&& input) {
-            return array::apply<core::hyperbolic::arccosine>(std::forward<source>(input));
-        }
+    template <operand source>
+    auto acot(source&& input) {
+        return array::apply<core::Code::acot>(std::forward<source>(input));
+    }
 
-        template <operand source>
-        auto arctangent(source&& input) {
-            return array::apply<core::hyperbolic::arctangent>(std::forward<source>(input));
-        }
+    // sinh, cosh, tanh and their inverses, with the h suffix from C.
+    template <operand source>
+    auto sinh(source&& input) {
+        return array::apply<core::Code::sinh>(std::forward<source>(input));
+    }
 
-        template <operand source>
-        auto cosecant(source&& input) {
-            return array::apply<core::hyperbolic::cosecant>(std::forward<source>(input));
-        }
+    template <operand source>
+    auto cosh(source&& input) {
+        return array::apply<core::Code::cosh>(std::forward<source>(input));
+    }
 
-        template <operand source>
-        auto secant(source&& input) {
-            return array::apply<core::hyperbolic::secant>(std::forward<source>(input));
-        }
+    template <operand source>
+    auto tanh(source&& input) {
+        return array::apply<core::Code::tanh>(std::forward<source>(input));
+    }
 
-        template <operand source>
-        auto cotangent(source&& input) {
-            return array::apply<core::hyperbolic::cotangent>(std::forward<source>(input));
-        }
+    template <operand source>
+    auto asinh(source&& input) {
+        return array::apply<core::Code::asinh>(std::forward<source>(input));
+    }
 
-        template <operand source>
-        auto arccosecant(source&& input) {
-            return array::apply<core::hyperbolic::arccosecant>(std::forward<source>(input));
-        }
+    template <operand source>
+    auto acosh(source&& input) {
+        return array::apply<core::Code::acosh>(std::forward<source>(input));
+    }
 
-        template <operand source>
-        auto arcsecant(source&& input) {
-            return array::apply<core::hyperbolic::arcsecant>(std::forward<source>(input));
-        }
+    template <operand source>
+    auto atanh(source&& input) {
+        return array::apply<core::Code::atanh>(std::forward<source>(input));
+    }
 
-        template <operand source>
-        auto arccotangent(source&& input) {
-            return array::apply<core::hyperbolic::arccotangent>(std::forward<source>(input));
-        }
+    template <operand source>
+    auto csch(source&& input) {
+        return array::apply<core::Code::csch>(std::forward<source>(input));
+    }
+
+    template <operand source>
+    auto sech(source&& input) {
+        return array::apply<core::Code::sech>(std::forward<source>(input));
+    }
+
+    template <operand source>
+    auto coth(source&& input) {
+        return array::apply<core::Code::coth>(std::forward<source>(input));
+    }
+
+    template <operand source>
+    auto acsch(source&& input) {
+        return array::apply<core::Code::acsch>(std::forward<source>(input));
+    }
+
+    template <operand source>
+    auto asech(source&& input) {
+        return array::apply<core::Code::asech>(std::forward<source>(input));
+    }
+
+    template <operand source>
+    auto acoth(source&& input) {
+        return array::apply<core::Code::acoth>(std::forward<source>(input));
     }
 
 }

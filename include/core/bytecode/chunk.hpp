@@ -105,14 +105,13 @@ namespace sci::core {
         [[nodiscard]] uint32 cost() const noexcept {
             uint32 total = arguments + 1;
             for (uint8 index = 0; index < length; ++index) {
-                const Code operation = code[index].code;
-                if (operation == Code::divide || operation == Code::root) {
+                if (const Code operation = code[index].code; operation == Code::divide || operation == Code::root) {
                     total += 4;
                 } else if (operation == Code::exponential || operation == Code::logarithm) {
                     total += 12;
-                } else if (operation >= Code::sine && operation <= Code::tangent) {
+                } else if (operation >= Code::sin && operation <= Code::tan) {
                     total += 16;
-                } else if (operation >= Code::arcsine && operation <= hyperbolic::arctangent) {
+                } else if (operation >= Code::asin && operation <= Code::acoth) {
                     total += 24;
                 } else {
                     total += 1;
