@@ -48,6 +48,11 @@ namespace sci::core::drivers::processor::kernels {
         routines.kernels[static_cast<size>(hyperbolic::arcsine)] = &unary<pack, Operation<hyperbolic::arcsine>>;
         routines.kernels[static_cast<size>(hyperbolic::arccosine)] = &unary<pack, Operation<hyperbolic::arccosine>>;
         routines.kernels[static_cast<size>(hyperbolic::arctangent)] = &unary<pack, Operation<hyperbolic::arctangent>>;
+        routines.kernels[static_cast<size>(hyperbolic::cosecant)] = &unary<pack, Operation<hyperbolic::cosecant>>;
+        routines.kernels[static_cast<size>(hyperbolic::secant)] = &unary<pack, Operation<hyperbolic::secant>>;
+        routines.kernels[static_cast<size>(hyperbolic::cotangent)] = &unary<pack, Operation<hyperbolic::cotangent>>;
+        routines.kernels[static_cast<size>(hyperbolic::arccosecant)] = &unary<pack, Operation<hyperbolic::arccosecant>>;
+        routines.kernels[static_cast<size>(hyperbolic::arcsecant)] = &unary<pack, Operation<hyperbolic::arcsecant>>;
         routines.kernels[static_cast<size>(Code::add)] = &binary<pack, Operation<Code::add>>;
         routines.kernels[static_cast<size>(Code::subtract)] = &binary<pack, Operation<Code::subtract>>;
         routines.kernels[static_cast<size>(Code::multiply)] = &binary<pack, Operation<Code::multiply>>;

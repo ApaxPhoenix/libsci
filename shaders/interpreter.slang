@@ -25,16 +25,16 @@ float4 fetch(Chunk* chunk, uint identifier, uint4 index, inout float4 registers[
 
 float4 apply(uint code, float4 first, float4 second, float4 third) {
     switch (code) {
-        case 0: return first;
-        case 1: return -first;
-        case 2: return abs(first);
-        case 3: return sqrt(first);
-        case 4: return exp(first);
-        case 5: return log(first);
-        case 6: return sin(first);
-        case 7: return cos(first);
-        case 8: return tan(first);
-        case 9: return asin(first);
+        case 0:  return first;
+        case 1:  return -first;
+        case 2:  return abs(first);
+        case 3:  return sqrt(first);
+        case 4:  return exp(first);
+        case 5:  return log(first);
+        case 6:  return sin(first);
+        case 7:  return cos(first);
+        case 8:  return tan(first);
+        case 9:  return asin(first);
         case 10: return acos(first);
         case 11: return atan(first);
         case 12: return sinh(first);
@@ -43,16 +43,21 @@ float4 apply(uint code, float4 first, float4 second, float4 third) {
         case 15: return asinh(first);
         case 16: return acosh(first);
         case 17: return atanh(first);
-        case 18: return first + second;
-        case 19: return first - second;
-        case 20: return first * second;
-        case 21: return first / second;
-        case 22: return lesser(first, second);
-        case 23: return greater(first, second);
+        case 18: return 1.0 / sinh(first);
+        case 19: return 1.0 / cosh(first);
+        case 20: return 1.0 / tanh(first);
+        case 21: return asinh(1.0 / first);
+        case 22: return acosh(1.0 / first);
+        case 23: return atanh(1.0 / first);
+        case 24: return first + second;
+        case 25: return first - second;
+        case 26: return first * second;
+        case 27: return first / second;
+        case 28: return lesser(first, second);
+        case 29: return greater(first, second);
         default: return fma(first, second, third);
     }
 }
-
 // Runs every instruction for four elements and returns the chunk's result.
 float4 run(Chunk* chunk, uint4 index, bool4 live) {
     float4 registers[16];
