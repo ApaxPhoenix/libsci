@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cstddef>
 #include <iomanip>
 #include <iostream>
 #include <ratio>
@@ -15,12 +14,12 @@ int main() {
 
     const sci::Array<float, 1> ramp = sci::range(0.0f, 1.0f, 1.0f / static_cast<float>(elements));
 
-    const sci::Array<float, 1> alpha = ramp * 3.0f + 1.0f;
-    const sci::Array<float, 1> beta = ramp * 3.0f + 5.0f;
-    const sci::Array<float, 1> gamma = ramp * 2.0f + -1.0f;
-    const sci::Array<float, 1> delta = ramp * 0.75f + 0.25f; // Valid domain for asech: (0, 1]
-    const sci::Array<float, 1> epsilon = ramp * 1.5f + 1.5f; // Valid domain for acoth: |x| > 1
-    const sci::Array<float, 1> zeta = ramp * 1.25f + -0.5f;
+    const sci::Array<float, 1> alpha   = sci::linspace(3.0f, 4.0f, elements);
+    const sci::Array<float, 1> beta    = sci::linspace(3.0f, 8.0f, elements);
+    const sci::Array<float, 1> gamma   = sci::linspace(2.0f, 1.0f, elements);
+    const sci::Array<float, 1> delta   = sci::linspace(0.75f, 1.0f, elements); // Valid domain for asech: (0, 1]
+    const sci::Array<float, 1> epsilon = sci::linspace(1.5f, 3.0f, elements); // Valid domain for acoth: |x| > 1
+    const sci::Array<float, 1> zeta    = sci::linspace(1.25f, 0.75f, elements);
 
     std::chrono::duration<double, std::micro> overall{0};
 
