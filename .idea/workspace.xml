@@ -28,16 +28,16 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="da230a09-af73-4e1a-8554-6505e2456f7c" name="Changes" comment="Introduced CPU single-loop JIT vectorization and background GPU shader compilation to double performance on long expressions">
+    <list default="true" id="da230a09-af73-4e1a-8554-6505e2456f7c" name="Changes" comment="Added support for some of the last remaining trigonometric functions">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bin/libsci" beforeDir="false" afterPath="$PROJECT_DIR$/bin/libsci" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/array/methods.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/methods.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/calculate.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/calculate.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/bytecode/chunk.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/bytecode/chunk.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/core/bytecode/code.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/bytecode/code.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/compose.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/compose.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/operation.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/operation.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/polynomial.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/polynomial.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/operations/reduce.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/operations/reduce.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/operations/unary.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/operations/unary.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/sci.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/sci.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shaders/interpreter.slang" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/interpreter.slang" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/core/drivers/processor/compiler.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/processor/compiler.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
@@ -217,7 +217,7 @@
       <workItem from="1793018441918" duration="22893000" />
       <workItem from="1793247327220" duration="1105000" />
       <workItem from="1793288093705" duration="2401000" />
-      <workItem from="1793314671460" duration="9790000" />
+      <workItem from="1793314671460" duration="19669000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Commit">
       <option name="closed" value="true" />
@@ -251,7 +251,15 @@
       <option name="project" value="LOCAL" />
       <updated>1791694181829</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Added support for some of the last remaining trigonometric functions">
+      <option name="closed" value="true" />
+      <created>1793410527345</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1793410527345</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -267,17 +275,8 @@
     <MESSAGE value="Initial Commit" />
     <MESSAGE value="The CPU JIT (asmjit, NEON and AVX2) compiles expressions into single loops, and the GPU JIT compiles a Slang shader per expression in the background; both are about 2x faster on long expressions." />
     <MESSAGE value="Introduced CPU single-loop JIT vectorization and background GPU shader compilation to double performance on long expressions" />
-    <option name="LAST_COMMIT_MESSAGE" value="Introduced CPU single-loop JIT vectorization and background GPU shader compilation to double performance on long expressions" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/include/sci.hpp</url>
-          <line>19</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+    <MESSAGE value="Added support for some of the last remaining trigonometric functions" />
+    <MESSAGE value="Add support for some of the last remaining trigonometric functions" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add support for some of the last remaining trigonometric functions" />
   </component>
 </project>

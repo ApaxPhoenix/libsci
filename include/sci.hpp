@@ -7,7 +7,7 @@
 //     auto first = sci::range(0.0f, 1.0f, 0.001f);           // Array<float, 1>
 //     auto second = sci::ones({1000});
 //     sci::Array<float, 1> third = first * second + 2.0f;    // computed in a single loop
-//     float total = sci::sum(sci::sine(third));              // or third.sum()
+//     float total = sci::sum(sci::sin(third));               // or third.sum()
 //
 //     sci::Device graphics(sci::Target::graphics);           // like torch.device / cupy
 //     auto fourth = third.to(graphics);                      // expressions on it run on the GPU
@@ -55,18 +55,34 @@ namespace sci {
     using operations::absolute;
     using operations::exponential;
     using operations::logarithm;
-    using operations::negative;
+    using operations::negate;
     using operations::root;
 
-    using operations::sine;
-    using operations::cosine;
-    using operations::tangent;
-    using operations::arcsine;
-    using operations::arccosine;
-    using operations::arctangent;
+    using operations::sin;
+    using operations::cos;
+    using operations::tan;
+    using operations::asin;
+    using operations::acos;
+    using operations::atan;
+    using operations::csc;
+    using operations::sec;
+    using operations::cot;
+    using operations::acsc;
+    using operations::asec;
+    using operations::acot;
 
-    // sci::hyperbolic::sine (sinh), ::cosine, ::tangent, ::arcsine, ::arccosine, ::arctangent.
-    namespace hyperbolic = operations::hyperbolic;
+    using operations::sinh;
+    using operations::cosh;
+    using operations::tanh;
+    using operations::asinh;
+    using operations::acosh;
+    using operations::atanh;
+    using operations::csch;
+    using operations::sech;
+    using operations::coth;
+    using operations::acsch;
+    using operations::asech;
+    using operations::acoth;
 
     using operations::mean;
     using operations::sum;
