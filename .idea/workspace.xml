@@ -28,18 +28,10 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="da230a09-af73-4e1a-8554-6505e2456f7c" name="Changes" comment="Added support for some of the last remaining trigonometric functions">
+    <list default="true" id="da230a09-af73-4e1a-8554-6505e2456f7c" name="Changes" comment="Implement complete set of arithmetic, trigonometric, hyperbolic, and reduction functions.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bin/libsci" beforeDir="false" afterPath="$PROJECT_DIR$/bin/libsci" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/array/calculate.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/calculate.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/bytecode/chunk.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/bytecode/chunk.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/bytecode/code.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/bytecode/code.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/compose.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/compose.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/operation.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/drivers/processor/kernels/generic/operation.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/operations/unary.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/operations/unary.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/operations/creation.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/operations/creation.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/sci.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/sci.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/interpreter.slang" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/interpreter.slang" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/drivers/processor/compiler.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/drivers/processor/compiler.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -217,7 +209,7 @@
       <workItem from="1793018441918" duration="22893000" />
       <workItem from="1793247327220" duration="1105000" />
       <workItem from="1793288093705" duration="2401000" />
-      <workItem from="1793314671460" duration="19669000" />
+      <workItem from="1793314671460" duration="22403000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Commit">
       <option name="closed" value="true" />
@@ -259,7 +251,15 @@
       <option name="project" value="LOCAL" />
       <updated>1793410527345</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Implement complete set of arithmetic, trigonometric, hyperbolic, and reduction functions.">
+      <option name="closed" value="true" />
+      <created>1793503335032</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1793503335032</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -277,6 +277,7 @@
     <MESSAGE value="Introduced CPU single-loop JIT vectorization and background GPU shader compilation to double performance on long expressions" />
     <MESSAGE value="Added support for some of the last remaining trigonometric functions" />
     <MESSAGE value="Add support for some of the last remaining trigonometric functions" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add support for some of the last remaining trigonometric functions" />
+    <MESSAGE value="Implement complete set of arithmetic, trigonometric, hyperbolic, and reduction functions." />
+    <option name="LAST_COMMIT_MESSAGE" value="Implement complete set of arithmetic, trigonometric, hyperbolic, and reduction functions." />
   </component>
 </project>

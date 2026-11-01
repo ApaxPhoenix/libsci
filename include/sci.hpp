@@ -40,6 +40,9 @@ namespace sci {
     using operations::ones;
     using operations::range;
     using operations::zeros;
+    using operations::linspace;
+    using operations::eye;
+    using operations::grid;
 
     using operations::add;
     using operations::divide;
