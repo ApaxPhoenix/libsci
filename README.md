@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://en.cppreference.com/w/cpp/compiler_support">
-    <img alt="C++ Standard" src="https://img.shields.io/badge/C%2B%2B-23-blue?logo=c%2B%2B"
+    <img alt="C++ Standard" src="https://img.shields.io/badge/C%2B%2B-26-blue?logo=c%2B%2B"
   ></a>
   <a href="https://github.com/ApaxPhoenix/libsci">
     <img alt="Platforms" src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey"
@@ -88,8 +88,8 @@ reductions along one dimension are next. See [CHANGELOG.md](CHANGELOG.md) for wh
 
 ### Requirements
 
-- CMake 3.20 or later.
-- A C++23 compiler: Apple clang 16 or later, GCC 13 or later, or a recent MSVC.
+- CMake 3.25 or later.
+- A C++26 compiler: Apple clang 16 or later, Clang 17 or later, or GCC 14 or later.
 - The Vulkan loader and headers. On macOS, the Vulkan SDK with MoltenVK.
 - Slang and asmjit are downloaded into `vendors/` the first time CMake configures.
 

@@ -1,9 +1,20 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.25)
 project(libsci VERSION 0.1.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 23)
+# C++26. CMake does not know yet that some compilers accept it (AppleClang 16, for one), so for
+# those it starts from C++23 and the flag is passed directly; the later -std wins.
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+if("cxx_std_26" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+    set(CMAKE_CXX_STANDARD 26)
+else()
+    set(CMAKE_CXX_STANDARD 23)
+    if(MSVC)
+        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/std:c++latest>)
+    else()
+        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-std=c++26>)
+    endif()
+endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
