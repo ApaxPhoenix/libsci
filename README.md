@@ -1,43 +1,140 @@
-<h1 align="center">
-  libsci
-</h1>
+# libsci
 
-<p align="center">
-  <b>A numpy-style array library for modern C++, on SIMD CPUs and Vulkan GPUs.</b>
-</p>
+**numpy for C++. One header, one pass over the data, on any CPU or GPU.**
 
-<p align="center">
-  <a href="https://en.cppreference.com/w/cpp/compiler_support">
-    <img alt="C++ Standard" src="https://img.shields.io/badge/C%2B%2B-26-blue?logo=c%2B%2B"
-  ></a>
-  <a href="https://github.com/ApaxPhoenix/libsci">
-    <img alt="Platforms" src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey"
-  ></a>
-  <a href="https://github.com/ApaxPhoenix/libsci/stargazers">
-    <img alt="GitHub Stars" src="https://img.shields.io/github/stars/ApaxPhoenix/libsci?color=239dad&label=stars"
-  ></a>
-  <a href="https://github.com/ApaxPhoenix/libsci/issues">
-    <img alt="GitHub Issues" src="https://img.shields.io/github/issues/ApaxPhoenix/libsci?color=5865F2&label=issues"
-  ></a>
-  <a href="https://github.com/ApaxPhoenix/libsci/pulls">
-    <img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-A561FF"
-  ></a>
-  <a href="https://github.com/ApaxPhoenix/libsci/commits/dev">
-    <img alt="Last Commit" src="https://img.shields.io/github/last-commit/ApaxPhoenix/libsci/dev?color=success"
-  ></a>
-  <a href="https://github.com/ApaxPhoenix/libsci/blob/main/LICENSE">
-    <img alt="AGPL v3 License" src="https://img.shields.io/badge/license-AGPL%20v3-brightgreen"
-  ></a>
-</p>
+libsci is an array library for people who think in numpy and need to ship C++. You write
+`a * b + c` with the names you already know (`zeros`, `linspace`, `sum`, `exponential`, `sin`),
+and libsci turns it into a single loop with no temporary arrays. The same code runs on SIMD
+CPUs, through a JIT, or on the GPU, depending only on where your arrays live.
 
-libsci brings numpy's way of working to C++: arrays, elementwise math and reductions with the
-names you already know, in one header. Behind it is an engine that treats every expression as a
-small program. `a * b + c` is not computed when you write it. It is recorded as bytecode and runs
-in a single pass when the result is needed, with no temporary arrays in between.
+libsci is built for anyone who wants numerical code that is fast by default, without learning a
+new way to write it.
 
-The same bytecode runs everywhere: on SIMD kernels chosen for the CPU at runtime, as machine code
-from a JIT, and on the GPU through Vulkan. The code you write doesn't change; where the arrays
-live decides where it runs.
+> **Status: early development.** libsci is at version 0.1.0 and changing quickly. The engine,
+> the CPU kernels and both JITs work today, and the API may still change before 1.0.
+
+## What it's going to be
+
+- **numpy you can compile.** Arrays, elementwise math, reductions and linear algebra, named the
+  way numpy names them, in one header with no Python anywhere.
+- **Fast without trying.** Expressions fuse into one pass, pick the best SIMD instructions for
+  the CPU they run on, spread across cores, and compile to machine code when they repeat.
+- **One code path, every device.** Move an array to the GPU with `to(device)` and the same
+  expressions run there. No kernels to write, no second API to learn.
+- **Correct to the bit.** Every path, from the scalar fallback to the GPU JIT, follows the same
+  rules: NaN propagates as in numpy, and the vector math stays within a couple of ulp of the C
+  library.
+
+## How it works
+
+1. **Expressions are recorded, not computed.** `a * b + c` builds a small tree of nodes. Nothing
+   runs until the result is stored, reduced or copied.
+2. **The tree becomes bytecode.** When it is needed, the tree is recorded into a `Chunk`: a short
+   list of instructions over input arrays, constants and temporaries. A multiply followed by an
+   add becomes one fused multiply-add, and `sum(a * b)` becomes a dot product that never stores
+   `a * b`.
+3. **The CPU runs it block by block.** The chunk runs over 1,024 elements at a time, so every
+   temporary stays in the L1 cache. The SIMD kernels (NEON, AVX2, AVX-512 or a scalar fallback)
+   are chosen once from what the CPU supports, and large arrays are split across a thread pool.
+4. **Repeated chunks become machine code.** The second time a chunk runs, or the first time it
+   is large, the CPU JIT (asmjit) compiles it into one loop that keeps every value in a register.
+5. **GPU arrays run on the GPU.** For arrays on a Vulkan device, the chunk goes to an
+   interpreter shader straight away, while a background thread compiles a shader of its own with
+   Slang. Work is batched into command buffers and runs asynchronously.
+6. **Reading waits for the result.** Touching a GPU array from the host waits for the queued
+   work first, so a GPU array reads like any other.
+
+## Features
+
+**Arrays**
+- `sci::Array<type, rank>`: contiguous, row-major, on the host, on a `Device` or in an `Arena`.
+- Created with `zeros`, `ones`, `full`, `empty`, `range`, `linspace` and `eye`, on the host or
+  straight on a device: `sci::ones({1024}, graphics)`.
+- Indexing with `a[i, j]`, iteration, `fill`, `copy`, `to(device)` and `host()`.
+
+**Math**
+- `+ - * /` and `add`, `subtract`, `multiply`, `divide`, with arrays or scalars on either side.
+- `absolute`, `root`, `exponential`, `logarithm` and `negate`.
+- Every circular function and its inverse: `sin`, `cos`, `tan`, `csc`, `sec`, `cot`, `asin` …
+  `acot`.
+- Every hyperbolic function and its inverse: `sinh` … `coth`, `asinh` … `acoth`.
+- Elementwise `minimum` and `maximum`, where NaN wins as in numpy.
+
+**Reductions and linear algebra**
+- `sum`, `mean`, `minimum` and `maximum`, fused with the expression they reduce.
+- `product` (matrix product, Apple's Accelerate on macOS), `dot`, `linear::decompose` (LU with
+  partial pivoting) and `linear::solve`.
+
+**Performance**
+- SIMD kernels for NEON, AVX2 and AVX-512, picked at runtime.
+- A thread pool whose hot path takes no locks. Memory-bound work on Apple chips stays on the
+  performance cores.
+- A CPU JIT for NEON and AVX2, and a GPU JIT that compiles in the background.
+- The vector exponential and logarithm are within 1 ulp, and sine and cosine within 2.
+
+**GPU**
+- Vulkan 1.2 on any capable GPU, including Apple GPUs through MoltenVK.
+- Expressions, reductions and matrix products run on the device, split so no single dispatch
+  trips the macOS GPU watchdog.
+- Without a usable GPU, a `Device` falls back to the CPU and everything still works.
+
+## How it compares
+
+|  | libsci | NumPy | Eigen | xtensor |
+| --- | :---: | :---: | :---: | :---: |
+| C++ library | ✅ | ❌ | ✅ | ✅ |
+| numpy's names | ✅ | ✅ | ❌ | ✅ |
+| Lazy, fused expressions | ✅ | ❌ | ✅ | ✅ |
+| SIMD chosen at runtime | ✅ | ✅ | ❌ | ❌ |
+| JIT-compiled expressions | ✅ | ❌ | ❌ | ❌ |
+| Multithreaded elementwise math | ✅ | ❌ | ❌ | Optional |
+| GPU arrays | ✅ Vulkan | ❌ | ❌ | ❌ |
+| Broadcasting | Planned | ✅ | ❌ | ✅ |
+| Views, reshape and slicing | Planned | ✅ | ✅ | ✅ |
+| Reductions along an axis | Planned | ✅ | ✅ | ✅ |
+
+This table is our best reading of each library's public documentation and may fall out of date.
+If something is wrong, please open an issue.
+
+## Roadmap
+
+**Next**
+- Broadcasting, so `(3, 1)` and `(1, 4)` arrays combine into `(3, 4)`
+- Views: `reshape`, `transpose` and slicing without copies
+- Reductions along one dimension: `sum(a, axis)` and friends
+- More elementwise functions: `power`, `floor`, `ceil`, `round`, `clip` and `where`
+- A test suite and CI on Linux x86-64, Windows and macOS
+
+**Later**
+- Reading and writing `.npy` files
+- Random numbers
+- Integer arrays on the fast path
+- Vector versions of the functions that still call the C library
+- float64 on GPUs that support it
+
+## Platforms
+
+| Platform | Status |
+| --- | --- |
+| macOS, Apple silicon | Works. This is where development happens; the GPU runs through MoltenVK. |
+| Linux, Windows, x86-64 | Builds. The AVX2 and AVX-512 kernels and the x86 JIT are checked by the compiler but not yet tested on hardware. |
+
+## Building
+
+You need CMake 3.25 or later, a C++26 compiler (Apple clang 16, Clang 17 or GCC 14 or later),
+and the Vulkan loader and headers (on macOS, the Vulkan SDK with MoltenVK). Slang and asmjit are
+downloaded into `vendors/` the first time CMake configures.
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+```
+
+```bash
+cmake --build build
+```
+
+This builds the `sci` static library and the demo in `src/main.cpp` as `bin/libsci`. To use
+libsci in your own project, link `sci` and include `<sci.hpp>`:
 
 ```cpp
 #include <sci.hpp>
@@ -56,75 +153,14 @@ int main() {
 }
 ```
 
-## Highlights
+### Settings
 
-- **Lazy and fused.** Expressions are computed in one pass over the data, block by block so
-  their working set stays in cache. A multiply followed by an add becomes one fused multiply-add,
-  and `sum(a * b)` never builds `a * b`.
-- **Fast on every CPU.** SIMD kernels for NEON, AVX2 and AVX-512, plus a scalar fallback, picked
-  at runtime from what the CPU supports. Large arrays are split across a thread pool whose hot path takes no locks,
-  and memory-bound work on Apple chips stays on the performance cores.
-- **Two JITs.** On the CPU, an expression of two or more instructions compiles into one
-  machine-code loop with every value in a register (asmjit, NEON and AVX2). On the GPU, every
-  expression gets a shader of its own, compiled by Slang on a background thread while the
-  interpreter runs it.
-- **GPU arrays.** `array.to(device)` moves an array to the GPU. Expressions, reductions and
-  matrix products on it run there asynchronously, and reading it on the host waits for the
-  result.
-- **Accurate.** The vector exponential and logarithm are within 1 ulp, and sine and cosine
-  within 2. `minimum` and `maximum` let NaN win, as numpy does.
-- **numpy's vocabulary.** `zeros`, `ones`, `full`, `empty`, `range`, `linspace` and `eye`;
-  `add`, `subtract`, `multiply` and `divide`; `absolute`, `root`, `exponential`, `logarithm`;
-  every circular and hyperbolic function and its inverse (`sin` … `acot`, `sinh` … `acoth`);
-  `sum`, `mean`, `minimum` and `maximum`; `product`, `dot`, LU decomposition and `solve`.
-
-## Status
-
-libsci is pre-release software (version 0.1.0). The array engine, the CPU kernels and both JITs
-are complete. The GPU runs float32; float64 falls back to the CPU. Broadcasting, reshaping and
-reductions along one dimension are next. See [CHANGELOG.md](CHANGELOG.md) for what has been done.
-
-## Building from source
-
-### Requirements
-
-- CMake 3.25 or later.
-- A C++26 compiler: Apple clang 16 or later, Clang 17 or later, or GCC 14 or later.
-- The Vulkan loader and headers. On macOS, the Vulkan SDK with MoltenVK.
-- Slang and asmjit are downloaded into `vendors/` the first time CMake configures.
-
-### Build
-
-```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-```
-
-```bash
-cmake --build build
-```
-
-This builds the `sci` static library and the demo in `src/main.cpp` as `bin/libsci`. To use
-libsci in your own project, link `sci` and include `<sci.hpp>`. Add `-DSCI_NATIVE=ON` to tune
-every file for the machine you build on.
-
-## Settings
-
-| Variable      | What it does                                                    |
-|---------------|-----------------------------------------------------------------|
-| `SCI_ISA`     | Forces the CPU kernels: `fallback`, `neon`, `avx2` or `avx512`. |
-| `SCI_JIT`     | `0` turns both JITs off, `trace` reports every compile.         |
-| `SCI_THREADS` | Size of the thread pool. The default is one thread per core.    |
-
-## Layout
-
-| Folder                                         | What is in it                                        |
-|------------------------------------------------|------------------------------------------------------|
-| `include/array/`                               | `Array`, its storage and the lazy expression nodes   |
-| `include/operations/`                          | The numpy-style functions                            |
-| `include/linear/`                              | Matrix product, LU decomposition and solving         |
-| `include/core/bytecode/`                       | The bytecode every engine runs                       |
-| `include/core/drivers/processor/`              | SIMD kernels, thread pool and CPU JIT                |
-| `include/core/drivers/vulkan/`, `shaders/`     | The GPU path and its Slang shaders                   |
+| Variable | What it does |
+| --- | --- |
+| `SCI_ISA` | Forces the CPU kernels: `fallback`, `neon`, `avx2` or `avx512`. |
+| `SCI_JIT` | `0` turns both JITs off, `trace` reports every compile. |
+| `SCI_THREADS` | Size of the thread pool. The default is one thread per core. |
+| `SCI_NATIVE` | CMake option that tunes every file for the build machine. |
 
 ## License
 
