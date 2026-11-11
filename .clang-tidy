@@ -1,0 +1,51 @@
+# Checks for libsci. The SIMD kernels, the JITs and the Vulkan driver work with raw pointers, C
+# arrays, bit casts and hardware constants on purpose, so the checks against those are off.
+Checks: >
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  cppcoreguidelines-*,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-macro-usage,
+  -cppcoreguidelines-narrowing-conversions,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-bounds-*,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-type-union-access,
+  -cppcoreguidelines-pro-type-vararg,
+  modernize-*,
+  -modernize-avoid-c-arrays,
+  -modernize-use-trailing-return-type,
+  performance-*,
+  readability-*,
+  -readability-braces-around-statements,
+  -readability-else-after-return,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-implicit-bool-conversion,
+  -readability-magic-numbers,
+  -readability-math-missing-parentheses,
+  -readability-uppercase-literal-suffix
+
+HeaderFilterRegex: '.*/(include|src)/.*'
+ExcludeHeaderFilterRegex: '.*/(vendors|cmake-build-[^/]*)/.*'
+FormatStyle: file
+
+# One real word per name: types are capitalised, everything else is lowercase with no underscores.
+CheckOptions:
+  readability-identifier-naming.NamespaceCase: lower_case
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.StructCase: CamelCase
+  readability-identifier-naming.EnumCase: CamelCase
+  readability-identifier-naming.EnumConstantCase: camelBack
+  readability-identifier-naming.ConceptCase: camelBack
+  readability-identifier-naming.FunctionCase: camelBack
+  readability-identifier-naming.MethodCase: camelBack
+  readability-identifier-naming.VariableCase: camelBack
+  readability-identifier-naming.ParameterCase: camelBack
+  readability-identifier-naming.MemberCase: camelBack
+  readability-identifier-naming.ConstantCase: camelBack
+  readability-identifier-naming.TemplateParameterCase: camelBack
+  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE

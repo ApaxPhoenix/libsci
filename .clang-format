@@ -1,0 +1,64 @@
+# libsci's style: four-space indents, namespace bodies indented, attached braces with `else` on its
+# own line, `Type* name`, and short functions and ifs on one line. There is no column limit: long
+# lines stay as they are written, and comments wrap at 100 by hand.
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: Latest
+ColumnLimit: 0
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+ConstructorInitializerIndentWidth: 4
+NamespaceIndentation: All
+AccessModifierOffset: -4
+IndentCaseLabels: true
+IndentPPDirectives: None
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: false
+  AfterControlStatement: Never
+  AfterFunction: false
+  AfterNamespace: false
+  AfterStruct: false
+  BeforeElse: true
+  SplitEmptyFunction: false
+
+PointerAlignment: Left
+ReferenceAlignment: Left
+SpaceAfterTemplateKeyword: true
+AlwaysBreakTemplateDeclarations: Yes
+RequiresClausePosition: OwnLine
+IndentRequiresClause: false
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: true
+  AfterRequiresInClause: true
+  AfterRequiresInExpression: true
+
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLoopsOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortBlocksOnASingleLine: Never
+
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: CurrentLine
+AlignAfterOpenBracket: DontAlign
+AlignOperands: DontAlign
+AlignTrailingComments: true
+Cpp11BracedListStyle: true
+FixNamespaceComments: false
+
+# Includes and using-declarations are grouped by hand.
+SortIncludes: Never
+SortUsingDeclarations: Never
+IncludeBlocks: Preserve
+
+MaxEmptyLinesToKeep: 1
+KeepEmptyLines:
+  AtStartOfBlock: false
+  AtEndOfFile: false
+InsertNewlineAtEOF: true

@@ -1,0 +1,22 @@
+# clangd reads the compile commands CMake writes into the build folder, and runs the checks in
+# .clang-tidy as you type.
+CompileFlags:
+  CompilationDatabase: cmake-build-debug
+  Add: [-std=c++26]
+
+Diagnostics:
+  ClangTidy:
+    FastCheckFilter: Loose
+  UnusedIncludes: Strict
+  MissingIncludes: None
+
+Index:
+  Background: Build
+
+InlayHints:
+  Enabled: true
+  ParameterNames: true
+  DeducedTypes: true
+
+Hover:
+  ShowAKA: true
