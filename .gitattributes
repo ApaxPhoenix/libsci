@@ -1,0 +1,17 @@
+# Text files are stored with LF line endings everywhere.
+* text=auto eol=lf
+
+*.cpp text diff=cpp
+*.hpp text diff=cpp
+*.slang text diff=cpp
+*.cmake text
+CMakeLists.txt text
+*.md text diff=markdown
+
+# Build outputs: never diffed or merged line by line.
+bin/** binary
+*.spv binary
+
+# GitHub's language stats: Slang reads like HLSL, and the IDE settings are not code.
+*.slang linguist-language=HLSL
+.idea/** linguist-generated
