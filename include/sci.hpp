@@ -25,6 +25,7 @@
 #include "linear/solve.hpp"
 #include "operations/binary.hpp"
 #include "operations/creation.hpp"
+#include "operations/manipulations.hpp"
 #include "operations/reduce.hpp"
 #include "operations/unary.hpp"
 
@@ -50,6 +51,8 @@ namespace sci {
     using operations::subtract;
 
     using operations::copy;
+    using operations::reshape;
+    using operations::transpose;
 
     // With two operands elementwise (numpy.minimum), with one a reduction (numpy.min).
     using operations::maximum;

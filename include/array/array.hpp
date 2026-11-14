@@ -73,11 +73,11 @@ namespace sci::array {
         }
 
         // Uninitialised (see sci::empty).
-        Array(Shape<rank> shape, Uninitialized)
+        Array(Shape<rank> shape, Uninitialized /*unused*/)
             : store(shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {}
 
         template <location place>
-        Array(place& where, Shape<rank> shape, Uninitialized)
+        Array(place& where, Shape<rank> shape, Uninitialized /*unused*/)
             : store(where, shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {}
 
         // Computes an expression in a single pass, on the device its arrays live on. Implicit on

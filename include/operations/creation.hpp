@@ -3,6 +3,7 @@
 #include <array/array.hpp>
 
 #include <cmath>
+#include <utility>
 
 // Array creation, named as in numpy. The shape is a braced list and the element type defaults to
 // float; pass a Device (or an Arena) after the other arguments to create the array there:
@@ -61,8 +62,8 @@ namespace sci::operations {
     }
 
     template <typename element = float, core::size rank, location... place>
-     requires (sizeof...(place) <= 1 && rank == 2)
-     Array<element, rank> eye(const core::size (&shape)[rank], place&... where) {
+    requires (sizeof...(place) <= 1 && rank == 2)
+    Array<element, rank> eye(const core::size (&shape)[rank], place&... where) {
         Array<element, rank> result(where..., Shape<rank>{std::to_array(shape)}, element{0});
 
         const core::size rows = shape[0];
@@ -79,6 +80,12 @@ namespace sci::operations {
 
     template <typename element = float, location... place>
     requires (sizeof...(place) <= 1)
+    Array<element, 2> eye(const core::size order, place&... where) {
+        return eye<element>({order, order}, where...);
+    }
+
+    template <typename element = float, location... place>
+    requires (sizeof...(place) <= 1)
     std::pair<Array<element, 2>, Array<element, 2>> grid(const Array<element, 1>& x, const Array<element, 1>& y, place&... where) {
         const core::size nx = x.shape()[0];
         const core::size ny = y.shape()[0];
@@ -88,12 +95,12 @@ namespace sci::operations {
 
         for (core::size i = 0; i < ny; ++i) {
             for (core::size j = 0; j < nx; ++j) {
-                xx(i, j) = x[j];
-                yy(i, j) = y[i];
+                xx[i, j] = x[j];
+                yy[i, j] = y[i];
             }
         }
 
-        return {xx, yy};
+        return {std::move(xx), std::move(yy)};
     }
 
     // Contents are unspecified until written, which skips the zero-fill.

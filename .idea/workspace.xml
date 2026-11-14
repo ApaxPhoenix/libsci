@@ -18,6 +18,8 @@
   <component name="CMakeRunConfigurationManager">
     <generated>
       <config projectName="libsci" targetName="libsci" />
+      <config projectName="libsci" targetName="format" />
+      <config projectName="libsci" targetName="format-check" />
       <config projectName="libsci" targetName="sci" />
       <config projectName="libsci" targetName="asmjit" />
     </generated>
@@ -28,8 +30,14 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="da230a09-af73-4e1a-8554-6505e2456f7c" name="Changes" comment="Implement complete set of arithmetic, trigonometric, hyperbolic, and reduction functions.">
+    <list default="true" id="da230a09-af73-4e1a-8554-6505e2456f7c" name="Changes" comment="Implement 3 more array creation utilities to my operations.">
+      <change afterPath="$PROJECT_DIR$/include/operations/manipulations.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/libsci" beforeDir="false" afterPath="$PROJECT_DIR$/bin/libsci" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/array/array.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/array/array.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/core/bytecode/accumulator.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/core/bytecode/accumulator.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/operations/binary.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/operations/binary.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/operations/creation.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/operations/creation.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/sci.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/include/sci.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
@@ -43,7 +51,7 @@
     <option name="formatViaClangd" value="false" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="4086" />
+    <option name="cachedIndexableFilesCount" value="4090" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
@@ -131,9 +139,9 @@
     </key>
   </component>
   <component name="RunManager" selected="CMake Application.libsci">
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
       </method>
     </configuration>
     <configuration name="asmjit" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="libsci" TARGET_NAME="asmjit" CONFIG_NAME="Debug">
@@ -142,6 +150,16 @@
       </method>
     </configuration>
     <configuration name="asmjit" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="libsci" TARGET_NAME="asmjit" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="format-check" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="libsci" TARGET_NAME="format-check" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="format" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="libsci" TARGET_NAME="format" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -179,6 +197,8 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="CMake Application.format" />
+      <item itemvalue="CMake Application.format-check" />
       <item itemvalue="CMake Application.libsci" />
       <item itemvalue="CMake Application.sci" />
       <item itemvalue="CMake Application.asmjit" />
@@ -209,7 +229,10 @@
       <workItem from="1793018441918" duration="22893000" />
       <workItem from="1793247327220" duration="1105000" />
       <workItem from="1793288093705" duration="2401000" />
-      <workItem from="1793314671460" duration="22403000" />
+      <workItem from="1793314671460" duration="26410000" />
+      <workItem from="1794291003044" duration="1163000" />
+      <workItem from="1794438304592" duration="112000" />
+      <workItem from="1794686585647" duration="5789000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Commit">
       <option name="closed" value="true" />
@@ -259,7 +282,15 @@
       <option name="project" value="LOCAL" />
       <updated>1793503335032</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Implement 3 more array creation utilities to my operations.">
+      <option name="closed" value="true" />
+      <created>1793566495515</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1793566495515</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -278,6 +309,7 @@
     <MESSAGE value="Added support for some of the last remaining trigonometric functions" />
     <MESSAGE value="Add support for some of the last remaining trigonometric functions" />
     <MESSAGE value="Implement complete set of arithmetic, trigonometric, hyperbolic, and reduction functions." />
-    <option name="LAST_COMMIT_MESSAGE" value="Implement complete set of arithmetic, trigonometric, hyperbolic, and reduction functions." />
+    <MESSAGE value="Implement 3 more array creation utilities to my operations." />
+    <option name="LAST_COMMIT_MESSAGE" value="Implement 3 more array creation utilities to my operations." />
   </component>
 </project>

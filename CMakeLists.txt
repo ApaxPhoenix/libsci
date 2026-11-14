@@ -23,6 +23,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 option(SCI_NATIVE "Tune every translation unit for the build machine (-march=native / -mcpu=native)" OFF)
+option(SCI_TIDY "Run clang-tidy when building libsci" OFF)
 
 include(FetchContent)
 
@@ -186,3 +187,22 @@ target_compile_options(sci PRIVATE ${SCI_WARNINGS} ${SCI_OPTIMIZE})
 add_executable(libsci src/main.cpp)
 target_link_libraries(libsci PRIVATE sci)
 target_compile_options(libsci PRIVATE ${SCI_WARNINGS} ${SCI_OPTIMIZE})
+
+# Prefer tools from the selected compiler's installation, then look on PATH.
+get_filename_component(SCI_COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+if(SCI_TIDY)
+    find_program(SCI_CLANG_TIDY NAMES clang-tidy-22 clang-tidy HINTS "${SCI_COMPILER_DIR}" REQUIRED)
+    set_target_properties(sci libsci PROPERTIES CXX_CLANG_TIDY
+            "${SCI_CLANG_TIDY};--config-file=${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy")
+endif()
+
+find_program(SCI_CLANG_FORMAT NAMES clang-format-22 clang-format HINTS "${SCI_COMPILER_DIR}")
+if(SCI_CLANG_FORMAT)
+    set(SCI_FORMAT_FILES ${SOURCES} ${HEADERS} "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+    add_custom_target(format
+            COMMAND "${SCI_CLANG_FORMAT}" --style=file -i ${SCI_FORMAT_FILES}
+            VERBATIM)
+    add_custom_target(format-check
+            COMMAND "${SCI_CLANG_FORMAT}" --style=file --dry-run --Werror ${SCI_FORMAT_FILES}
+            VERBATIM)
+endif()

@@ -14,7 +14,7 @@ namespace sci::core {
     public:
         explicit Accumulator(const Fold fold) noexcept
             : fold(fold),
-              total(fold == Fold::sum ? 0.0 : (fold == Fold::minimum ? infinity : -infinity)) {}
+              total(fold == Fold::sum ? 0.0 : fold == Fold::minimum ? infinity : -infinity) {}
 
         void add(const double value) noexcept {
             if (fold == Fold::sum || std::isnan(total) || std::isnan(value)) {

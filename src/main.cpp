@@ -8,6 +8,14 @@
 #include <vector>
 
 int main() {
+    const auto volume = sci::reshape(sci::range(12), {2, 2, 3});
+    const auto transposed = sci::transpose(volume);
+    if (const sci::Array<int, 3> expected(sci::Shape<3>{3, 2, 2}, {0, 6, 3, 9, 1, 7, 4, 10, 2, 8, 5, 11}); transposed != expected) {
+        std::cerr << "3-D transpose check failed\n";
+        return 1;
+    }
+    std::cout << "3-D transpose check passed\n\n";
+
     constexpr std::size_t elements = 1'000'000;
     constexpr int warmup = 3;
     constexpr int runs = 20;
@@ -38,7 +46,7 @@ int main() {
             time = std::chrono::duration<double, std::micro>(finish - start).count();
         }
 
-        std::sort(times.begin(), times.end());
+        std::ranges::sort(times);
         const double median = times[times.size() / 2];
         overall += std::chrono::duration<double, std::micro>(median);
         std::cout << std::left << std::setw(22) << name << std::setw(14) << result << std::setw(12) << median

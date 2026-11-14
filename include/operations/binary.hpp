@@ -10,41 +10,41 @@ namespace sci::operations {
     using array::compatible;
     using array::operand;
 
-    template <typename left, typename right>
-    requires compatible<left, right>
-    auto add(left&& first, right&& second) {
-        return array::apply<core::Code::add>(std::forward<left>(first), std::forward<right>(second));
+    template <typename alpha, typename beta>
+    requires compatible<alpha, beta>
+    auto add(alpha&& first, beta&& second) {
+        return array::apply<core::Code::add>(std::forward<alpha>(first), std::forward<beta>(second));
     }
 
-    template <typename left, typename right>
-    requires compatible<left, right>
-    auto subtract(left&& first, right&& second) {
-        return array::apply<core::Code::subtract>(std::forward<left>(first), std::forward<right>(second));
+    template <typename alpha, typename beta>
+    requires compatible<alpha, beta>
+    auto subtract(alpha&& first, beta&& second) {
+        return array::apply<core::Code::subtract>(std::forward<alpha>(first), std::forward<beta>(second));
     }
 
-    template <typename left, typename right>
-    requires compatible<left, right>
-    auto multiply(left&& first, right&& second) {
-        return array::apply<core::Code::multiply>(std::forward<left>(first), std::forward<right>(second));
+    template <typename alpha, typename beta>
+    requires compatible<alpha, beta>
+    auto multiply(alpha&& first, beta&& second) {
+        return array::apply<core::Code::multiply>(std::forward<alpha>(first), std::forward<beta>(second));
     }
 
-    template <typename left, typename right>
-    requires compatible<left, right>
-    auto divide(left&& first, right&& second) {
-        return array::apply<core::Code::divide>(std::forward<left>(first), std::forward<right>(second));
+    template <typename alpha, typename beta>
+    requires compatible<alpha, beta>
+    auto divide(alpha&& first, beta&& second) {
+        return array::apply<core::Code::divide>(std::forward<alpha>(first), std::forward<beta>(second));
     }
 
     // Elementwise minimum / maximum; NaN in either operand gives NaN, as in numpy.
-    template <typename left, typename right>
-    requires compatible<left, right>
-    auto minimum(left&& first, right&& second) {
-        return array::apply<core::Code::minimum>(std::forward<left>(first), std::forward<right>(second));
+    template <typename alpha, typename beta>
+    requires compatible<alpha, beta>
+    auto minimum(alpha&& first, beta&& second) {
+        return array::apply<core::Code::minimum>(std::forward<alpha>(first), std::forward<beta>(second));
     }
 
-    template <typename left, typename right>
-    requires compatible<left, right>
-    auto maximum(left&& first, right&& second) {
-        return array::apply<core::Code::maximum>(std::forward<left>(first), std::forward<right>(second));
+    template <typename alpha, typename beta>
+    requires compatible<alpha, beta>
+    auto maximum(alpha&& first, beta&& second) {
+        return array::apply<core::Code::maximum>(std::forward<alpha>(first), std::forward<beta>(second));
     }
 
     // A new array holding the values of an array or expression (numpy.copy).
