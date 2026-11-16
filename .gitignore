@@ -1,78 +1,54 @@
-# Prerequisites
-*.d
+# Build trees: CLion's profiles' and the presets', all named cmake-build-*.
+cmake-build-*/
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# What a build leaves in bin/: the program, its libraries, and the packages
+# cpack makes. Never committed: a release carries them instead.
+/bin/
 
-# Precompiled Headers
-*.gch
-*.pch
+# The scratch documents and programs in build/ are local; only what is
+# committed on purpose is tracked.
+/build/*
+!/build/.gitkeep
+!/build/main.*
+/build/**/*.pdf
 
-# Linker files
-*.ilk
+# Third-party sources the first configure downloads at their pinned versions.
+/vendors/
 
-# Debugger Files
-*.pdb
+# Each machine's own presets: its compilers, toolchains and paths.
+CMakeUserPresets.json
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-*.so.*
-
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# Build directories
-build/
-Build/
-build-*/
-
-# CMake generated files
+# CMake run by hand, outside a preset.
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
-Makefile
-install_manifest.txt
 compile_commands.json
-
-# Temporary files
-*.tmp
-*.log
-*.bak
-*.swp
-
-# vcpkg
-vcpkg_installed/
-
-# debug information files
-*.dwo
-
-# test output & cache
+install_manifest.txt
 Testing/
-.cache/
 
-# macOS
+# Compiled objects and libraries, wherever a tool leaves them.
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.pdb
+*.ilk
+
+# Editors and tools.
+.cache/
+.idea/workspace.xml
+.idea/shelf/
+.idea/usage.statistics.xml
+*.swp
+__pycache__/
+
+# The folder metadata macOS's Finder leaves behind.
 .DS_Store
 
-# Slang, downloaded by CMake at configure time
-vendors/
-
-# CLion build directories
-cmake-build-*/
+# libsci's own.
+# vcpkg's manifest mode, when it is used outside a preset.
+vcpkg_installed/

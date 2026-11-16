@@ -78,7 +78,7 @@ namespace sci::core {
         // Finishes a chunk whose result is written to the output array.
         const Chunk& output(const uint8 value) noexcept {
             if (overflow) return *this;
-            if (length > 0 && code[length - 1].target == value && (value & slot::kinds) == slot::temporary) {
+            if (length > 0 && code[length - 1].target == value && (value & slot::types) == slot::temporary) {
                 code[length - 1].target = slot::output;
             } else if (length < capacity) {
                 code[length++] = Instruction{.code = Code::copy, .target = slot::output, .sources = {value, slot::none, slot::none}};
@@ -163,7 +163,7 @@ namespace sci::core {
     private:
         // Rewrites `product + addend` into one fma when the product was the last recorded instruction.
         uint8 contract(const uint8 product, const uint8 addend) noexcept {
-            if (length == 0 || (product & slot::kinds) != slot::temporary) return slot::none;
+            if (length == 0 || (product & slot::types) != slot::temporary) return slot::none;
             Instruction& last = code[length - 1];
             if (last.code != Code::multiply || last.target != product) return slot::none;
             last.code = Code::fuse;
@@ -173,8 +173,8 @@ namespace sci::core {
         }
 
         void release(const uint8 value) noexcept {
-            if ((value & slot::kinds) == slot::temporary) {
-                busy &= ~(uint64{1} << (value & ~slot::kinds));
+            if ((value & slot::types) == slot::temporary) {
+                busy &= ~(uint64{1} << (value & ~slot::types));
             }
         }
 

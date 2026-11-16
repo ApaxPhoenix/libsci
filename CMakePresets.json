@@ -1,0 +1,99 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "description": "Ninja, and the compile commands clangd reads.",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "description": "A checked build: asserts on, no optimisation, debug information for stepping through libsci.",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/cmake-build-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "description": "The build that ships: optimised and stripped, its programs in bin/.",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/cmake-build-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "sanitize",
+      "displayName": "Sanitized",
+      "description": "AddressSanitizer and UndefinedBehaviorSanitizer over libsci: a memory error or undefined behaviour stops the program where it happens. Its programs stay in its own tree.",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/cmake-build-sanitize",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "SCI_SANITIZE": "address,undefined",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/cmake-build-sanitize/bin"
+      }
+    },
+    {
+      "name": "analyze",
+      "displayName": "Analysis",
+      "description": "clang-tidy and the Clang Static Analyzer over libsci's own sources as they build, as .clang-tidy configures them.",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/cmake-build-analyze",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SCI_TIDY": "ON",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/cmake-build-analyze/bin"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "sanitize",
+      "configurePreset": "sanitize"
+    },
+    {
+      "name": "analyze",
+      "configurePreset": "analyze"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "sanitize",
+      "configurePreset": "sanitize",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

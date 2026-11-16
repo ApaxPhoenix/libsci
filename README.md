@@ -10,10 +10,43 @@ CPUs, through a JIT, or on the GPU, depending only on where your arrays live.
 libsci is built for anyone who wants numerical code that is fast by default, without learning a
 new way to write it.
 
-> **Status: early development.** libsci is at version 0.1.0 and changing quickly. The engine,
-> the CPU kernels and both JITs work today, and the API may still change before 1.0.
+> **Status: pre-release (0.1.0-alpha.1).** libsci is changing quickly. The engine, the CPU
+> kernels and both JITs work today, and the API may still change before 1.0.
 
-## What it's going to be
+```cpp
+#include <sci.hpp>
+
+int main() {
+    const sci::Array<float, 1> first = sci::linspace(0.0f, 1.0f, 1'000'000);
+    const sci::Array<float, 1> second = sci::ones({1'000'000});
+
+    sci::Array<float, 1> third = first * second + 2.0f;   // one loop, no temporaries
+    const float total = sci::sum(sci::sin(third));        // the sine never gets stored
+
+    sci::Device graphics(sci::Target::graphics);          // falls back to the CPU without a GPU
+    const auto moved = third.to(graphics);
+    sci::Array<float, 1> fourth = sci::exponential(moved) * 0.5f;   // runs on the GPU
+    return fourth.sum() > total ? 0 : 1;
+}
+```
+
+## Contents
+
+[Highlights](#highlights) ·
+[How it works](#how-it-works) ·
+[Features](#features) ·
+[How it compares](#how-it-compares) ·
+[Roadmap](#roadmap) ·
+[Platforms](#platforms) ·
+[Building from source](#building-from-source) ·
+[Usage](#usage) ·
+[Documentation](#documentation) ·
+[Project layout](#project-layout) ·
+[Security](#security) ·
+[Contributing](#contributing) ·
+[License](#license)
+
+## Highlights
 
 - **numpy you can compile.** Arrays, elementwise math, reductions and linear algebra, named the
   way numpy names them, in one header with no Python anywhere.
@@ -48,9 +81,10 @@ new way to write it.
 
 **Arrays**
 - `sci::Array<type, rank>`: contiguous, row-major, on the host, on a `Device` or in an `Arena`.
-- Created with `zeros`, `ones`, `full`, `empty`, `range`, `linspace` and `eye`, on the host or
+- Composed with `zeros`, `ones`, `full`, `empty`, `range`, `linspace` and `eye`, on the host or
   straight on a device: `sci::ones({1024}, graphics)`.
 - Indexing with `a[i, j]`, iteration, `fill`, `copy`, `to(device)` and `host()`.
+- Reshaping: `reshape`, `transpose`, `flatten`, `squeeze` and `expand`.
 
 **Math**
 - `+ - * /` and `add`, `subtract`, `multiply`, `divide`, with arrays or scalars on either side.
@@ -89,79 +123,163 @@ new way to write it.
 | JIT-compiled expressions | ✅ | ❌ | ❌ | ❌ |
 | Multithreaded elementwise math | ✅ | ❌ | ❌ | Optional |
 | GPU arrays | ✅ Vulkan | ❌ | ❌ | ❌ |
+| Reshape and transpose | ✅ Copies | ✅ | ✅ | ✅ |
 | Broadcasting | Planned | ✅ | ❌ | ✅ |
-| Views, reshape and slicing | Planned | ✅ | ✅ | ✅ |
+| Views and slicing without copies | Planned | ✅ | ✅ | ✅ |
 | Reductions along an axis | Planned | ✅ | ✅ | ✅ |
 
-This table is our best reading of each library's public documentation and may fall out of date.
-If something is wrong, please open an issue.
+This table is the project's best reading of each library's public documentation and may fall out
+of date. If something in it is wrong, please open an issue.
 
 ## Roadmap
 
-**Next**
-- Broadcasting, so `(3, 1)` and `(1, 4)` arrays combine into `(3, 4)`
-- Views: `reshape`, `transpose` and slicing without copies
-- Reductions along one dimension: `sum(a, axis)` and friends
-- More elementwise functions: `power`, `floor`, `ceil`, `round`, `clip` and `where`
-- A test suite and CI on Linux x86-64, Windows and macOS
+### Done in 0.1.0-alpha.1
+- [x] Lazy expressions fused into one pass, as bytecode
+- [x] SIMD kernels for NEON, AVX2 and AVX-512, chosen at run time
+- [x] A CPU JIT with asmjit, and a GPU JIT with Slang over Vulkan
+- [x] `reshape`, `transpose`, `flatten`, `squeeze` and `expand`
 
-**Later**
-- Reading and writing `.npy` files
-- Random numbers
-- Integer arrays on the fast path
-- Vector versions of the functions that still call the C library
-- float64 on GPUs that support it
+### Next
+- [ ] Broadcasting, so `(3, 1)` and `(1, 4)` arrays combine into `(3, 4)`
+- [ ] Views: `reshape`, `transpose` and slicing without copies
+- [ ] Reductions along one dimension: `sum(a, axis)` and the rest
+- [ ] More elementwise functions: `power`, `floor`, `ceil`, `round`, `clip` and `where`
+- [ ] A test suite, and CI on Linux x86-64, Windows and macOS
+
+### Later
+- [ ] Reading and writing `.npy` files
+- [ ] Random numbers
+- [ ] Integer arrays on the fast path
+- [ ] Vector versions of the functions that still call the C library
+- [ ] float64 on GPUs that support it
+
+Every release's notes are in [releases/](releases/), and [CHANGELOG.md](CHANGELOG.md) collects
+them all.
 
 ## Platforms
 
 | Platform | Status |
 | --- | --- |
 | macOS, Apple silicon | Works. This is where development happens; the GPU runs through MoltenVK. |
-| Linux, Windows, x86-64 | Builds. The AVX2 and AVX-512 kernels and the x86 JIT are checked by the compiler but not yet tested on hardware. |
+| Linux, x86-64 | Builds. The AVX2 and AVX-512 kernels and the x86 JIT are checked by the compiler but not yet tested on hardware. |
+| Windows, x86-64 | Configures with `clang-cl`; not yet tested on hardware. |
 
-## Building
+## Building from source
 
-You need CMake 3.25 or later, a C++26 compiler (Apple clang 16, Clang 17 or GCC 14 or later),
-and the Vulkan loader and headers (on macOS, the Vulkan SDK with MoltenVK). Slang and asmjit are
-downloaded into `vendors/` the first time CMake configures.
+### Requirements
+
+- CMake 3.25 or later and Ninja.
+- A C++26 compiler: Clang 17 or later, GCC 14 or later, or Apple clang 16. On Windows, use
+  `clang-cl`, which the build selects if your IDE profile names MSVC (`cl`) or MinGW.
+- The Vulkan loader and headers; on macOS, the Vulkan SDK with MoltenVK.
+- Nothing else: the first configure downloads Slang and asmjit into `vendors/`.
+
+### Build and test
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
+git clone https://github.com/ApaxPhoenix/libsci.git
 ```
 
 ```bash
-cmake --build build
+cmake --preset release
 ```
 
-This builds the `sci` static library and the demo in `src/main.cpp` as `bin/libsci`. To use
-libsci in your own project, link `sci` and include `<sci.hpp>`:
-
-```cpp
-#include <sci.hpp>
-
-int main() {
-    const sci::Array<float, 1> first = sci::linspace(0.0f, 1.0f, 1'000'000);
-    const sci::Array<float, 1> second = sci::ones({1'000'000});
-
-    sci::Array<float, 1> third = first * second + 2.0f;   // one loop, no temporaries
-    const float total = sci::sum(sci::sin(third));        // the sine never gets stored
-
-    sci::Device graphics(sci::Target::graphics);          // falls back to the CPU without a GPU
-    const auto moved = third.to(graphics);
-    sci::Array<float, 1> fourth = sci::exponential(moved) * 0.5f;   // runs on the GPU
-    return fourth.sum() > total ? 0 : 1;
-}
+```bash
+cmake --build --preset release
 ```
 
-### Settings
+```bash
+ctest --preset release
+```
 
-| Variable | What it does |
+This builds the `sci` static library, and the demonstration in `src/main.cpp` as `bin/libsci`.
+
+### Presets
+
+| Preset | What it builds |
+| --- | --- |
+| `release` | The optimised build. |
+| `debug` | The same with assertions on and no optimisation. |
+| `sanitize` | Everything under AddressSanitizer and UndefinedBehaviorSanitizer. |
+| `analyze` | clang-tidy and the Clang Static Analyzer over libsci's own sources. |
+
+What belongs to your machine alone -- a compiler path, a toolchain -- goes in
+`CMakeUserPresets.json`, which is never committed.
+
+## Usage
+
+Link `sci` and include `<sci.hpp>`:
+
+```cmake
+add_subdirectory(libsci)
+target_link_libraries(program PRIVATE sci::sci)
+```
+
+These settings are read when the program runs, or, for `SCI_NATIVE`, when it is configured:
+
+| Setting | What it does |
 | --- | --- |
 | `SCI_ISA` | Forces the CPU kernels: `fallback`, `neon`, `avx2` or `avx512`. |
 | `SCI_JIT` | `0` turns both JITs off, `trace` reports every compile. |
 | `SCI_THREADS` | Size of the thread pool. The default is one thread per core. |
 | `SCI_NATIVE` | CMake option that tunes every file for the build machine. |
 
+## Documentation
+
+The API reference is generated from the sources with Doxygen:
+
+```bash
+cmake --build --preset release --target docs
+```
+
+It is written to `cmake-build-release/docs/html`.
+
+## Project layout
+
+| Path | Contents |
+| --- | --- |
+| `include/`, `src/` | libsci: `array` (arrays, shapes, strides, storage and deferred expressions), `operations` (the numpy-style functions), `linear` (products, factorizations and solving), `core` (bytecode, memory, and the CPU and GPU drivers) |
+| `shaders/` | The Slang compute shaders, compiled into the library |
+| `cmake/` | The scripts that turn shaders into headers |
+| `releases/` | Every release's notes |
+| `bin/`, `build/` | What a build leaves, and scratch files; neither is committed |
+
+## Security
+
+Found a vulnerability? Please don't report it in a public issue. Report it privately, with
+**Report a vulnerability** on the repository's **Security** tab or by email to
+andromedeyz@hotmail.com, and read [SECURITY.md](SECURITY.md) before disclosing anything publicly.
+
+## Contributing
+
+Contributions of every size are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), which
+covers the [Contributor License Agreement](CLA.md), and please read the
+[Code of Conduct](CODE_OF_CONDUCT.md). Open an issue to report a bug or to discuss a feature
+before starting on a large change. Pull requests should:
+
+- build without warnings;
+- check every operation they change against a plain scalar loop;
+- add an entry to [CHANGELOG.md](CHANGELOG.md).
+
+libsci is maintained by Andres Hernandez ([\@ApaxPhoenix](https://github.com/ApaxPhoenix)).
+
 ## License
 
-libsci is licensed under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE).
+Copyright (C) 2026 Andres Hernandez.
+
+libsci is dual-licensed. It is free software under the
+[GNU Affero General Public License v3.0](LICENSE), and is also available under a commercial
+license for use the AGPL does not allow, such as in closed-source products: see
+[LICENSING.md](LICENSING.md) and [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md). Contributions
+are accepted under the [Contributor License Agreement](CLA.md) described in
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
+The libraries libsci builds on keep their own licenses: see
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+## Acknowledgements
+
+libsci compiles through [asmjit](https://asmjit.com), by Petr Kobalicek, and its shaders through
+[Slang](https://shader-slang.org). It runs on the GPU through [Vulkan](https://www.vulkan.org)
+and, on Apple hardware, [MoltenVK](https://github.com/KhronosGroup/MoltenVK). Its names and its
+rules for NaN follow [NumPy](https://numpy.org).

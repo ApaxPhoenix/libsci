@@ -30,7 +30,7 @@ namespace sci::core::drivers {
         Device(const Device&) = delete;
         Device& operator=(const Device&) = delete;
 
-        [[nodiscard]] Target target() const noexcept { return kind; }
+        [[nodiscard]] Target target() const noexcept { return type; }
         [[nodiscard]] uint32 index() const noexcept { return ordinal; }
         [[nodiscard]] const char* name() const noexcept;
 
@@ -48,7 +48,7 @@ namespace sci::core::drivers {
         void product(Precision precision, const void* left, const void* right, void* output, size rows, size columns, size depth);
 
     private:
-        Target kind{Target::processor};
+        Target type{Target::processor};
         uint32 ordinal{0};
         std::unique_ptr<Graphics> graphics;
     };

@@ -38,7 +38,7 @@ namespace sci::core::drivers::processor::compiler {
         bool reads[Chunk::capacity]{};
         bool signs = false;
         const auto note = [&](const uint8 identifier) {
-            if (identifier != slot::none && (identifier & slot::kinds) == slot::input) reads[identifier & ~slot::kinds] = true;
+            if (identifier != slot::none && (identifier & slot::types) == slot::input) reads[identifier & ~slot::types] = true;
         };
         for (uint8 step = 0; step < chunk.length; ++step) {
             for (const uint8 source : chunk.code[step].sources) note(source);
@@ -83,9 +83,9 @@ namespace sci::core::drivers::processor::compiler {
         x86::Vec values[256];
         bool loaded[Chunk::capacity]{};
         const auto value = [&](const uint8 identifier) -> x86::Vec {
-            const uint8 index = identifier & ~slot::kinds;
-            if ((identifier & slot::kinds) == slot::literal) return literals[index];
-            if ((identifier & slot::kinds) == slot::input && !loaded[index]) {
+            const uint8 index = identifier & ~slot::types;
+            if ((identifier & slot::types) == slot::literal) return literals[index];
+            if ((identifier & slot::types) == slot::input && !loaded[index]) {
                 values[identifier] = compiler.new_vec256("input");
                 compiler.vmovups(values[identifier], x86::ptr(pointers[index]));
                 loaded[index] = true;

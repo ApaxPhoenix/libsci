@@ -147,8 +147,8 @@ namespace sci::core::drivers {
     };
 
     Device::Device(const Target target, const uint32 index)
-        : kind(target), ordinal(index) {
-        if (kind != Target::graphics) return;
+        : type(target), ordinal(index) {
+        if (type != Target::graphics) return;
 
         if (vulkan::Context context = vulkan::Context::compose(ordinal); context.valid()) {
             graphics = std::make_unique<Graphics>(std::move(context));
@@ -157,7 +157,7 @@ namespace sci::core::drivers {
 
         if (!graphics) {
             std::println(stderr, "[sci] no usable Vulkan device at index {}; running on the CPU", ordinal);
-            kind = Target::processor;
+            type = Target::processor;
         }
     }
 
@@ -176,7 +176,7 @@ namespace sci::core::drivers {
 
     void Device::allocate(const size bytes, Memory& memory) {
         memory.bytes = bytes;
-        memory.target = kind;
+        memory.target = type;
         if (graphics) {
             std::scoped_lock lock(graphics->guard);
             memory.buffer = graphics->allocator.compose(bytes);

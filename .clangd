@@ -1,22 +1,16 @@
-# clangd reads the compile commands CMake writes into the build folder, and runs the checks in
-# .clang-tidy as you type.
+# The compile commands of the debug build, `cmake --preset debug`, which also puts
+# the generated headers on the include path. No include hints: third-party
+# headers are included as umbrellas, and the hints would point inside them.
 CompileFlags:
   CompilationDatabase: cmake-build-debug
-  Add: [-std=c++26]
-
 Diagnostics:
-  ClangTidy:
-    FastCheckFilter: Loose
-  UnusedIncludes: Strict
+  UnusedIncludes: None
   MissingIncludes: None
 
-Index:
-  Background: Build
+---
 
-InlayHints:
-  Enabled: true
-  ParameterNames: true
-  DeducedTypes: true
-
-Hover:
-  ShowAKA: true
+# Downloaded and generated sources are someone else's, and are never diagnosed.
+If:
+  PathMatch: (vendors|cmake-build-[^/]*)/.*
+Diagnostics:
+  Suppress: "*"

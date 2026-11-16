@@ -1,12 +1,12 @@
 # Changelog
 
-All notable changes to libsci are documented in this file.
+All notable changes to libsci are documented in this file. Each release's own notes are in
+[releases/](releases/).
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
-[Semantic Versioning](https://semver.org/spec/v2.0.0.html). Nothing has been tagged yet; the
-version in `CMakeLists.txt` is 0.1.0.
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is `VERSION`'s first line.
 
-## [Unreleased]
+## [0.1.0-alpha.1] - One pass over the data
 
 ### Added
 

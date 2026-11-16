@@ -1,32 +1,77 @@
 # Security Policy
 
+libsci computes on arrays that programs build, often from data they did not
+write, and generates machine code and shaders while it runs. This page
+explains which versions receive security fixes, how to report a
+vulnerability, and what the library does and does not protect against.
+
 ## Supported versions
 
-libsci is before 1.0 and has no tagged releases yet. Security fixes go into the `main` branch.
+libsci is pre-release software. Security fixes go to the `main` branch and
+ship in the next release.
 
-| Version        | Supported |
-|----------------|-----------|
-| `main` (0.1.x) | Yes       |
-| Older commits  | No        |
+| Version           | Supported          |
+|-------------------|--------------------|
+| 0.1.x (`main`)    | :white_check_mark: |
+| Earlier snapshots | :x:                |
 
 ## Reporting a vulnerability
 
-Please do not open a public issue, pull request or discussion for a security problem.
+**Please do not report security issues in public issues, pull requests or
+discussions.**
 
-Report it privately through GitHub instead: open the repository's **Security** tab and choose
-**Report a vulnerability**, or go straight to
-<https://github.com/ApaxPhoenix/libsci/security/advisories/new>.
+Report them privately in one of two ways:
 
-A useful report includes:
+- through GitHub's private vulnerability reporting, using **Report a
+  vulnerability** on the repository's **Security** tab; or
+- by email to andromedeyz@hotmail.com, with `libsci security` in the
+  subject line.
 
-- what is affected (file, function or API) and the commit you tested;
-- the smallest program or steps that reproduce the problem;
-- what someone could do with it, such as crash the process or read or write memory outside an
-  array;
-- your platform: operating system, CPU, GPU and driver, and compiler.
+Please include:
 
-The report stays private while it is looked into. Once a fix is on `main`, the advisory is
-published, and you are credited in it unless you would rather not be.
+- the version or commit you tested, and your platform: operating system,
+  CPU, GPU and driver and compiler;
+- the smallest program that reproduces the issue;
+- what an attacker gains: code execution, reading or writing memory outside
+  what was given, denial of service or something else.
+
+### What to expect
+
+| Step                                                | Target                                      |
+|-----------------------------------------------------|---------------------------------------------|
+| Acknowledgement of your report                      | within 3 business days                      |
+| Initial assessment and severity                     | within 10 business days                     |
+| Fix for a confirmed critical or high-severity issue | as soon as possible, usually within 30 days |
+
+You will be kept informed while the issue is being fixed. Please allow up to
+90 days for a fix before disclosing the issue publicly. Unless you ask to
+stay anonymous, the fix's entry in [CHANGELOG.md](CHANGELOG.md) will credit
+you.
+
+## Security model
+
+### What the library guarantees
+
+- **Generated code computes the expression and nothing else.** The CPU JIT's
+  machine code and the GPU JIT's shaders are generated from an expression's
+  bytecode alone, never from text a program hands in.
+- **No files and no network.** libsci reads no file and opens no connection
+  of its own; its shaders are compiled into the library.
+- **GPU work finishes before the host reads it.** An array's memory reaches
+  the host only after every dispatch writing it has completed.
+
+### What you need to handle yourself
+
+Shape and size checks in libsci are assertions (`ASSERT`), and release builds (`NDEBUG`) leave
+them out. In a release build:
+
+- an expression that mixes arrays of different shapes is not rejected and can read past the end
+  of the smaller array;
+- `NDArray(shape, {values...})` with more values than the shape holds writes past the end of the
+  array.
+
+If shapes or values come from an untrusted source, check them before building arrays or
+expressions from them.
 
 ## Scope
 
@@ -49,16 +94,3 @@ Out of scope, please report these to their own projects:
 
 Results that are wrong but cannot be used to attack anything, such as a numerical accuracy issue,
 belong in a normal issue.
-
-## Things to know when handling untrusted input
-
-Shape and size checks in libsci are assertions (`ASSERT`), and release builds (`NDEBUG`) leave
-them out. In a release build:
-
-- an expression that mixes arrays of different shapes is not rejected and can read past the end
-  of the smaller array;
-- `NDArray(shape, {values...})` with more values than the shape holds writes past the end of the
-  array.
-
-If shapes or values come from an untrusted source, check them before building arrays or
-expressions from them.

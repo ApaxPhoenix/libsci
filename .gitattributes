@@ -1,17 +1,27 @@
-# Text files are stored with LF line endings everywhere.
+# Text is stored with LF and checked out with LF everywhere, so Git for Windows'
+# CRLF default leaves no stray diffs and the shell snippets still run.
 * text=auto eol=lf
 
 *.cpp text diff=cpp
 *.hpp text diff=cpp
-*.slang text diff=cpp
+*.c text diff=cpp
+*.h text diff=cpp
+*.in text
 *.cmake text
 CMakeLists.txt text
+*.json text
 *.md text diff=markdown
+*.py text diff=python
+*.js text
+*.ts text
 
-# Build outputs: never diffed or merged line by line.
-bin/** binary
+# libsci's own kinds of file.
+*.slang text diff=cpp
 *.spv binary
 
-# GitHub's language stats: Slang reads like HLSL, and the IDE settings are not code.
+# Slang is C-like; GitHub has no grammar of its own for it, so count it as HLSL,
+# which it extends.
 *.slang linguist-language=HLSL
+
+# CLion's project files are editor settings, not code.
 .idea/** linguist-generated
