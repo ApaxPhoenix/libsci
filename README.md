@@ -10,7 +10,7 @@ CPUs, through a JIT, or on the GPU, depending only on where your arrays live.
 libsci is built for anyone who wants numerical code that is fast by default, without learning a
 new way to write it.
 
-> **Status: pre-release (0.1.0-alpha.1).** libsci is changing quickly. The engine, the CPU
+> **Status: pre-release (0.2.0-alpha.1).** libsci is changing quickly. The engine, the CPU
 > kernels and both JITs work today, and the API may still change before 1.0.
 
 ```cpp
@@ -133,18 +133,23 @@ of date. If something in it is wrong, please open an issue.
 
 ## Roadmap
 
-### Done in 0.1.0-alpha.1
-- [x] Lazy expressions fused into one pass, as bytecode
-- [x] SIMD kernels for NEON, AVX2 and AVX-512, chosen at run time
-- [x] A CPU JIT with asmjit, and a GPU JIT with Slang over Vulkan
-- [x] `reshape`, `transpose`, `flatten`, `squeeze` and `expand`
+### Done in 0.2.0-alpha.1
+- [x] Every circular and hyperbolic function, and their inverses
+- [x] `linspace` and `eye`, and `reshape`, `transpose`, `flatten`, `squeeze` and `expand`
+- [x] C++26, with presets, clang-tidy, sanitizers and CI on Windows, Linux and macOS
+
+### Done before
+- [x] Lazy expressions fused into one pass, as bytecode (0.1.0-beta.1)
+- [x] SIMD kernels for NEON, AVX2 and AVX-512, chosen at run time (0.1.0-beta.1)
+- [x] A CPU JIT with asmjit, and a GPU JIT with Slang over Vulkan (0.1.0-beta.1)
+- [x] GPU arrays through Vulkan (0.1.0-alpha.2)
 
 ### Next
 - [ ] Broadcasting, so `(3, 1)` and `(1, 4)` arrays combine into `(3, 4)`
 - [ ] Views: `reshape`, `transpose` and slicing without copies
 - [ ] Reductions along one dimension: `sum(a, axis)` and the rest
 - [ ] More elementwise functions: `power`, `floor`, `ceil`, `round`, `clip` and `where`
-- [ ] A test suite, and CI on Linux x86-64, Windows and macOS
+- [ ] A test suite, run by CI on every push
 
 ### Later
 - [ ] Reading and writing `.npy` files

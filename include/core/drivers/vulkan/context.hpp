@@ -23,10 +23,10 @@ namespace sci::core::drivers::vulkan {
         Context() = default;
         ~Context();
 
-        Context(const Context&) = delete;
-        Context& operator=(const Context&) = delete;
-        Context(Context&& context) noexcept;
-        Context& operator=(Context&&) = delete;
+        Context(const Context &) = delete;
+        Context &operator=(const Context &) = delete;
+        Context(Context &&context) noexcept;
+        Context &operator=(Context &&) = delete;
 
         // Opens the ordinal-th capable GPU. Check valid() afterwards.
         [[nodiscard]] static Context compose(uint32 ordinal = 0);

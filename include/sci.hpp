@@ -37,13 +37,13 @@ namespace sci {
     using core::drivers::Target;
 
     using operations::empty;
+    using operations::eye;
     using operations::full;
+    using operations::grid;
+    using operations::linspace;
     using operations::ones;
     using operations::range;
     using operations::zeros;
-    using operations::linspace;
-    using operations::eye;
-    using operations::grid;
 
     using operations::add;
     using operations::divide;
@@ -64,31 +64,31 @@ namespace sci {
     using operations::negate;
     using operations::root;
 
-    using operations::sin;
-    using operations::cos;
-    using operations::tan;
-    using operations::asin;
     using operations::acos;
-    using operations::atan;
-    using operations::csc;
-    using operations::sec;
-    using operations::cot;
+    using operations::acot;
     using operations::acsc;
     using operations::asec;
-    using operations::acot;
+    using operations::asin;
+    using operations::atan;
+    using operations::cos;
+    using operations::cot;
+    using operations::csc;
+    using operations::sec;
+    using operations::sin;
+    using operations::tan;
 
-    using operations::sinh;
-    using operations::cosh;
-    using operations::tanh;
-    using operations::asinh;
     using operations::acosh;
-    using operations::atanh;
-    using operations::csch;
-    using operations::sech;
-    using operations::coth;
+    using operations::acoth;
     using operations::acsch;
     using operations::asech;
-    using operations::acoth;
+    using operations::asinh;
+    using operations::atanh;
+    using operations::cosh;
+    using operations::coth;
+    using operations::csch;
+    using operations::sech;
+    using operations::sinh;
+    using operations::tanh;
 
     using operations::mean;
     using operations::sum;

@@ -7,8 +7,7 @@
 namespace sci::array {
 
     // Extent of each dimension, like numpy's shape tuple: Shape<2>{rows, columns}.
-    template <core::size rank>
-    struct Shape {
+    template <core::size rank> struct Shape {
         std::array<core::size, rank> extents{};
 
         // Number of elements (the product of the extents).
@@ -20,11 +19,9 @@ namespace sci::array {
             return count;
         }
 
-        constexpr core::size operator[](core::size index) const noexcept {
-            return extents[index];
-        }
+        constexpr core::size operator[](core::size index) const noexcept { return extents[index]; }
 
-        constexpr bool operator==(const Shape&) const noexcept = default;
+        constexpr bool operator==(const Shape &) const noexcept = default;
     };
 
 }

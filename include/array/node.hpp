@@ -5,9 +5,9 @@
 #include "array/methods.hpp"
 #include "array/shape.hpp"
 #include "core/assert.hpp"
-#include "core/drivers/device.hpp"
 #include "core/bytecode/chunk.hpp"
 #include "core/bytecode/code.hpp"
+#include "core/drivers/device.hpp"
 #include "core/types.hpp"
 
 #include <algorithm>
@@ -20,12 +20,12 @@ namespace sci::array {
     using core::drivers::Device;
 
     // Interior node: code applied to its operands.
-    template <core::Code code, typename... operands>
-    struct Node : Methods<Node<code, operands...>> {
+    template <core::Code code, typename... operands> struct Node : Methods<Node<code, operands...>> {
         using element = std::tuple_element_t<0, std::tuple<operands...>>::element;
         static constexpr core::size rank = std::max({operands::rank...});
 
-        static_assert((std::is_same_v<typename operands::element, element> && ...), "operands must share an element type");
+        static_assert((std::is_same_v<typename operands::element, element> && ...),
+                      "operands must share an element type");
         static_assert(((operands::rank == 0 || operands::rank == rank) && ...), "operands must share a rank");
         static_assert(rank > 0, "an expression needs at least one array operand");
 
@@ -38,40 +38,45 @@ namespace sci::array {
         [[nodiscard]] Shape<rank> shape() const noexcept {
             const Shape<rank> result = std::get<lead>(children).shape();
             // Scalars match any shape.
-            ASSERT(std::apply([&](const auto&... child) {
-                return ([&] {
-                    if constexpr (std::remove_cvref_t<decltype(child)>::rank > 0) {
-                        return child.shape() == result;
-                    } else {
-                        return true;
-                    }
-                }() && ...);
-            }, children));
+            ASSERT(std::apply(
+                    [&](const auto &...child) {
+                        return ([&] {
+                            if constexpr (std::remove_cvref_t<decltype(child)>::rank > 0) {
+                                return child.shape() == result;
+                            } else {
+                                return true;
+                            }
+                        }() && ...);
+                    },
+                    children));
             return result;
         }
 
         // The first device found among the leaves decides where the expression runs.
-        [[nodiscard]] Device* device() const noexcept {
-            Device* found = nullptr;
-            std::apply([&](const auto&... child) { ((found = found ? found : child.device()), ...); }, children);
+        [[nodiscard]] Device *device() const noexcept {
+            Device *found = nullptr;
+            std::apply([&](const auto &...child) { ((found = found ? found : child.device()), ...); }, children);
             return found;
         }
 
-        [[nodiscard]] core::uint8 record(core::Chunk& chunk) const noexcept {
-            return std::apply([&](const auto&... child) {
-                const core::uint8 slots[] = {child.record(chunk)...};
-                if constexpr (sizeof...(operands) == 1) {
-                    return chunk.emit(code, slots[0]);
-                } else if constexpr (sizeof...(operands) == 2) {
-                    return chunk.emit(code, slots[0], slots[1]);
-                } else {
-                    return chunk.emit(code, slots[0], slots[1], slots[2]);
-                }
-            }, children);
+        [[nodiscard]] core::uint8 record(core::Chunk &chunk) const noexcept {
+            return std::apply(
+                    [&](const auto &...child) {
+                        const core::uint8 slots[] = {child.record(chunk)...};
+                        if constexpr (sizeof...(operands) == 1) {
+                            return chunk.emit(code, slots[0]);
+                        } else if constexpr (sizeof...(operands) == 2) {
+                            return chunk.emit(code, slots[0], slots[1]);
+                        } else {
+                            return chunk.emit(code, slots[0], slots[1], slots[2]);
+                        }
+                    },
+                    children);
         }
 
         [[nodiscard]] element at(const core::size index) const noexcept {
-            return std::apply([&](const auto&... child) { return calculate<code, element>(child.at(index)...); }, children);
+            return std::apply([&](const auto &...child) { return calculate<code, element>(child.at(index)...); },
+                              children);
         }
 
     private:
@@ -79,12 +84,12 @@ namespace sci::array {
         static constexpr core::size lead = [] {
             constexpr bool arrays[] = {(operands::rank > 0)...};
             core::size index = 0;
-            while (!arrays[index]) ++index;
+            while (!arrays[index])
+                ++index;
             return index;
         }();
     };
 
-    template <core::Code code, typename... operands>
-    struct Deferred<Node<code, operands...>> : std::true_type {};
+    template <core::Code code, typename... operands> struct Deferred<Node<code, operands...>> : std::true_type {};
 
 }

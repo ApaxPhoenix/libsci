@@ -10,7 +10,7 @@ namespace sci::core::drivers::vulkan {
     struct Buffer {
         VkBuffer handle{VK_NULL_HANDLE};
         VkDeviceMemory memory{VK_NULL_HANDLE};
-        void* host{nullptr};
+        void *host{nullptr};
         uint64 address{0};
         size bytes{0};
     };

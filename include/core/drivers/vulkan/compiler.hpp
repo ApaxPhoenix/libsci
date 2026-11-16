@@ -33,28 +33,29 @@ namespace sci::core::drivers::vulkan {
     class Compiler {
     public:
         // `bytes`: size of the push-constant block the shaders take.
-        Compiler(const Context& context, uint32 bytes);
+        Compiler(const Context &context, uint32 bytes);
         ~Compiler();
 
-        Compiler(const Compiler&) = delete;
-        Compiler& operator=(const Compiler&) = delete;
+        Compiler(const Compiler &) = delete;
+        Compiler &operator=(const Compiler &) = delete;
 
         // The chunk's kernel once it is compiled. Null before that (the first call queues the
         // compile) and when it cannot be compiled.
-        [[nodiscard]] const Kernel* find(const Chunk& chunk);
+        [[nodiscard]] const Kernel *find(const Chunk &chunk);
 
     private:
         // A shader for one chunk: shaders/common/ around a `run` in which every value is a named float4.
-        [[nodiscard]] static std::string generate(const Chunk& chunk);
+        [[nodiscard]] static std::string generate(const Chunk &chunk);
 
         // SPIR-V for each entry point of a generated shader, compiled with the options CMake gives
         // slangc. Empty on failure, with Slang's messages in `diagnostics`.
-        [[nodiscard]] static std::vector<std::vector<uint32>> compile(slang::IGlobalSession* global, const std::string& source, std::string& diagnostics);
+        [[nodiscard]] static std::vector<std::vector<uint32>>
+        compile(slang::IGlobalSession *global, const std::string &source, std::string &diagnostics);
 
         // The compiler thread: takes jobs off the queue until the Compiler is destroyed.
         void loop();
 
-        const Context& context;
+        const Context &context;
         uint32 bytes{0};
         std::atomic<bool> enabled{true};
         bool tracing{false};

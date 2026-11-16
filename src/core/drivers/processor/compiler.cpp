@@ -1,7 +1,7 @@
 #include "core/drivers/processor/compiler.hpp"
 #include "core/bytecode/chunk.hpp"
-#include "core/bytecode/precision.hpp"
 #include "core/bytecode/code.hpp"
+#include "core/bytecode/precision.hpp"
 #include "core/drivers/processor/compiler/avx2.hpp"
 #include "core/drivers/processor/compiler/neon.hpp"
 #include "core/drivers/processor/kernels/avx2.hpp"
@@ -27,25 +27,25 @@ namespace sci::core::drivers::processor {
     constexpr size limit = 4096;
 
     Compiler::Compiler() {
-        if (const char* setting = std::getenv("SCI_JIT")) {
+        if (const char *setting = std::getenv("SCI_JIT")) {
             enabled = std::strcmp(setting, "0") != 0;
             tracing = std::strcmp(setting, "trace") == 0;
         }
     }
 
-    Compiler& Compiler::global() {
+    Compiler &Compiler::global() {
         static Compiler compiler;
         return compiler;
     }
 
-    size Compiler::width(const kernels::Table& table, const Precision precision) noexcept {
+    size Compiler::width(const kernels::Table &table, const Precision precision) noexcept {
         const size bytes = precision == Precision::single ? sizeof(float) : sizeof(double);
         if (&table == kernels::neon) return 16 / bytes;
         if (&table == kernels::avx2) return 32 / bytes;
         return 0;
     }
 
-    Compiler::Function Compiler::compile(const Chunk& chunk, const kernels::Table& table, const size count) {
+    Compiler::Function Compiler::compile(const Chunk &chunk, const kernels::Table &table, const size count) {
         // A single instruction already runs as one kernel loop.
         if (!enabled || count < smallest || chunk.length < 2 || !chunk.valid() || width(table, chunk.precision) == 0) {
             return nullptr;
@@ -55,7 +55,8 @@ namespace sci::core::drivers::processor {
         // hyperbolic::arctangent) run best as kernel loops over whole blocks: a call per register
         // costs more than the temporaries it saves, so chunks that use them stay on the kernels.
         for (uint8 index = 0; index < chunk.length; ++index) {
-            if (const Code code = chunk.code[index].code; code >= Code::exponential && code <= Code::atan) return nullptr;
+            if (const Code code = chunk.code[index].code; code >= Code::exponential && code <= Code::atan)
+                return nullptr;
         }
 
         std::string key = chunk.signature();
@@ -76,8 +77,9 @@ namespace sci::core::drivers::processor {
         sightings.erase(key);
         functions.emplace(std::move(key), function);
         if (tracing) {
-            std::println(stderr, "[sci] jit: {} {} instructions for {} ({})", function ? "compiled" : "could not compile",
-                         chunk.length, table.name, chunk.precision == Precision::single ? "float32" : "float64");
+            std::println(stderr, "[sci] jit: {} {} instructions for {} ({})",
+                         function ? "compiled" : "could not compile", chunk.length, table.name,
+                         chunk.precision == Precision::single ? "float32" : "float64");
         }
         return function;
     }

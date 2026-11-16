@@ -1,8 +1,8 @@
 #pragma once
 
 #include "core/bytecode/chunk.hpp"
-#include "core/bytecode/precision.hpp"
 #include "core/bytecode/fold.hpp"
+#include "core/bytecode/precision.hpp"
 #include "core/types.hpp"
 
 namespace sci::core::drivers::processor {
@@ -16,22 +16,23 @@ namespace sci::core::drivers::processor {
     class Dispatch {
     public:
         // Null runs the fallback kernels.
-        explicit Dispatch(const kernels::Table* table) noexcept;
+        explicit Dispatch(const kernels::Table *table) noexcept;
 
         // The kernels SCI_ISA names (fallback, neon, avx2, avx512) when set and supported, otherwise
         // the widest this CPU runs.
-        [[nodiscard]] static const Dispatch& global() noexcept;
+        [[nodiscard]] static const Dispatch &global() noexcept;
 
-        void execute(const Chunk& chunk, void* output, size count) const;
+        void execute(const Chunk &chunk, void *output, size count) const;
 
         // Sum, minimum or maximum of the chunk result. The minimum and maximum of nothing are NaN.
-        [[nodiscard]] double reduce(const Chunk& chunk, Fold fold, size count) const;
+        [[nodiscard]] double reduce(const Chunk &chunk, Fold fold, size count) const;
 
         // Row-major output = left * right, with left rows x depth and right depth x columns.
-        static void product(Precision precision, const void* left, const void* right, void* output, size rows, size columns, size depth);
+        static void product(Precision precision, const void *left, const void *right, void *output, size rows,
+                            size columns, size depth);
 
     private:
-        const kernels::Table* table{nullptr};
+        const kernels::Table *table{nullptr};
     };
 
 }

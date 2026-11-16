@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/bytecode/fold.hpp"
 #include "core/bytecode/code.hpp"
+#include "core/bytecode/fold.hpp"
 #include "core/drivers/processor/kernels/generic/elementwise.hpp"
 #include "core/drivers/processor/kernels/generic/operation.hpp"
 #include "core/drivers/processor/kernels/generic/reductions.hpp"
@@ -27,8 +27,7 @@
 
 namespace sci::core::drivers::processor::kernels {
 
-    template <typename pack>
-    constexpr Routines<typename pack::element> assemble() noexcept {
+    template <typename pack> constexpr Routines<typename pack::element> assemble() noexcept {
         Routines<typename pack::element> routines{};
         routines.kernels[static_cast<size>(Code::copy)] = &unary<pack, Operation<Code::copy>>;
         routines.kernels[static_cast<size>(Code::negate)] = &unary<pack, Operation<Code::negate>>;
@@ -74,8 +73,7 @@ namespace sci::core::drivers::processor::kernels {
         return routines;
     }
 
-    template <template <typename> class pack>
-    constexpr Table compose(const char* name) noexcept {
+    template <template <typename> class pack> constexpr Table compose(const char *name) noexcept {
         return Table{name, assemble<pack<float>>(), assemble<pack<double>>()};
     }
 

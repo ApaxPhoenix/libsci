@@ -3,9 +3,9 @@
 #if defined(__x86_64__) || defined(_M_X64)
 
 #include "core/bytecode/chunk.hpp"
-#include "core/bytecode/precision.hpp"
-#include "core/bytecode/instruction.hpp"
 #include "core/bytecode/code.hpp"
+#include "core/bytecode/instruction.hpp"
+#include "core/bytecode/precision.hpp"
 #include "core/types.hpp"
 
 #include <asmjit/x86.h>
@@ -14,7 +14,7 @@
 
 namespace sci::core::drivers::processor::compiler {
 
-    bool avx2(asmjit::CodeHolder& code, const Chunk& chunk) {
+    bool avx2(asmjit::CodeHolder &code, const Chunk &chunk) {
         using namespace asmjit;
 
         const bool wide = chunk.precision == Precision::wide;
@@ -22,7 +22,8 @@ namespace sci::core::drivers::processor::compiler {
         const uint32 lanes = 32 / bytes;
 
         x86::Compiler compiler(&code);
-        FuncNode* function = compiler.add_func(FuncSignature::build<void, const void* const*, const void*, void*, size_t>());
+        FuncNode *function =
+                compiler.add_func(FuncSignature::build<void, const void *const *, const void *, void *, size_t>());
         function->frame().set_avx_enabled();
         function->frame().set_avx_cleanup();
         const x86::Gp inputs = compiler.new_gp_ptr("inputs");
@@ -38,10 +39,12 @@ namespace sci::core::drivers::processor::compiler {
         bool reads[Chunk::capacity]{};
         bool signs = false;
         const auto note = [&](const uint8 identifier) {
-            if (identifier != slot::none && (identifier & slot::types) == slot::input) reads[identifier & ~slot::types] = true;
+            if (identifier != slot::none && (identifier & slot::types) == slot::input)
+                reads[identifier & ~slot::types] = true;
         };
         for (uint8 step = 0; step < chunk.length; ++step) {
-            for (const uint8 source : chunk.code[step].sources) note(source);
+            for (const uint8 source : chunk.code[step].sources)
+                note(source);
             signs = signs || chunk.code[step].code == Code::negate || chunk.code[step].code == Code::absolute;
         }
         note(chunk.result);
@@ -49,7 +52,7 @@ namespace sci::core::drivers::processor::compiler {
         for (uint8 index = 0; index < chunk.arguments; ++index) {
             if (!reads[index]) continue;
             pointers[index] = compiler.new_gp_ptr("pointer");
-            compiler.mov(pointers[index], x86::ptr(inputs, static_cast<int32_t>(index * sizeof(void*))));
+            compiler.mov(pointers[index], x86::ptr(inputs, static_cast<int32_t>(index * sizeof(void *))));
         }
 
         // Constants are broadcast into registers once, before the loop.
@@ -68,7 +71,8 @@ namespace sci::core::drivers::processor::compiler {
         x86::Vec sign;
         if (signs) {
             std::uint64_t pattern[4];
-            for (std::uint64_t& word : pattern) word = wide ? 0x8000000000000000ull : 0x8000000080000000ull;
+            for (std::uint64_t &word : pattern)
+                word = wide ? 0x8000000000000000ull : 0x8000000080000000ull;
             sign = compiler.new_vec256("sign");
             compiler.vmovups(sign, compiler.new_const(ConstPoolScope::kLocal, pattern, sizeof(pattern)));
         }
@@ -95,58 +99,93 @@ namespace sci::core::drivers::processor::compiler {
 
         // NaN-propagating min / max, as the AVX2 kernels compute them: where `left` is NaN take it,
         // otherwise min/max(left, right), which returns `right` when `right` is NaN.
-        const auto extreme = [&](const x86::Vec& result, const x86::Vec& left, const x86::Vec& right, const bool lesser) {
+        const auto extreme = [&](const x86::Vec &result, const x86::Vec &left, const x86::Vec &right,
+                                 const bool lesser) {
             const x86::Vec candidate = compiler.new_vec256("candidate");
             const x86::Vec unordered = compiler.new_vec256("unordered");
             if (wide) {
-                if (lesser) compiler.vminpd(candidate, left, right); else compiler.vmaxpd(candidate, left, right);
+                if (lesser)
+                    compiler.vminpd(candidate, left, right);
+                else
+                    compiler.vmaxpd(candidate, left, right);
                 compiler.vcmppd(unordered, left, left, Imm(3));
                 compiler.vblendvpd(result, candidate, left, unordered);
             } else {
-                if (lesser) compiler.vminps(candidate, left, right); else compiler.vmaxps(candidate, left, right);
+                if (lesser)
+                    compiler.vminps(candidate, left, right);
+                else
+                    compiler.vmaxps(candidate, left, right);
                 compiler.vcmpps(unordered, left, left, Imm(3));
                 compiler.vblendvps(result, candidate, left, unordered);
             }
         };
 
         for (uint8 step = 0; step < chunk.length; ++step) {
-            const Instruction& instruction = chunk.code[step];
+            const Instruction &instruction = chunk.code[step];
             const x86::Vec first = value(instruction.sources[0]);
             x86::Vec result = compiler.new_vec256("value");
             switch (instruction.code) {
-                case Code::copy: result = first; break;
-                case Code::negate:
-                    if (wide) compiler.vxorpd(result, first, sign); else compiler.vxorps(result, first, sign);
-                    break;
-                case Code::absolute:
-                    if (wide) compiler.vandnpd(result, sign, first); else compiler.vandnps(result, sign, first);
-                    break;
-                case Code::root:
-                    if (wide) compiler.vsqrtpd(result, first); else compiler.vsqrtps(result, first);
-                    break;
-                case Code::add:
-                    if (wide) compiler.vaddpd(result, first, value(instruction.sources[1])); else compiler.vaddps(result, first, value(instruction.sources[1]));
-                    break;
-                case Code::subtract:
-                    if (wide) compiler.vsubpd(result, first, value(instruction.sources[1])); else compiler.vsubps(result, first, value(instruction.sources[1]));
-                    break;
-                case Code::multiply:
-                    if (wide) compiler.vmulpd(result, first, value(instruction.sources[1])); else compiler.vmulps(result, first, value(instruction.sources[1]));
-                    break;
-                case Code::divide:
-                    if (wide) compiler.vdivpd(result, first, value(instruction.sources[1])); else compiler.vdivps(result, first, value(instruction.sources[1]));
-                    break;
-                case Code::minimum: extreme(result, first, value(instruction.sources[1]), true); break;
-                case Code::maximum: extreme(result, first, value(instruction.sources[1]), false); break;
-                case Code::fuse:
-                    compiler.vmovaps(result, value(instruction.sources[2]));
-                    if (wide) {
-                        compiler.vfmadd231pd(result, first, value(instruction.sources[1]));
-                    } else {
-                        compiler.vfmadd231ps(result, first, value(instruction.sources[1]));
-                    }
-                    break;
-                default: return false;
+            case Code::copy:
+                result = first;
+                break;
+            case Code::negate:
+                if (wide)
+                    compiler.vxorpd(result, first, sign);
+                else
+                    compiler.vxorps(result, first, sign);
+                break;
+            case Code::absolute:
+                if (wide)
+                    compiler.vandnpd(result, sign, first);
+                else
+                    compiler.vandnps(result, sign, first);
+                break;
+            case Code::root:
+                if (wide)
+                    compiler.vsqrtpd(result, first);
+                else
+                    compiler.vsqrtps(result, first);
+                break;
+            case Code::add:
+                if (wide)
+                    compiler.vaddpd(result, first, value(instruction.sources[1]));
+                else
+                    compiler.vaddps(result, first, value(instruction.sources[1]));
+                break;
+            case Code::subtract:
+                if (wide)
+                    compiler.vsubpd(result, first, value(instruction.sources[1]));
+                else
+                    compiler.vsubps(result, first, value(instruction.sources[1]));
+                break;
+            case Code::multiply:
+                if (wide)
+                    compiler.vmulpd(result, first, value(instruction.sources[1]));
+                else
+                    compiler.vmulps(result, first, value(instruction.sources[1]));
+                break;
+            case Code::divide:
+                if (wide)
+                    compiler.vdivpd(result, first, value(instruction.sources[1]));
+                else
+                    compiler.vdivps(result, first, value(instruction.sources[1]));
+                break;
+            case Code::minimum:
+                extreme(result, first, value(instruction.sources[1]), true);
+                break;
+            case Code::maximum:
+                extreme(result, first, value(instruction.sources[1]), false);
+                break;
+            case Code::fuse:
+                compiler.vmovaps(result, value(instruction.sources[2]));
+                if (wide) {
+                    compiler.vfmadd231pd(result, first, value(instruction.sources[1]));
+                } else {
+                    compiler.vfmadd231ps(result, first, value(instruction.sources[1]));
+                }
+                break;
+            default:
+                return false;
             }
             values[instruction.target] = result;
         }
@@ -169,9 +208,7 @@ namespace sci::core::drivers::processor::compiler {
 
 namespace sci::core::drivers::processor::compiler {
 
-    bool avx2(asmjit::CodeHolder&, const Chunk&) {
-        return false;
-    }
+    bool avx2(asmjit::CodeHolder &, const Chunk &) { return false; }
 
 }
 

@@ -6,90 +6,39 @@ All notable changes to libsci are documented in this file. Each release's own no
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version is `VERSION`'s first line.
 
-## [0.1.0-alpha.1] - One pass over the data
+## [0.2.0-alpha.1] - In the shape of numpy
 
 ### Added
 
-- `sci.hpp`, a single header with a numpy-style API in the `sci` namespace: `NDArray`, `Shape`,
-  `Device` and `Target`; `add`, `subtract`, `multiply`, `divide`, `minimum`, `maximum`, `negative`,
-  `abs`, `sqrt`, `exp`, `log`, `sin`, `cos` and `copy`; `sum`, `mean`, `min` and `max`; `zeros`,
-  `ones`, `full`, `empty` and `arange`; `dot` and `matmul`.
-- Lazy expressions. `a * b + c` is recorded as bytecode (`core::Chunk`) and computed in a single
-  pass, with no temporary arrays, when it is stored, reduced or copied. A multiply followed by an
-  add becomes one fused multiply-add, and `sum(a * b)` never builds `a * b`.
-- SIMD CPU kernels for every operation, chosen at runtime: scalar fallback, NEON, AVX2 with FMA,
-  and AVX-512. The `SCI_ISA` environment variable forces one. The vector `exp`, `log`, `sin` and
-  `cos` are within a few ulp of the C library.
-- Large arrays are split across a fork-join thread pool (`SCI_THREADS` sets its size).
-  Memory-bound work on Apple chips uses only the performance cores.
-- GPU arrays: `sci::Device gpu(sci::Target::gpu)` and `array.to(gpu)`. Expressions, reductions
-  and `matmul` on GPU arrays run there asynchronously, and reading a GPU array on the host waits
-  for the result. Without a usable Vulkan device, the device falls back to the CPU.
-- Slang compute shaders (`shaders/interpreter.slang`, `shaders/matmul.slang`), compiled with
-  `slangc` at build time and embedded as SPIR-V by `cmake/embed.cmake`.
-- GPU work is batched into command buffers (`vulkan::Stream`), and GPU buffers are recycled
-  through a size-keyed cache (`vulkan::Allocator`).
-- `matmul` uses Apple's Accelerate on macOS.
-- `SCI_NATIVE` CMake option to tune every file for the build machine (`-march=native` /
-  `-mcpu=native`).
-- CPU JIT (`cpu::Jit`, with [asmjit](https://asmjit.com)): an expression of two or more
-  instructions compiles into one machine-code loop that keeps every value in a register, for NEON
-  on ARM64 and AVX2 on x86-64. Results are the kernel tables' to the bit, apart from which NaN
-  comes out when two NaNs meet. A chunk compiles the second time it runs, or the first time when
-  it is large. Expressions with `exp`, `log`, `sin` or `cos` keep running on the kernels for now.
-  About 2× faster for arithmetic chains that fit in cache.
-- GPU JIT (`vulkan::Jit`, with Slang's runtime library): every expression run on the GPU gets a
-  shader of its own, compiled on a background thread; it runs on the interpreter until the shader
-  is ready. Up to 2.2× faster for long expressions on 16M-element arrays.
-- `SCI_JIT` environment variable: `0` turns both JITs off, `trace` reports every compile.
-- `Chunk::signature()`, the key both JITs cache compiled code under.
-- `CHANGELOG.md` and `SECURITY.md`.
-- `tangent`, `arcsine`, `arccosine` and `arctangent`, and the hyperbolic functions and their
-  inverses as `sci::hyperbolic::sine`, `cosine`, `tangent`, `arcsine`, `arccosine` and
-  `arctangent`, on the CPU kernels, the scalar fallback and the GPU.
-- `memory::Allocation`: aligned host memory that frees itself, now behind host arrays, arena
-  blocks, CPU device memory and the per-thread scratch space of the CPU dispatcher.
-- `Accumulator` (folds reduction partials, shared by the CPU and GPU paths), `processor::Plan`,
-  `processor::Range` and `processor::Program`, replacing free helper functions in `dispatch.cpp`.
+- Every circular function and its inverse -- `sin`, `cos`, `tan`, `csc`, `sec`, `cot`, `asin` ...
+  `acot` -- and every hyperbolic function and its inverse, `sinh` ... `coth` and `asinh` ... `acoth`.
+- The complete set of arithmetic and reduction functions, elementwise and fused.
+- `linspace` and `eye` beside `zeros`, `ones`, `full`, `empty` and `range`.
+- `reshape`, `transpose`, `flatten`, `squeeze` and `expand`.
+- `debug`, `release`, `sanitize` and `analyze` presets, with `SCI_SANITIZE` and `SCI_TIDY`.
+- `.clangd`, `.clang-tidy` and `.clang-format`, shared with the other projects, and every source
+  laid out by them.
+- Build and Release workflows: Windows, Linux and macOS built, tested and packaged on every push,
+  and a release made when `VERSION` names a new one.
+- `VERSION`, `releases/`, a contributing guide, a contributor license agreement, a code of
+  conduct, licensing notes and third-party notices.
 
 ### Changed
 
-- Every name is a single English word, with no abbreviations: in the public API `NDArray` is now
-  `Array`, `arange` → `range`, `abs`/`sqrt`/`exp`/`log` → `absolute`/`root`/`exponential`/
-  `logarithm`, `sin`/`cos`/`tan`/`asin`/`acos`/`atan` → `sine`/`cosine`/`tangent`/`arcsine`/
-  `arccosine`/`arctangent`, the reductions `min`/`max` → `minimum`/`maximum` (the elementwise
-  versions take two operands), `linalg::matmul` → `linear::product`, `linalg::lu` →
-  `linear::decompose`, `Target::cpu`/`gpu` → `Target::processor`/`graphics`, `Array::cpu()` →
-  `host()`, and `ndim()` → the constant `Array::rank`.
-- Internally `Code` and `Fold` use the same words, `Dtype {float32, float64}` is
-  `Precision {single, wide}`, `cpu::` is `processor::`, both `Jit` classes are `Compiler`, and the
-  SIMD packs use `subtract`, `multiply`, `divide`, `fuse`, `negate`, `absolute`, `root`,
-  `minimum`, `maximum`, `raw`, `intersect`, `unite`, `toggle` and `shift<n>`.
-- Single-use helper functions are written into their callers, and the rest became members of
-  the class that uses them (for example `Batch::barrier`, `Polynomial::evaluate`, `Library` for
-  the C-library fallbacks).
-- Class names are capitalised: `NDArray`, `Shape`, `Device`, `Target` (previously `ndarray`,
-  `shape`, `device`, `target`).
-- Operations use numpy's names, such as `multiply` instead of `mul`.
-- `linalg::lu` pivots and returns `Factors` (`permutation`, `lower`, `upper`), as
-  `scipy.linalg.lu` does, instead of a pair of lower and upper factors. `linalg::solve` also
-  accepts several right-hand sides as a matrix.
-- `vulkan::dispatch` is replaced by `vulkan::Stream`.
-- Every class has its own header, named after the class, and `include/` mirrors `src/` (no
-  headers under `src/`). The shared CPU kernel code lives in
-  `include/core/drivers/cpu/kernels/generic/`, one file per class (`Scalar`, `Polynomial`,
-  `Exponential`, `Logarithm`, `Trigonometry`, `Operation`, ...), and each instruction set has its
-  own header (`fallback.hpp`, `neon.hpp`, `avx2.hpp`, `avx512.hpp`).
-- Helper types that were nested inside other classes are now classes of their own:
-  `memory::Block` (formerly `Arena::Chunk`), `vulkan::Batch` and `vulkan::Region`.
-- Variables and parameters are named after their type (`Batch& batch`, `Buffer& buffer`).
-- No anonymous namespaces. File-local helpers are `static`, and each instruction set's SIMD
-  wrapper has its own name (`Fallback`, `Neon`, `Avx2`, `Avx512`), so the kernels of one
-  instruction set can never be linked in place of another's.
-- The interpreter shader's shared parts moved to `shaders/common/` (`layout.slang`,
-  `entries.slang`), which the GPU JIT's shaders reuse; `cmake/sources.cmake` embeds them as text.
-- asmjit is fetched at a pinned commit and checked against its SHA-256; Slang's runtime library is
-  now linked.
+- C++26, with no compiler's own dialect of it.
+- The README follows the same layout as the other projects', with a roadmap of what is done,
+  next and later.
+- clang-cl is picked on Windows whatever compiler an IDE names, with compiler-rt's builtins
+  linked for the CPU detection.
+
+### Fixed
+
+- A Windows build linked without `__cpu_model`, which clang-cl's CPU detection needs.
+
+## [0.1.0] - Fewer functions, the same bits
+
+### Changed
+
 - Fewer functions, with the same results to the bit. `Array` gets `size`, `sum`, `mean`,
   `minimum`, `maximum` and `copy` from `Methods`, as expressions do. Its constructors and `to()`
   take a Device or an Arena through one template each. `zeros`, `ones`, `full` and `empty` take an
@@ -132,7 +81,100 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   cores. The count is queried once, the first time a large multithreaded job needs it, which cut
   the demo's first run from about 15 µs to about 6 µs.
 
-## 2026-08-20
+## [0.1.0-beta.2] - One word for every name
+
+### Added
+
+- `tangent`, `arcsine`, `arccosine` and `arctangent`, and the hyperbolic functions and their
+  inverses as `sci::hyperbolic::sine`, `cosine`, `tangent`, `arcsine`, `arccosine` and
+  `arctangent`, on the CPU kernels, the scalar fallback and the GPU.
+- `memory::Allocation`: aligned host memory that frees itself, now behind host arrays, arena
+  blocks, CPU device memory and the per-thread scratch space of the CPU dispatcher.
+- `Accumulator` (folds reduction partials, shared by the CPU and GPU paths), `processor::Plan`,
+  `processor::Range` and `processor::Program`, replacing free helper functions in `dispatch.cpp`.
+
+### Changed
+
+- Every name is a single English word, with no abbreviations: in the public API `NDArray` is now
+  `Array`, `arange` → `range`, `abs`/`sqrt`/`exp`/`log` → `absolute`/`root`/`exponential`/
+  `logarithm`, `sin`/`cos`/`tan`/`asin`/`acos`/`atan` → `sine`/`cosine`/`tangent`/`arcsine`/
+  `arccosine`/`arctangent`, the reductions `min`/`max` → `minimum`/`maximum` (the elementwise
+  versions take two operands), `linalg::matmul` → `linear::product`, `linalg::lu` →
+  `linear::decompose`, `Target::cpu`/`gpu` → `Target::processor`/`graphics`, `Array::cpu()` →
+  `host()`, and `ndim()` → the constant `Array::rank`.
+- Internally `Code` and `Fold` use the same words, `Dtype {float32, float64}` is
+  `Precision {single, wide}`, `cpu::` is `processor::`, both `Jit` classes are `Compiler`, and the
+  SIMD packs use `subtract`, `multiply`, `divide`, `fuse`, `negate`, `absolute`, `root`,
+  `minimum`, `maximum`, `raw`, `intersect`, `unite`, `toggle` and `shift<n>`.
+- Single-use helper functions are written into their callers, and the rest became members of
+  the class that uses them (for example `Batch::barrier`, `Polynomial::evaluate`, `Library` for
+  the C-library fallbacks).
+- Class names are capitalised: `NDArray`, `Shape`, `Device`, `Target` (previously `ndarray`,
+  `shape`, `device`, `target`).
+- Operations use numpy's names, such as `multiply` instead of `mul`.
+- Helper types that were nested inside other classes are now classes of their own:
+  `memory::Block` (formerly `Arena::Chunk`), `vulkan::Batch` and `vulkan::Region`.
+- Variables and parameters are named after their type (`Batch& batch`, `Buffer& buffer`).
+- No anonymous namespaces. File-local helpers are `static`, and each instruction set's SIMD
+  wrapper has its own name (`Fallback`, `Neon`, `Avx2`, `Avx512`), so the kernels of one
+  instruction set can never be linked in place of another's.
+
+## [0.1.0-beta.1] - One pass over the data
+
+### Added
+
+- `sci.hpp`, a single header with a numpy-style API in the `sci` namespace: `NDArray`, `Shape`,
+  `Device` and `Target`; `add`, `subtract`, `multiply`, `divide`, `minimum`, `maximum`, `negative`,
+  `abs`, `sqrt`, `exp`, `log`, `sin`, `cos` and `copy`; `sum`, `mean`, `min` and `max`; `zeros`,
+  `ones`, `full`, `empty` and `arange`; `dot` and `matmul`.
+- Lazy expressions. `a * b + c` is recorded as bytecode (`core::Chunk`) and computed in a single
+  pass, with no temporary arrays, when it is stored, reduced or copied. A multiply followed by an
+  add becomes one fused multiply-add, and `sum(a * b)` never builds `a * b`.
+- SIMD CPU kernels for every operation, chosen at runtime: scalar fallback, NEON, AVX2 with FMA,
+  and AVX-512. The `SCI_ISA` environment variable forces one. The vector `exp`, `log`, `sin` and
+  `cos` are within a few ulp of the C library.
+- Large arrays are split across a fork-join thread pool (`SCI_THREADS` sets its size).
+  Memory-bound work on Apple chips uses only the performance cores.
+- GPU arrays: `sci::Device gpu(sci::Target::gpu)` and `array.to(gpu)`. Expressions, reductions
+  and `matmul` on GPU arrays run there asynchronously, and reading a GPU array on the host waits
+  for the result. Without a usable Vulkan device, the device falls back to the CPU.
+- Slang compute shaders (`shaders/interpreter.slang`, `shaders/matmul.slang`), compiled with
+  `slangc` at build time and embedded as SPIR-V by `cmake/embed.cmake`.
+- GPU work is batched into command buffers (`vulkan::Stream`), and GPU buffers are recycled
+  through a size-keyed cache (`vulkan::Allocator`).
+- `matmul` uses Apple's Accelerate on macOS.
+- `SCI_NATIVE` CMake option to tune every file for the build machine (`-march=native` /
+  `-mcpu=native`).
+- CPU JIT (`cpu::Jit`, with [asmjit](https://asmjit.com)): an expression of two or more
+  instructions compiles into one machine-code loop that keeps every value in a register, for NEON
+  on ARM64 and AVX2 on x86-64. Results are the kernel tables' to the bit, apart from which NaN
+  comes out when two NaNs meet. A chunk compiles the second time it runs, or the first time when
+  it is large. Expressions with `exp`, `log`, `sin` or `cos` keep running on the kernels for now.
+  About 2× faster for arithmetic chains that fit in cache.
+- GPU JIT (`vulkan::Jit`, with Slang's runtime library): every expression run on the GPU gets a
+  shader of its own, compiled on a background thread; it runs on the interpreter until the shader
+  is ready. Up to 2.2× faster for long expressions on 16M-element arrays.
+- `SCI_JIT` environment variable: `0` turns both JITs off, `trace` reports every compile.
+- `Chunk::signature()`, the key both JITs cache compiled code under.
+- `CHANGELOG.md` and `SECURITY.md`.
+
+### Changed
+
+- `linalg::lu` pivots and returns `Factors` (`permutation`, `lower`, `upper`), as
+  `scipy.linalg.lu` does, instead of a pair of lower and upper factors. `linalg::solve` also
+  accepts several right-hand sides as a matrix.
+- `vulkan::dispatch` is replaced by `vulkan::Stream`.
+- Every class has its own header, named after the class, and `include/` mirrors `src/` (no
+  headers under `src/`). The shared CPU kernel code lives in
+  `include/core/drivers/cpu/kernels/generic/`, one file per class (`Scalar`, `Polynomial`,
+  `Exponential`, `Logarithm`, `Trigonometry`, `Operation`, ...), and each instruction set has its
+  own header (`fallback.hpp`, `neon.hpp`, `avx2.hpp`, `avx512.hpp`).
+- The interpreter shader's shared parts moved to `shaders/common/` (`layout.slang`,
+  `entries.slang`), which the GPU JIT's shaders reuse; `cmake/sources.cmake` embeds them as text.
+- asmjit is fetched at a pinned commit and checked against its SHA-256; Slang's runtime library is
+  now linked.
+
+## [0.1.0-alpha.2] - On the GPU
 
 ### Added
 
@@ -144,7 +186,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - `matmul` (replacing `linalg/matrix.hpp`).
 - Slang is fetched when CMake configures the project, for compiling shaders later.
 
-## 2026-08-08
+## [0.1.0-alpha.1] - First arrays
 
 ### Added
 

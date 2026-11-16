@@ -5,8 +5,7 @@
 namespace sci::core::drivers::processor::kernels {
 
     // Coefficients of a polynomial: coefficients[k] multiplies x^k.
-    template <typename type, size count>
-    struct Polynomial {
+    template <typename type, size count> struct Polynomial {
         type coefficients[count]{};
 
         // Taylor coefficients 1/k!.
@@ -31,8 +30,7 @@ namespace sci::core::drivers::processor::kernels {
         }
 
         // Taylor coefficients (-1)^k / (2k + offset)!, in powers of r^2.
-        template <size offset>
-        static constexpr Polynomial alternating() noexcept {
+        template <size offset> static constexpr Polynomial alternating() noexcept {
             Polynomial polynomial{};
             for (size index = 0; index < count; ++index) {
                 double factor = 1.0;
@@ -45,8 +43,7 @@ namespace sci::core::drivers::processor::kernels {
         }
 
         // sum c[k] x^(k - from) for k in [from, count), by Horner's rule.
-        template <typename pack, size from>
-        pack::value evaluate(const pack::value input) const noexcept {
+        template <typename pack, size from> pack::value evaluate(const pack::value input) const noexcept {
             typename pack::value result = pack::splat(coefficients[count - 1]);
             for (size index = count - 1; index-- > from;) {
                 result = pack::fuse(result, input, pack::splat(coefficients[index]));

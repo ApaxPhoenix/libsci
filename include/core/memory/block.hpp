@@ -16,7 +16,7 @@ namespace sci::core::memory {
         std::unique_ptr<Block> next;
 
         Block(const size bytes, const size bound)
-            : allocation(bytes, bound), head(static_cast<std::byte*>(allocation.data())) {}
+            : allocation(bytes, bound), head(static_cast<std::byte *>(allocation.data())) {}
     };
 
 }

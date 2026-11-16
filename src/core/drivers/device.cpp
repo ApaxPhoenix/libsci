@@ -1,20 +1,20 @@
 #include "core/drivers/device.hpp"
 #include "core/alignment.hpp"
 #include "core/assert.hpp"
+#include "core/bytecode/accumulator.hpp"
+#include "core/bytecode/chunk.hpp"
+#include "core/bytecode/fold.hpp"
+#include "core/bytecode/instruction.hpp"
+#include "core/bytecode/precision.hpp"
 #include "core/drivers/processor/dispatch.hpp"
 #include "core/drivers/vulkan/allocator.hpp"
-#include "core/drivers/vulkan/context.hpp"
 #include "core/drivers/vulkan/compiler.hpp"
+#include "core/drivers/vulkan/context.hpp"
 #include "core/drivers/vulkan/kernel.hpp"
 #include "core/drivers/vulkan/pipeline.hpp"
 #include "core/drivers/vulkan/region.hpp"
 #include "core/drivers/vulkan/stream.hpp"
 #include "core/memory/allocation.hpp"
-#include "core/bytecode/accumulator.hpp"
-#include "core/bytecode/instruction.hpp"
-#include "core/bytecode/precision.hpp"
-#include "core/bytecode/fold.hpp"
-#include "core/bytecode/chunk.hpp"
 #include "core/types.hpp"
 #include "shaders/spirv.hpp"
 
@@ -43,7 +43,8 @@ namespace sci::core::drivers {
         uint64 inputs[Chunk::capacity];
     };
 
-    static_assert(offsetof(Layout, code) == 16 && offsetof(Layout, constants) == 528 && offsetof(Layout, inputs) == 784);
+    static_assert(offsetof(Layout, code) == 16 && offsetof(Layout, constants) == 528 &&
+                  offsetof(Layout, inputs) == 784);
 
     // Mirrors Arguments in shaders/common/layout.slang; `reserved` pads it to the shader's 32 bytes.
     struct Evaluation {
@@ -99,28 +100,27 @@ namespace sci::core::drivers {
         std::mutex guard;
 
         // Takes over an opened context; everything else is built on top of it.
-        explicit Graphics(vulkan::Context&& opened)
-            : context(std::move(opened)),
-              allocator(context),
+        explicit Graphics(vulkan::Context &&opened)
+            : context(std::move(opened)), allocator(context),
               evaluate(context, shaders::interpreter, "evaluate", sizeof(Evaluation)),
               reduce(context, shaders::interpreter, "reduce", sizeof(Evaluation)),
-              product(context, shaders::product, "product", sizeof(Product)),
-              compiler(context, sizeof(Evaluation)),
+              product(context, shaders::product, "product", sizeof(Product)), compiler(context, sizeof(Evaluation)),
               stream(context, allocator) {}
 
         // Translates a chunk for interpreter.slang and the JIT's kernels, which read the same block.
         // False when the GPU cannot run it: float64, more temporaries than the interpreter has
         // registers (unless the chunk is `compiled`), or an array that does not live on this device.
-        [[nodiscard]] bool encode(const Chunk& chunk, const size count, Layout& layout, const bool compiled) const noexcept {
+        [[nodiscard]] bool encode(const Chunk &chunk, const size count, Layout &layout,
+                                  const bool compiled) const noexcept {
             if (chunk.precision != Precision::single || (!compiled && chunk.temporaries > registers)) return false;
             if (count > std::numeric_limits<uint32>::max() / 2) return false;
 
             layout.length = chunk.length;
             layout.result = chunk.result;
             for (uint8 index = 0; index < chunk.length; ++index) {
-                const Instruction& step = chunk.code[index];
+                const Instruction &step = chunk.code[index];
                 layout.code[index][0] = static_cast<uint32>(step.code) | uint32{step.target} << 8 |
-                                       uint32{step.sources[0]} << 16 | uint32{step.sources[1]} << 24;
+                                        uint32{step.sources[0]} << 16 | uint32{step.sources[1]} << 24;
                 layout.code[index][1] = step.sources[2];
             }
             for (uint8 index = 0; index < chunk.literals; ++index) {
@@ -135,9 +135,9 @@ namespace sci::core::drivers {
 
         // Copies a chunk into the batch's scratch memory and returns its device address, with
         // every input advanced by `start` elements (for split dispatches).
-        [[nodiscard]] uint64 upload(const Layout& layout, const uint8 arguments, const size start) {
+        [[nodiscard]] uint64 upload(const Layout &layout, const uint8 arguments, const size start) {
             const vulkan::Region region = stream.reserve(sizeof(Layout));
-            auto* copy = static_cast<Layout*>(region.host);
+            auto *copy = static_cast<Layout *>(region.host);
             std::memcpy(copy, &layout, sizeof(Layout));
             for (uint8 index = 0; index < arguments; ++index) {
                 copy->inputs[index] += start * sizeof(float);
@@ -146,13 +146,13 @@ namespace sci::core::drivers {
         }
     };
 
-    Device::Device(const Target target, const uint32 index)
-        : type(target), ordinal(index) {
+    Device::Device(const Target target, const uint32 index) : type(target), ordinal(index) {
         if (type != Target::graphics) return;
 
         if (vulkan::Context context = vulkan::Context::compose(ordinal); context.valid()) {
             graphics = std::make_unique<Graphics>(std::move(context));
-            if (!graphics->evaluate.valid() || !graphics->reduce.valid() || !graphics->product.valid()) graphics.reset();
+            if (!graphics->evaluate.valid() || !graphics->reduce.valid() || !graphics->product.valid())
+                graphics.reset();
         }
 
         if (!graphics) {
@@ -163,9 +163,7 @@ namespace sci::core::drivers {
 
     Device::~Device() = default;
 
-    const char* Device::name() const noexcept {
-        return graphics ? graphics->context.properties.deviceName : "cpu";
-    }
+    const char *Device::name() const noexcept { return graphics ? graphics->context.properties.deviceName : "cpu"; }
 
     void Device::synchronize() noexcept {
         if (graphics) {
@@ -174,7 +172,7 @@ namespace sci::core::drivers {
         }
     }
 
-    void Device::allocate(const size bytes, Memory& memory) {
+    void Device::allocate(const size bytes, Memory &memory) {
         memory.bytes = bytes;
         memory.target = type;
         if (graphics) {
@@ -188,7 +186,7 @@ namespace sci::core::drivers {
         ASSERT(memory.host != nullptr);
     }
 
-    void Device::dispose(Memory& memory) noexcept {
+    void Device::dispose(Memory &memory) noexcept {
         if (memory.target == Target::graphics && graphics) {
             std::scoped_lock lock(graphics->guard);
             graphics->stream.retire(memory.buffer);
@@ -197,26 +195,26 @@ namespace sci::core::drivers {
         memory = {};
     }
 
-    void Device::execute(const Chunk& chunk, void* output, const size count) {
+    void Device::execute(const Chunk &chunk, void *output, const size count) {
         if (count == 0) return;
         if (graphics) {
             std::unique_lock lock(graphics->guard);
             Layout layout;
             const uint64 destination = graphics->allocator.locate(output);
-            const vulkan::Kernel* kernel = destination != 0 ? graphics->compiler.find(chunk) : nullptr;
+            const vulkan::Kernel *kernel = destination != 0 ? graphics->compiler.find(chunk) : nullptr;
             if (destination != 0 && graphics->encode(chunk, count, layout, kernel != nullptr)) {
-                const vulkan::Pipeline& pipeline = kernel ? *kernel->evaluate : graphics->evaluate;
+                const vulkan::Pipeline &pipeline = kernel ? *kernel->evaluate : graphics->evaluate;
                 const size cost = chunk.cost();
                 const size limit = std::max<size>(stride, slice / cost / stride * stride);
                 for (size start = 0; start < count; start += limit) {
                     const size length = std::min(limit, count - start);
                     const Evaluation arguments{
-                        .chunk = graphics->upload(layout, chunk.arguments, start),
-                        .output = destination + start * sizeof(float),
-                        .count = static_cast<uint32>(length),
-                        .mode = 0,
-                        .groups = static_cast<uint32>(std::min<size>((length + stride - 1) / stride, 65535)),
-                        .reserved = 0,
+                            .chunk = graphics->upload(layout, chunk.arguments, start),
+                            .output = destination + start * sizeof(float),
+                            .count = static_cast<uint32>(length),
+                            .mode = 0,
+                            .groups = static_cast<uint32>(std::min<size>((length + stride - 1) / stride, 65535)),
+                            .reserved = 0,
                     };
                     graphics->stream.record(pipeline, &arguments, length * cost, arguments.groups);
                 }
@@ -227,7 +225,7 @@ namespace sci::core::drivers {
         processor::Dispatch::global().execute(chunk, output, count);
     }
 
-    double Device::reduce(const Chunk& chunk, const Fold fold, const size count) {
+    double Device::reduce(const Chunk &chunk, const Fold fold, const size count) {
         if (count == 0) {
             return fold == Fold::sum ? 0.0 : std::numeric_limits<double>::quiet_NaN();
         }
@@ -236,12 +234,12 @@ namespace sci::core::drivers {
             Layout layout{};
             const size cost = chunk.cost();
             const bool large = count * cost >= handoff;
-            const vulkan::Kernel* kernel = large ? graphics->compiler.find(chunk) : nullptr;
+            const vulkan::Kernel *kernel = large ? graphics->compiler.find(chunk) : nullptr;
             if (large && graphics->encode(chunk, count, layout, kernel != nullptr)) {
-                const vulkan::Pipeline& pipeline = kernel ? *kernel->reduce : graphics->reduce;
+                const vulkan::Pipeline &pipeline = kernel ? *kernel->reduce : graphics->reduce;
                 // One dispatch per bounded slice, each leaving one partial per workgroup.
                 struct Piece {
-                    const float* values;
+                    const float *values;
                     uint32 width;
                 };
                 std::vector<Piece> pieces;
@@ -252,22 +250,22 @@ namespace sci::core::drivers {
                     const uint64 address = graphics->upload(layout, chunk.arguments, start);
                     const vulkan::Region partials = graphics->stream.reserve(size{width} * 2 * sizeof(float));
                     const Evaluation arguments{
-                        .chunk = address,
-                        .output = partials.address,
-                        .count = static_cast<uint32>(length),
-                        .mode = static_cast<uint32>(fold),
-                        .groups = width,
-                        .reserved = 0,
+                            .chunk = address,
+                            .output = partials.address,
+                            .count = static_cast<uint32>(length),
+                            .mode = static_cast<uint32>(fold),
+                            .groups = width,
+                            .reserved = 0,
                     };
                     graphics->stream.record(pipeline, &arguments, length * cost, width);
-                    pieces.push_back({.values = static_cast<const float*>(partials.host), .width = width});
+                    pieces.push_back({.values = static_cast<const float *>(partials.host), .width = width});
                 }
                 graphics->stream.wait();
 
                 // Fold the partials in double precision; a NaN anywhere wins.
                 Accumulator accumulator(fold);
                 bool poisoned = false;
-                for (const Piece& piece : pieces) {
+                for (const Piece &piece : pieces) {
                     for (uint32 group = 0; group < piece.width; ++group) {
                         accumulator.add(piece.values[2 * group]);
                         poisoned = poisoned || piece.values[2 * group + 1] != 0.0f;
@@ -280,7 +278,8 @@ namespace sci::core::drivers {
         return processor::Dispatch::global().reduce(chunk, fold, count);
     }
 
-    void Device::product(const Precision precision, const void* left, const void* right, void* output, const size rows, const size columns, const size depth) {
+    void Device::product(const Precision precision, const void *left, const void *right, void *output, const size rows,
+                         const size columns, const size depth) {
         if (rows == 0 || columns == 0) return;
         if (graphics) {
             std::unique_lock lock(graphics->guard);
@@ -288,24 +287,25 @@ namespace sci::core::drivers {
             const uint64 second = graphics->allocator.locate(right);
             const uint64 destination = graphics->allocator.locate(output);
             constexpr size limit = std::numeric_limits<uint32>::max();
-            if (precision == Precision::single && first && second && destination && rows < limit && columns < limit && depth < limit) {
+            if (precision == Precision::single && first && second && destination && rows < limit && columns < limit &&
+                depth < limit) {
                 // Bands of rows, each a bounded amount of work.
                 const size area = std::max<size>(columns * std::max<size>(depth, 1) / 16, 1);
                 const size band = std::max<size>(tile, slice / area / tile * tile);
                 for (size top = 0; top < rows; top += band) {
                     const size height = std::min(band, rows - top);
                     const Product arguments{
-                        .left = first,
-                        .right = second,
-                        .output = destination,
-                        .rows = static_cast<uint32>(rows),
-                        .columns = static_cast<uint32>(columns),
-                        .depth = static_cast<uint32>(depth),
-                        .first = static_cast<uint32>(top),
+                            .left = first,
+                            .right = second,
+                            .output = destination,
+                            .rows = static_cast<uint32>(rows),
+                            .columns = static_cast<uint32>(columns),
+                            .depth = static_cast<uint32>(depth),
+                            .first = static_cast<uint32>(top),
                     };
                     graphics->stream.record(graphics->product, &arguments, height * area,
-                                       static_cast<uint32>((columns + tile - 1) / tile),
-                                       static_cast<uint32>((height + tile - 1) / tile));
+                                            static_cast<uint32>((columns + tile - 1) / tile),
+                                            static_cast<uint32>((height + tile - 1) / tile));
                 }
                 return;
             }

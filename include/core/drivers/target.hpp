@@ -5,9 +5,6 @@
 namespace sci::core::drivers {
 
     // Where an array lives and where its expressions run.
-    enum class Target : uint8 {
-        processor,
-        graphics
-    };
+    enum class Target : uint8 { processor, graphics };
 
 }

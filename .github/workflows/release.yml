@@ -1,0 +1,135 @@
+# Ships what Build made once it has passed on main with a VERSION not yet
+# released: the tag and a GitHub release with every package. Build packed and tested them in its own run,
+# versioned as VERSION says, so what is published is what passed, and a new
+# version is VERSION changed on main. A tag pushed by hand releases the same
+# way when it is VERSION's own.
+#
+# Each place is published to once: a run finds what is there already and
+# ships only the rest, so a step that failed is retried by running this
+# workflow again for the same Build run, from the Actions tab or with
+#   gh workflow run release.yml -f run=<the Build run's id>
+name: Release
+
+on:
+  workflow_run:
+    workflows: [ Build ]
+    types: [ completed ]
+  workflow_dispatch:
+    inputs:
+      run:
+        description: The Build run whose packages to ship
+        required: true
+
+# One release at a time: a second run for the same version finds it shipped.
+concurrency:
+  group: release
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  # The version is VERSION's at the commit Build ran on. A tag that is not
+  # VERSION's own, or a tag already on another commit, ships nothing.
+  version:
+    name: Version
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-24.04
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+      commit: ${{ steps.decide.outputs.commit }}
+      version: ${{ steps.decide.outputs.version }}
+      title: ${{ steps.decide.outputs.title }}
+      ship: ${{ steps.decide.outputs.ship }}
+      github: ${{ steps.decide.outputs.github }}
+    steps:
+      - name: Decide
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN: ${{ inputs.run || github.event.workflow_run.id }}
+        run: |
+          read -r commit branch conclusion event < <(gh run view "$RUN" -R "$GITHUB_REPOSITORY" \
+            --json headSha,headBranch,conclusion,event --jq '"\(.headSha) \(.headBranch) \(.conclusion) \(.event)"')
+          file=$(gh api "repos/$GITHUB_REPOSITORY/contents/VERSION?ref=$commit" --jq .content 2> /dev/null |
+            base64 -d 2> /dev/null | tr -d '\r') || file=""
+          version=$(printf '%s\n' "$file" | sed -n 1p | tr -d '[:space:]')
+          title=$(printf '%s\n' "$file" | sed -n 2p | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+          tag="v$version"
+          ship=false
+          github=false
+          if [ "$conclusion" != success ] || [ "$event" != push ]; then
+            echo "::notice::Build run $RUN did not pass on a push, so nothing is shipped."
+          elif [ -z "$version" ]; then
+            echo "::notice::This commit has no VERSION, so nothing is shipped."
+          elif [ "$branch" != main ] && [ "$branch" != "$tag" ]; then
+            echo "::notice::The tag $branch is not VERSION's $tag, so nothing is shipped."
+          elif tagged=$(gh api "repos/$GITHUB_REPOSITORY/commits/$tag" --jq .sha 2> /dev/null) &&
+              [ "$tagged" != "$commit" ]; then
+            echo "::warning::$tag already names $tagged, not $commit: raise VERSION to release this commit."
+          else
+            ship=true
+            gh release view "$tag" -R "$GITHUB_REPOSITORY" > /dev/null 2>&1 || github=true
+          fi
+          echo "Build run $RUN, $commit: version $version, \"$title\"; shipped: $ship; GitHub release to make: $github"
+          {
+            echo "run=$RUN"
+            echo "commit=$commit"
+            echo "version=$version"
+            echo "title=$title"
+            echo "ship=$ship"
+            echo "github=$github"
+          } >> "$GITHUB_OUTPUT"
+
+  # Makes the tag at the commit Build ran on, unless it is there already, and
+  # names the release with VERSION's second line, or the tag when there is
+  # none. Its notes are releases/<version>.md at that commit, written by hand
+  # as every release's are; without one, GitHub's list of what was merged
+  # stands in.
+  github:
+    name: GitHub
+    needs: version
+    if: needs.version.outputs.github == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: bin
+          merge-multiple: true
+          run-id: ${{ needs.version.outputs.run }}
+          github-token: ${{ github.token }}
+
+      - name: Notes
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+          COMMIT: ${{ needs.version.outputs.commit }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/contents/releases/$VERSION.md?ref=$COMMIT" --jq .content 2> /dev/null |
+            base64 -d > notes.md 2> /dev/null || true
+          if [ -s notes.md ]; then
+            echo "generate=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::There is no releases/$VERSION.md, so the notes are GitHub's list of what was merged."
+            echo "generate=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: ${{ needs.version.outputs.title || format('v{0}', needs.version.outputs.version) }}
+          target_commitish: ${{ needs.version.outputs.commit }}
+          body_path: notes.md
+          files: bin/*
+          generate_release_notes: ${{ steps.notes.outputs.generate }}
+          # A version with a hyphen, like 0.1.0-alpha.1, is a pre-release and
+          # never the latest.
+          prerelease: ${{ contains(needs.version.outputs.version, '-') }}
+          make_latest: ${{ !contains(needs.version.outputs.version, '-') }}

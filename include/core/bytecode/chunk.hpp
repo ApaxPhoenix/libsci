@@ -1,9 +1,9 @@
 #pragma once
 
-#include "core/bytecode/precision.hpp"
-#include "core/bytecode/instruction.hpp"
 #include "core/bytecode/code.hpp"
 #include "core/bytecode/fold.hpp"
+#include "core/bytecode/instruction.hpp"
+#include "core/bytecode/precision.hpp"
 #include "core/types.hpp"
 
 #include <algorithm>
@@ -26,11 +26,10 @@ namespace sci::core {
     public:
         static constexpr size capacity = 64;
 
-        explicit Chunk(const Precision precision) noexcept
-            : precision(precision) {}
+        explicit Chunk(const Precision precision) noexcept : precision(precision) {}
 
         // Recording. Each call returns the value id of what it added.
-        [[nodiscard]] uint8 input(const void* pointer) noexcept {
+        [[nodiscard]] uint8 input(const void *pointer) noexcept {
             for (uint8 index = 0; index < arguments; ++index) {
                 if (inputs[index] == pointer) return slot::input | index;
             }
@@ -41,7 +40,8 @@ namespace sci::core {
 
         [[nodiscard]] uint8 constant(const double value) noexcept {
             for (uint8 index = 0; index < literals; ++index) {
-                if (std::bit_cast<uint64>(constants[index]) == std::bit_cast<uint64>(value)) return slot::literal | index;
+                if (std::bit_cast<uint64>(constants[index]) == std::bit_cast<uint64>(value))
+                    return slot::literal | index;
             }
             if (literals == capacity) return fail();
             constants[literals] = value;
@@ -50,7 +50,8 @@ namespace sci::core {
 
         // Sources are consumed: expression trees use every temporary exactly once, so a temporary
         // returns to the free list as soon as its consumer is recorded.
-        [[nodiscard]] uint8 emit(const Code code, const uint8 first, const uint8 second = slot::none, const uint8 third = slot::none) noexcept {
+        [[nodiscard]] uint8 emit(const Code code, const uint8 first, const uint8 second = slot::none,
+                                 const uint8 third = slot::none) noexcept {
             if (overflow) return slot::none;
 
             if (code == Code::add) {
@@ -76,12 +77,13 @@ namespace sci::core {
         }
 
         // Finishes a chunk whose result is written to the output array.
-        const Chunk& output(const uint8 value) noexcept {
+        const Chunk &output(const uint8 value) noexcept {
             if (overflow) return *this;
             if (length > 0 && code[length - 1].target == value && (value & slot::types) == slot::temporary) {
                 code[length - 1].target = slot::output;
             } else if (length < capacity) {
-                code[length++] = Instruction{.code = Code::copy, .target = slot::output, .sources = {value, slot::none, slot::none}};
+                code[length++] = Instruction{
+                        .code = Code::copy, .target = slot::output, .sources = {value, slot::none, slot::none}};
             } else {
                 fail();
             }
@@ -90,15 +92,13 @@ namespace sci::core {
         }
 
         // Finishes a chunk whose result feeds a reduction instead of being stored.
-        const Chunk& reduce(const uint8 value) noexcept {
+        const Chunk &reduce(const uint8 value) noexcept {
             result = value;
             return *this;
         }
 
         // False once the expression outgrew the fixed capacity; callers then fall back to a loop.
-        [[nodiscard]] bool valid() const noexcept {
-            return !overflow;
-        }
+        [[nodiscard]] bool valid() const noexcept { return !overflow; }
 
         // Rough per-element work: one unit per array streamed plus each instruction's cost. Decides
         // when a chunk is worth spreading across threads or sending to the GPU.
@@ -124,7 +124,8 @@ namespace sci::core {
         // skip that multiply and contract its operands directly (a dot product), so the product
         // never round-trips through memory.
         [[nodiscard]] bool contracted(const Fold fold) const noexcept {
-            return fold == Fold::sum && length > 0 && code[length - 1].code == Code::multiply && code[length - 1].target == result;
+            return fold == Fold::sum && length > 0 && code[length - 1].code == Code::multiply &&
+                   code[length - 1].target == result;
         }
 
         // The instructions and value counts without the input addresses or constant values: chunks
@@ -138,7 +139,7 @@ namespace sci::core {
             key += static_cast<char>(temporaries);
             key += static_cast<char>(result);
             for (uint8 index = 0; index < length; ++index) {
-                const auto&[code, target, sources] = this->code[index];
+                const auto &[code, target, sources] = this->code[index];
                 key += static_cast<char>(code);
                 key += static_cast<char>(target);
                 for (const uint8 source : sources) {
@@ -157,14 +158,14 @@ namespace sci::core {
         uint8 temporaries{0};
         uint8 result{slot::none};
         Instruction code[capacity]{};
-        const void* inputs[capacity]{};
+        const void *inputs[capacity]{};
         double constants[capacity]{};
 
     private:
         // Rewrites `product + addend` into one fma when the product was the last recorded instruction.
         uint8 contract(const uint8 product, const uint8 addend) noexcept {
             if (length == 0 || (product & slot::types) != slot::temporary) return slot::none;
-            Instruction& last = code[length - 1];
+            Instruction &last = code[length - 1];
             if (last.code != Code::multiply || last.target != product) return slot::none;
             last.code = Code::fuse;
             last.sources[2] = addend;

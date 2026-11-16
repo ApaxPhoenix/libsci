@@ -9,7 +9,8 @@
 
 namespace sci::core::drivers::vulkan {
 
-    Pipeline::Pipeline(const Context& context, const std::span<const uint32> code, const char* entry, const uint32 bytes)
+    Pipeline::Pipeline(const Context &context, const std::span<const uint32> code, const char *entry,
+                       const uint32 bytes)
         : context(context), bytes(bytes) {
         std::vector<uint32> words(code.begin(), code.end());
 
@@ -47,54 +48,44 @@ namespace sci::core::drivers::vulkan {
                     }
                     placed = true;
                 }
-                result.insert(result.end(), code.begin() + static_cast<std::ptrdiff_t>(position), code.begin() + static_cast<std::ptrdiff_t>(position + count));
+                result.insert(result.end(), code.begin() + static_cast<std::ptrdiff_t>(position),
+                              code.begin() + static_cast<std::ptrdiff_t>(position + count));
                 position += count;
             }
             if (!malformed) words = std::move(result);
         }
 
-        const VkShaderModuleCreateInfo module{
-            .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .codeSize = words.size() * sizeof(uint32),
-            .pCode = words.data()
-        };
+        const VkShaderModuleCreateInfo module{.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+                                              .pNext = nullptr,
+                                              .flags = 0,
+                                              .codeSize = words.size() * sizeof(uint32),
+                                              .pCode = words.data()};
         if (vkCreateShaderModule(context.device, &module, nullptr, &shader) != VK_SUCCESS) return;
 
-        const VkPushConstantRange range{
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-            .offset = 0,
-            .size = bytes
-        };
-        const VkPipelineLayoutCreateInfo plan{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .setLayoutCount = 0,
-            .pSetLayouts = nullptr,
-            .pushConstantRangeCount = 1,
-            .pPushConstantRanges = &range
-        };
+        const VkPushConstantRange range{.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT, .offset = 0, .size = bytes};
+        const VkPipelineLayoutCreateInfo plan{.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+                                              .pNext = nullptr,
+                                              .flags = 0,
+                                              .setLayoutCount = 0,
+                                              .pSetLayouts = nullptr,
+                                              .pushConstantRangeCount = 1,
+                                              .pPushConstantRanges = &range};
         if (vkCreatePipelineLayout(context.device, &plan, nullptr, &layout) != VK_SUCCESS) return;
 
         const VkComputePipelineCreateInfo compute{
-            .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .stage = {
-                .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
                 .pNext = nullptr,
                 .flags = 0,
-                .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-                .module = shader,
-                .pName = entry,
-                .pSpecializationInfo = nullptr
-            },
-            .layout = layout,
-            .basePipelineHandle = VK_NULL_HANDLE,
-            .basePipelineIndex = -1
-        };
+                .stage = {.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                          .pNext = nullptr,
+                          .flags = 0,
+                          .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+                          .module = shader,
+                          .pName = entry,
+                          .pSpecializationInfo = nullptr},
+                .layout = layout,
+                .basePipelineHandle = VK_NULL_HANDLE,
+                .basePipelineIndex = -1};
         if (vkCreateComputePipelines(context.device, VK_NULL_HANDLE, 1, &compute, nullptr, &handle) != VK_SUCCESS) {
             handle = VK_NULL_HANDLE;
         }

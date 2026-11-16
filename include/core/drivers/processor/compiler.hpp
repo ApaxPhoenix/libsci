@@ -27,17 +27,17 @@ namespace sci::core::drivers::processor {
     public:
         // Runs a compiled chunk over `count` elements, a multiple of width(). inputs[k] and output
         // point at the first element, constants holds the chunk's constants in the element type.
-        using Function = void (*)(const void* const* inputs, const void* constants, void* output, size count);
+        using Function = void (*)(const void *const *inputs, const void *constants, void *output, size count);
 
-        [[nodiscard]] static Compiler& global();
+        [[nodiscard]] static Compiler &global();
 
         // Elements one iteration of compiled code covers, or 0 when this table has no compiler.
-        [[nodiscard]] static size width(const kernels::Table& table, Precision precision) noexcept;
+        [[nodiscard]] static size width(const kernels::Table &table, Precision precision) noexcept;
 
         // The compiled chunk, or null when the kernels should run it: not supported, too small, or
         // not worth compiling yet. A chunk compiles the second time it is seen, or the first time when
         // it carries enough work (`count` elements) to pay for compiling.
-        [[nodiscard]] Function compile(const Chunk& chunk, const kernels::Table& table, size count);
+        [[nodiscard]] Function compile(const Chunk &chunk, const kernels::Table &table, size count);
 
     private:
         Compiler();

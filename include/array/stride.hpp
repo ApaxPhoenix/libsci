@@ -8,8 +8,7 @@
 namespace sci::array {
 
     // Elements to skip per step along each dimension (numpy's strides, in elements instead of bytes).
-    template <core::size rank>
-    struct Stride {
+    template <core::size rank> struct Stride {
         std::array<core::size, rank> steps{};
 
         // Row-major (C order) strides for a shape.
@@ -23,9 +22,7 @@ namespace sci::array {
             return result;
         }
 
-        constexpr core::size operator[](core::size index) const noexcept {
-            return steps[index];
-        }
+        constexpr core::size operator[](core::size index) const noexcept { return steps[index]; }
 
         // Flat offset of a multi-dimensional index.
         constexpr core::size offset(std::array<core::size, rank> indices) const noexcept {

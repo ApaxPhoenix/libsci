@@ -10,7 +10,8 @@
 int main() {
     const auto volume = sci::reshape(sci::range(12), {2, 2, 3});
     const auto transposed = sci::transpose(volume);
-    if (const sci::Array<int, 3> expected(sci::Shape<3>{3, 2, 2}, {0, 6, 3, 9, 1, 7, 4, 10, 2, 8, 5, 11}); transposed != expected) {
+    if (const sci::Array<int, 3> expected(sci::Shape<3>{3, 2, 2}, {0, 6, 3, 9, 1, 7, 4, 10, 2, 8, 5, 11});
+        transposed != expected) {
         std::cerr << "3-D transpose check failed\n";
         return 1;
     }
@@ -22,24 +23,24 @@ int main() {
 
     const sci::Array<float, 1> ramp = sci::range(0.0f, 1.0f, 1.0f / static_cast<float>(elements));
 
-    const sci::Array<float, 1> alpha   = sci::linspace(3.0f, 4.0f, elements);
-    const sci::Array<float, 1> beta    = sci::linspace(3.0f, 8.0f, elements);
-    const sci::Array<float, 1> gamma   = sci::linspace(2.0f, 1.0f, elements);
-    const sci::Array<float, 1> delta   = sci::linspace(0.75f, 1.0f, elements); // Valid domain for asech: (0, 1]
+    const sci::Array<float, 1> alpha = sci::linspace(3.0f, 4.0f, elements);
+    const sci::Array<float, 1> beta = sci::linspace(3.0f, 8.0f, elements);
+    const sci::Array<float, 1> gamma = sci::linspace(2.0f, 1.0f, elements);
+    const sci::Array<float, 1> delta = sci::linspace(0.75f, 1.0f, elements);  // Valid domain for asech: (0, 1]
     const sci::Array<float, 1> epsilon = sci::linspace(1.5f, 3.0f, elements); // Valid domain for acoth: |x| > 1
-    const sci::Array<float, 1> zeta    = sci::linspace(1.25f, 0.75f, elements);
+    const sci::Array<float, 1> zeta = sci::linspace(1.25f, 0.75f, elements);
 
     std::chrono::duration<double, std::micro> overall{0};
 
     // Runs one operation with its reduction, then prints the result and how long it took.
-    const auto measure = [&overall](const char* name, const auto& work) {
+    const auto measure = [&overall](const char *name, const auto &work) {
         float result = 0.0f;
         for (int run = 0; run < warmup; ++run) {
             result = work();
         }
 
         std::vector<double> times(runs);
-        for (double& time : times) {
+        for (double &time : times) {
             const auto start = std::chrono::steady_clock::now();
             result = work();
             const auto finish = std::chrono::steady_clock::now();

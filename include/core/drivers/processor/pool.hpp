@@ -22,34 +22,34 @@ namespace sci::core::drivers::processor {
         explicit Pool(size count = std::thread::hardware_concurrency());
         ~Pool();
 
-        Pool(const Pool&) = delete;
-        Pool& operator=(const Pool&) = delete;
+        Pool(const Pool &) = delete;
+        Pool &operator=(const Pool &) = delete;
 
         // Threads that can take part in a job, the caller included.
         [[nodiscard]] size width() const noexcept { return threads.size() + 1; }
 
         // At most `limit` threads (the caller included) take part; 0 means all of them.
-        template <typename action>
-        void run(const size count, action&& work, const size limit = 0) {
+        template <typename action> void run(const size count, action &&work, const size limit = 0) {
             using callable = std::remove_reference_t<action>;
-            run(count, [](void* state, const size index) { (*static_cast<callable*>(state))(index); }, static_cast<void*>(&work), limit);
+            run(
+                    count, [](void *state, const size index) { (*static_cast<callable *>(state))(index); },
+                    static_cast<void *>(&work), limit);
         }
 
-        void run(size count, void (*routine)(void*, size), void* state, size limit);
+        void run(size count, void (*routine)(void *, size), void *state, size limit);
 
         // Shared pool, sized from SCI_THREADS when set, otherwise from the hardware.
-        [[nodiscard]] static Pool& global();
+        [[nodiscard]] static Pool &global();
 
     private:
         // Pauses the core for a moment inside a spin loop.
         static void relax() noexcept;
 
         // Spins on a condition, then starts yielding the core so a preempted peer can finish.
-        template <typename predicate>
-        static void await(predicate&& ready) noexcept;
+        template <typename predicate> static void await(predicate &&ready) noexcept;
 
         void loop(size seat);
-        void drain(void (*routine)(void*, size), void* state, size count) noexcept;
+        void drain(void (*routine)(void *, size), void *state, size count) noexcept;
 
         std::vector<std::thread> threads;
         std::mutex exclusive;
@@ -57,8 +57,8 @@ namespace sci::core::drivers::processor {
         std::condition_variable signal;
 
         // The published job; only read by workers counted in `busy`.
-        void (*task)(void*, size){nullptr};
-        void* argument{nullptr};
+        void (*task)(void *, size){nullptr};
+        void *argument{nullptr};
         size total{0};
         size seats{0};
 

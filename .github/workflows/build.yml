@@ -1,0 +1,123 @@
+# Builds, tests and packages libsci on every platform a release ships for, one
+# runner each: CMake packages the architecture it builds, so another
+# architecture is another build. Every package is versioned as the VERSION
+# file says. A release is release.yml's: once this workflow passes on main
+# with a VERSION not yet released, it ships what this run packaged.
+#
+# Every runner gets a C++26 compiler: Visual Studio's clang-cl on Windows,
+# Clang 20 from apt.llvm.org on Linux, Homebrew's LLVM on macOS. The first
+# configure downloads Slang and asmjit into vendors/, cached between runs.
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Windows x64, runner: windows-2025-vs2026, architecture: x64 }
+          - { name: Linux x64, runner: ubuntu-24.04, architecture: x64 }
+          - { name: macOS ARM64, runner: macos-15, architecture: arm64 }
+    env:
+      TREE: ${{ github.workspace }}/cmake-build-release
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Cache Slang and asmjit
+        uses: actions/cache@v5
+        with:
+          path: vendors
+          key: vendors-${{ runner.os }}-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: vendors-${{ runner.os }}-
+
+      # Vulkan's loader and headers everywhere; on Linux, Mesa's lavapipe, a
+      # Vulkan device on the CPU, so the GPU path runs on a runner with none.
+      - name: Install Vulkan and the system's build tools
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y ninja-build libvulkan-dev mesa-vulkan-drivers vulkan-tools
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew install ninja vulkan-headers vulkan-loader molten-vk
+          fi
+
+      - name: Install the Vulkan SDK
+        if: runner.os == 'Windows'
+        uses: humbletim/install-vulkan-sdk@v1.2
+        with:
+          version: latest
+          cache: true
+
+      # Visual Studio's clang-cl, and its environment for every step after this
+      # one, as a Developer Command Prompt would have it.
+      - name: Load Visual Studio's clang-cl and environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $studio = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * `
+            -requires Microsoft.VisualStudio.Component.VC.Llvm.Clang -property installationPath
+          "COMPILER=$studio\VC\Tools\Llvm\x64\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
+          "CCOMPILER=$studio\VC\Tools\Llvm\x64\bin\clang-cl.exe" | Out-File $env:GITHUB_ENV -Append
+          $before = @{}
+          Get-ChildItem env: | ForEach-Object { $before[$_.Name] = $_.Value }
+          $after = cmd /c "`"$studio\VC\Auxiliary\Build\vcvarsall.bat`" x64 > nul && set"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          foreach ($line in $after) {
+            if ($line -match '^([^=]+)=(.*)$' -and $before[$Matches[1]] -ne $Matches[2]) {
+              "$($Matches[1])=$($Matches[2])" | Out-File $env:GITHUB_ENV -Append
+            }
+          }
+
+      - name: Set up Clang 20
+        if: runner.os == 'Linux'
+        run: |
+          wget -q https://apt.llvm.org/llvm.sh
+          sudo bash llvm.sh 20
+          echo "COMPILER=clang++-20" >> "$GITHUB_ENV"
+          echo "CCOMPILER=clang-20" >> "$GITHUB_ENV"
+
+      - name: Set up Homebrew's LLVM
+        if: runner.os == 'macOS'
+        run: |
+          brew install llvm
+          echo "COMPILER=$(brew --prefix llvm)/bin/clang++" >> "$GITHUB_ENV"
+          echo "CCOMPILER=$(brew --prefix llvm)/bin/clang" >> "$GITHUB_ENV"
+
+      - name: Configure
+        shell: bash
+        run: |
+          cmake -B "$TREE" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER="$CCOMPILER" -DCMAKE_CXX_COMPILER="$COMPILER"
+
+      - name: Build
+        run: cmake --build "${{ env.TREE }}"
+
+      - name: Test
+        run: ctest --test-dir "${{ env.TREE }}" --output-on-failure --timeout 300
+
+      - name: Package
+        run: cpack --config "${{ env.TREE }}/CPackConfig.cmake"
+
+      - name: Keep the packages
+        uses: actions/upload-artifact@v6
+        with:
+          name: libsci-${{ runner.os }}-${{ matrix.architecture }}
+          path: |
+            bin/*.zip
+            bin/*.tar.gz
+          if-no-files-found: error

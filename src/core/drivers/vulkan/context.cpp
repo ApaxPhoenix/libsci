@@ -19,35 +19,31 @@ namespace sci::core::drivers::vulkan {
         vkEnumerateInstanceExtensionProperties(nullptr, &count, available.data());
 
         // Portability drivers (MoltenVK on macOS) are only listed when the instance opts in.
-        std::vector<const char*> extensions;
+        std::vector<const char *> extensions;
         VkInstanceCreateFlags flags = 0;
-        if (std::ranges::any_of(available, [](const VkExtensionProperties& extension) {
+        if (std::ranges::any_of(available, [](const VkExtensionProperties &extension) {
                 return std::strcmp(extension.extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) == 0;
             })) {
             extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
             flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
         }
 
-        constexpr VkApplicationInfo application{
-            .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-            .pNext = nullptr,
-            .pApplicationName = nullptr,
-            .applicationVersion = 0,
-            .pEngineName = "libsci",
-            .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-            .apiVersion = VK_API_VERSION_1_2
-        };
+        constexpr VkApplicationInfo application{.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+                                                .pNext = nullptr,
+                                                .pApplicationName = nullptr,
+                                                .applicationVersion = 0,
+                                                .pEngineName = "libsci",
+                                                .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+                                                .apiVersion = VK_API_VERSION_1_2};
 
-        const VkInstanceCreateInfo instance{
-            .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = flags,
-            .pApplicationInfo = &application,
-            .enabledLayerCount = 0,
-            .ppEnabledLayerNames = nullptr,
-            .enabledExtensionCount = static_cast<uint32>(extensions.size()),
-            .ppEnabledExtensionNames = extensions.data()
-        };
+        const VkInstanceCreateInfo instance{.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+                                            .pNext = nullptr,
+                                            .flags = flags,
+                                            .pApplicationInfo = &application,
+                                            .enabledLayerCount = 0,
+                                            .ppEnabledLayerNames = nullptr,
+                                            .enabledExtensionCount = static_cast<uint32>(extensions.size()),
+                                            .ppEnabledExtensionNames = extensions.data()};
 
         if (vkCreateInstance(&instance, nullptr, &context.instance) != VK_SUCCESS) return context;
 
@@ -77,8 +73,10 @@ namespace sci::core::drivers::vulkan {
             extended.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
             extended.pNext = &subgroup;
             vkGetPhysicalDeviceProperties2(candidate, &extended);
-            constexpr VkSubgroupFeatureFlags needed = VK_SUBGROUP_FEATURE_BASIC_BIT | VK_SUBGROUP_FEATURE_VOTE_BIT | VK_SUBGROUP_FEATURE_ARITHMETIC_BIT;
-            if ((subgroup.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT) && (subgroup.supportedOperations & needed) == needed) {
+            constexpr VkSubgroupFeatureFlags needed =
+                    VK_SUBGROUP_FEATURE_BASIC_BIT | VK_SUBGROUP_FEATURE_VOTE_BIT | VK_SUBGROUP_FEATURE_ARITHMETIC_BIT;
+            if ((subgroup.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT) &&
+                (subgroup.supportedOperations & needed) == needed) {
                 usable.push_back(candidate);
             }
         }
@@ -109,8 +107,8 @@ namespace sci::core::drivers::vulkan {
         vkEnumerateDeviceExtensionProperties(candidate, nullptr, &known, supported.data());
 
         // Required whenever a portability driver exposes it.
-        std::vector<const char*> enabled;
-        if (std::ranges::any_of(supported, [](const VkExtensionProperties& extension) {
+        std::vector<const char *> enabled;
+        if (std::ranges::any_of(supported, [](const VkExtensionProperties &extension) {
                 return std::strcmp(extension.extensionName, "VK_KHR_portability_subset") == 0;
             })) {
             enabled.push_back("VK_KHR_portability_subset");
@@ -125,27 +123,23 @@ namespace sci::core::drivers::vulkan {
         features.features.shaderInt64 = VK_TRUE;
 
         float priority{1.0f};
-        const VkDeviceQueueCreateInfo queue{
-            .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .queueFamilyIndex = context.family,
-            .queueCount = 1,
-            .pQueuePriorities = &priority
-        };
+        const VkDeviceQueueCreateInfo queue{.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                                            .pNext = nullptr,
+                                            .flags = 0,
+                                            .queueFamilyIndex = context.family,
+                                            .queueCount = 1,
+                                            .pQueuePriorities = &priority};
 
-        const VkDeviceCreateInfo setup{
-            .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-            .pNext = &features,
-            .flags = 0,
-            .queueCreateInfoCount = 1,
-            .pQueueCreateInfos = &queue,
-            .enabledLayerCount = 0,
-            .ppEnabledLayerNames = nullptr,
-            .enabledExtensionCount = static_cast<uint32>(enabled.size()),
-            .ppEnabledExtensionNames = enabled.data(),
-            .pEnabledFeatures = nullptr
-        };
+        const VkDeviceCreateInfo setup{.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+                                       .pNext = &features,
+                                       .flags = 0,
+                                       .queueCreateInfoCount = 1,
+                                       .pQueueCreateInfos = &queue,
+                                       .enabledLayerCount = 0,
+                                       .ppEnabledLayerNames = nullptr,
+                                       .enabledExtensionCount = static_cast<uint32>(enabled.size()),
+                                       .ppEnabledExtensionNames = enabled.data(),
+                                       .pEnabledFeatures = nullptr};
 
         VkPhysicalDeviceFloatControlsProperties controls{};
         controls.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES;
@@ -169,14 +163,11 @@ namespace sci::core::drivers::vulkan {
         if (instance) vkDestroyInstance(instance, nullptr);
     }
 
-    Context::Context(Context&& context) noexcept
+    Context::Context(Context &&context) noexcept
         : instance(std::exchange(context.instance, VK_NULL_HANDLE)),
           physical(std::exchange(context.physical, VK_NULL_HANDLE)),
-          device(std::exchange(context.device, VK_NULL_HANDLE)),
-          queue(std::exchange(context.queue, VK_NULL_HANDLE)),
-          family(context.family),
-          index(context.index),
-          properties(context.properties),
-          preserving(context.preserving) {}
+          device(std::exchange(context.device, VK_NULL_HANDLE)), queue(std::exchange(context.queue, VK_NULL_HANDLE)),
+          family(context.family), index(context.index), properties(context.properties), preserving(context.preserving) {
+    }
 
 }

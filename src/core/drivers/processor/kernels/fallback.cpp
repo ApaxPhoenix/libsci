@@ -6,17 +6,14 @@
 namespace sci::core::drivers::processor::kernels {
 
     // Plain scalar code: any CPU, and the reference the vector paths are tested against.
-    template <typename type>
-    struct Fallback;
+    template <typename type> struct Fallback;
 
-    template <>
-    struct Fallback<float> : Scalar<float, uint32, Fallback<float>> {};
+    template <> struct Fallback<float> : Scalar<float, uint32, Fallback<float>> {};
 
-    template <>
-    struct Fallback<double> : Scalar<double, uint64, Fallback<double>> {};
+    template <> struct Fallback<double> : Scalar<double, uint64, Fallback<double>> {};
 
     constexpr Table table = compose<Fallback>("fallback");
 
-    const Table* const fallback = &table;
+    const Table *const fallback = &table;
 
 }

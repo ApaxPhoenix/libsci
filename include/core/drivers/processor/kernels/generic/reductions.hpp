@@ -5,8 +5,7 @@
 namespace sci::core::drivers::processor::kernels {
 
     // Four independent accumulators hide the add latency and give a partly pairwise summation order.
-    template <typename pack>
-    pack::element sum(const typename pack::element* source, const size count) noexcept {
+    template <typename pack> pack::element sum(const typename pack::element *source, const size count) noexcept {
         using type = pack::element;
         constexpr size width = pack::width;
 
@@ -41,7 +40,8 @@ namespace sci::core::drivers::processor::kernels {
 
     // sum(left * right) with four fused multiply-add accumulators: the multiply never leaves registers.
     template <typename pack>
-    pack::element dot(const typename pack::element* left, const typename pack::element* right, const size count) noexcept {
+    pack::element dot(const typename pack::element *left, const typename pack::element *right,
+                      const size count) noexcept {
         using type = pack::element;
         using narrow = pack::narrow;
         constexpr size width = pack::width;
@@ -76,7 +76,7 @@ namespace sci::core::drivers::processor::kernels {
     }
 
     template <typename pack, typename operation>
-    pack::element extreme(const typename pack::element* source, const size count) noexcept {
+    pack::element extreme(const typename pack::element *source, const size count) noexcept {
         using type = pack::element;
         using narrow = pack::narrow;
         constexpr size width = pack::width;
@@ -94,7 +94,8 @@ namespace sci::core::drivers::processor::kernels {
                 third = operation::template apply<pack>(third, pack::load(source + index + 2 * width));
                 fourth = operation::template apply<pack>(fourth, pack::load(source + index + 3 * width));
             }
-            first = operation::template apply<pack>(operation::template apply<pack>(first, second), operation::template apply<pack>(third, fourth));
+            first = operation::template apply<pack>(operation::template apply<pack>(first, second),
+                                                    operation::template apply<pack>(third, fourth));
 
             type lanes[width];
             pack::store(lanes, first);

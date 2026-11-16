@@ -14,27 +14,31 @@ namespace sci::linear {
     // forward substitution through the unit lower triangle, then back substitution through the upper.
     // Rows are updated as whole rows of `width` values, which keeps the inner loops contiguous.
     template <typename element>
-    void substitute(const element* factors, const core::size* rows, const element* right, element* solution,
+    void substitute(const element *factors, const core::size *rows, const element *right, element *solution,
                     const core::size order, const core::size width) {
         for (core::size row = 0; row < order; ++row) {
-            const element* source = right + rows[row] * width;
-            element* target = solution + row * width;
-            for (core::size column = 0; column < width; ++column) target[column] = source[column];
+            const element *source = right + rows[row] * width;
+            element *target = solution + row * width;
+            for (core::size column = 0; column < width; ++column)
+                target[column] = source[column];
             for (core::size inner = 0; inner < row; ++inner) {
                 const element scale = factors[row * order + inner];
-                const element* known = solution + inner * width;
-                for (core::size column = 0; column < width; ++column) target[column] -= scale * known[column];
+                const element *known = solution + inner * width;
+                for (core::size column = 0; column < width; ++column)
+                    target[column] -= scale * known[column];
             }
         }
         for (core::size row = order; row-- > 0;) {
-            element* target = solution + row * width;
+            element *target = solution + row * width;
             for (core::size inner = row + 1; inner < order; ++inner) {
                 const element scale = factors[row * order + inner];
-                const element* known = solution + inner * width;
-                for (core::size column = 0; column < width; ++column) target[column] -= scale * known[column];
+                const element *known = solution + inner * width;
+                for (core::size column = 0; column < width; ++column)
+                    target[column] -= scale * known[column];
             }
             const element diagonal = factors[row * order + row];
-            for (core::size column = 0; column < width; ++column) target[column] /= diagonal;
+            for (core::size column = 0; column < width; ++column)
+                target[column] /= diagonal;
         }
     }
 
@@ -42,8 +46,8 @@ namespace sci::linear {
     // are several right-hand sides solved at once. The result has right's shape and lives where the
     // matrix does.
     template <typename element, core::size rank>
-    requires (rank == 1 || rank == 2)
-    Array<element, rank> solve(const Array<element, 2>& matrix, const Array<element, rank>& right) {
+        requires(rank == 1 || rank == 2)
+    Array<element, rank> solve(const Array<element, 2> &matrix, const Array<element, rank> &right) {
         static_assert(std::is_floating_point_v<element>, "solve needs a floating-point matrix");
         const core::size order = right.shape()[0];
         const core::size width = rank == 1 ? 1 : right.shape()[rank - 1];

@@ -15,78 +15,84 @@ namespace sci::core::drivers::processor::kernels {
     // What one code does to a pack. The loops in elementwise.hpp and reductions.hpp call apply()
     // with the ISA's pack, and with its one-lane Scalar pack for the tail. The functions with no
     // polynomial of their own, the inverse circular and the hyperbolic ones, go through the C library.
-    template <Code code>
-    struct Operation {
-        template <typename pack>
-        static pack::value apply(const pack::value item) noexcept {
-            if constexpr (code == Code::copy) return item;
-            else if constexpr (code == Code::negate) return pack::negate(item);
-            else if constexpr (code == Code::absolute) return pack::absolute(item);
-            else if constexpr (code == Code::root) return pack::root(item);
-            else if constexpr (code == Code::exponential) return Exponential<pack>::exponential(item);
-            else if constexpr (code == Code::logarithm) return Logarithm<pack>::logarithm(item);
-            else if constexpr (code == Code::sin) return Trigonometry<pack>::template evaluate<false>(item);
-            else if constexpr (code == Code::cos) return Trigonometry<pack>::template evaluate<true>(item);
+    template <Code code> struct Operation {
+        template <typename pack> static pack::value apply(const pack::value item) noexcept {
+            if constexpr (code == Code::copy)
+                return item;
+            else if constexpr (code == Code::negate)
+                return pack::negate(item);
+            else if constexpr (code == Code::absolute)
+                return pack::absolute(item);
+            else if constexpr (code == Code::root)
+                return pack::root(item);
+            else if constexpr (code == Code::exponential)
+                return Exponential<pack>::exponential(item);
+            else if constexpr (code == Code::logarithm)
+                return Logarithm<pack>::logarithm(item);
+            else if constexpr (code == Code::sin)
+                return Trigonometry<pack>::template evaluate<false>(item);
+            else if constexpr (code == Code::cos)
+                return Trigonometry<pack>::template evaluate<true>(item);
             else if constexpr (code == Code::tan) {
-                return pack::divide(Trigonometry<pack>::template evaluate<false>(item), Trigonometry<pack>::template evaluate<true>(item));
-            }
-            else if constexpr (code == Code::asin) return Library<pack>::template apply<&asinf, &::asin>(item);
-            else if constexpr (code == Code::acos) return Library<pack>::template apply<&acosf, &::acos>(item);
-            else if constexpr (code == Code::atan) return Library<pack>::template apply<&atanf, &::atan>(item);
+                return pack::divide(Trigonometry<pack>::template evaluate<false>(item),
+                                    Trigonometry<pack>::template evaluate<true>(item));
+            } else if constexpr (code == Code::asin)
+                return Library<pack>::template apply<&asinf, &::asin>(item);
+            else if constexpr (code == Code::acos)
+                return Library<pack>::template apply<&acosf, &::acos>(item);
+            else if constexpr (code == Code::atan)
+                return Library<pack>::template apply<&atanf, &::atan>(item);
             else if constexpr (code == Code::csc) {
                 return pack::divide(pack::splat(typename pack::element(1)), Operation<Code::sin>::apply<pack>(item));
-            }
-            else if constexpr (code == Code::sec) {
+            } else if constexpr (code == Code::sec) {
                 return pack::divide(pack::splat(typename pack::element(1)), Operation<Code::cos>::apply<pack>(item));
-            }
-            else if constexpr (code == Code::cot) {
+            } else if constexpr (code == Code::cot) {
                 return pack::divide(pack::splat(typename pack::element(1)), Operation<Code::tan>::apply<pack>(item));
-            }
-            else if constexpr (code == Code::acsc) {
+            } else if constexpr (code == Code::acsc) {
                 return Operation<Code::asin>::apply<pack>(pack::divide(pack::splat(typename pack::element(1)), item));
-            }
-            else if constexpr (code == Code::asec) {
+            } else if constexpr (code == Code::asec) {
                 return Operation<Code::acos>::apply<pack>(pack::divide(pack::splat(typename pack::element(1)), item));
-            }
-            else if constexpr (code == Code::acot) {
+            } else if constexpr (code == Code::acot) {
                 return Operation<Code::atan>::apply<pack>(pack::divide(pack::splat(typename pack::element(1)), item));
-            }
-            else if constexpr (code == Code::sinh) return Library<pack>::template apply<&sinhf, &::sinh>(item);
-            else if constexpr (code == Code::cosh) return Library<pack>::template apply<&coshf, &::cosh>(item);
-            else if constexpr (code == Code::tanh) return Library<pack>::template apply<&tanhf, &::tanh>(item);
-            else if constexpr (code == Code::asinh) return Library<pack>::template apply<&asinhf, &::asinh>(item);
-            else if constexpr (code == Code::acosh) return Library<pack>::template apply<&acoshf, &::acosh>(item);
+            } else if constexpr (code == Code::sinh)
+                return Library<pack>::template apply<&sinhf, &::sinh>(item);
+            else if constexpr (code == Code::cosh)
+                return Library<pack>::template apply<&coshf, &::cosh>(item);
+            else if constexpr (code == Code::tanh)
+                return Library<pack>::template apply<&tanhf, &::tanh>(item);
+            else if constexpr (code == Code::asinh)
+                return Library<pack>::template apply<&asinhf, &::asinh>(item);
+            else if constexpr (code == Code::acosh)
+                return Library<pack>::template apply<&acoshf, &::acosh>(item);
             else if constexpr (code == Code::csch) {
                 return pack::divide(pack::splat(typename pack::element(1)), Operation<Code::sinh>::apply<pack>(item));
-            }
-            else if constexpr (code == Code::sech) {
+            } else if constexpr (code == Code::sech) {
                 return pack::divide(pack::splat(typename pack::element(1)), Operation<Code::cosh>::apply<pack>(item));
-            }
-            else if constexpr (code == Code::coth) {
+            } else if constexpr (code == Code::coth) {
                 return pack::divide(pack::splat(typename pack::element(1)), Operation<Code::tanh>::apply<pack>(item));
-            }
-            else if constexpr (code == Code::acsch) {
+            } else if constexpr (code == Code::acsch) {
                 return Operation<Code::asinh>::apply<pack>(pack::divide(pack::splat(typename pack::element(1)), item));
-            }
-            else if constexpr (code == Code::asech) {
+            } else if constexpr (code == Code::asech) {
                 return Operation<Code::acosh>::apply<pack>(pack::divide(pack::splat(typename pack::element(1)), item));
-            }
-            else if constexpr (code == Code::acoth) {
+            } else if constexpr (code == Code::acoth) {
                 return Operation<Code::atanh>::apply<pack>(pack::divide(pack::splat(typename pack::element(1)), item));
-            }
-            else {
+            } else {
                 static_assert(code == Code::atanh, "every one-operand code needs a case here");
                 return Library<pack>::template apply<&::atanhf, &::atanh>(item);
             }
         }
 
-        template <typename pack>
-        static pack::value apply(const pack::value left, const pack::value right) noexcept {
-            if constexpr (code == Code::add) return pack::add(left, right);
-            else if constexpr (code == Code::subtract) return pack::subtract(left, right);
-            else if constexpr (code == Code::multiply) return pack::multiply(left, right);
-            else if constexpr (code == Code::divide) return pack::divide(left, right);
-            else if constexpr (code == Code::minimum) return pack::minimum(left, right);
+        template <typename pack> static pack::value apply(const pack::value left, const pack::value right) noexcept {
+            if constexpr (code == Code::add)
+                return pack::add(left, right);
+            else if constexpr (code == Code::subtract)
+                return pack::subtract(left, right);
+            else if constexpr (code == Code::multiply)
+                return pack::multiply(left, right);
+            else if constexpr (code == Code::divide)
+                return pack::divide(left, right);
+            else if constexpr (code == Code::minimum)
+                return pack::minimum(left, right);
             else {
                 static_assert(code == Code::maximum, "every two-operand code needs a case here");
                 return pack::maximum(left, right);

@@ -2,20 +2,18 @@
 
 #include <arm_neon.h>
 
-#include "core/drivers/processor/kernels/neon.hpp"
 #include "core/drivers/processor/kernels/generic/compose.hpp"
 #include "core/drivers/processor/kernels/generic/scalar.hpp"
+#include "core/drivers/processor/kernels/neon.hpp"
 #include "core/types.hpp"
 
 namespace sci::core::drivers::processor::kernels {
 
     // NEON registers: four floats or two doubles.
 
-    template <typename type>
-    struct Neon;
+    template <typename type> struct Neon;
 
-    template <>
-    struct Neon<float> {
+    template <> struct Neon<float> {
         using element = float;
         using narrow = Scalar<float, uint32, Neon>;
         using value = float32x4_t;
@@ -24,8 +22,8 @@ namespace sci::core::drivers::processor::kernels {
 
         static constexpr size width = 4;
 
-        static value load(const float* source) noexcept { return vld1q_f32(source); }
-        static void store(float* target, const value item) noexcept { vst1q_f32(target, item); }
+        static value load(const float *source) noexcept { return vld1q_f32(source); }
+        static void store(float *target, const value item) noexcept { vst1q_f32(target, item); }
         static value splat(const float item) noexcept { return vdupq_n_f32(item); }
         static bits fill(const uint32 item) noexcept { return vdupq_n_u32(item); }
 
@@ -33,7 +31,9 @@ namespace sci::core::drivers::processor::kernels {
         static value subtract(const value left, const value right) noexcept { return vsubq_f32(left, right); }
         static value multiply(const value left, const value right) noexcept { return vmulq_f32(left, right); }
         static value divide(const value left, const value right) noexcept { return vdivq_f32(left, right); }
-        static value fuse(const value left, const value right, const value addend) noexcept { return vfmaq_f32(addend, left, right); }
+        static value fuse(const value left, const value right, const value addend) noexcept {
+            return vfmaq_f32(addend, left, right);
+        }
 
         static value negate(const value item) noexcept { return vnegq_f32(item); }
         static value absolute(const value item) noexcept { return vabsq_f32(item); }
@@ -60,8 +60,7 @@ namespace sci::core::drivers::processor::kernels {
         static bits toggle(const bits left, const bits right) noexcept { return veorq_u32(left, right); }
 
         // Every lane shifted left by `count` bits, or right by -count when it is negative.
-        template <int count>
-        static bits shift(const bits item) noexcept {
+        template <int count> static bits shift(const bits item) noexcept {
             if constexpr (count > 0) {
                 return vshlq_n_u32(item, count);
             } else {
@@ -70,8 +69,7 @@ namespace sci::core::drivers::processor::kernels {
         }
     };
 
-    template <>
-    struct Neon<double> {
+    template <> struct Neon<double> {
         using element = double;
         using narrow = Scalar<double, uint64, Neon>;
         using value = float64x2_t;
@@ -80,8 +78,8 @@ namespace sci::core::drivers::processor::kernels {
 
         static constexpr size width = 2;
 
-        static value load(const double* source) noexcept { return vld1q_f64(source); }
-        static void store(double* target, const value item) noexcept { vst1q_f64(target, item); }
+        static value load(const double *source) noexcept { return vld1q_f64(source); }
+        static void store(double *target, const value item) noexcept { vst1q_f64(target, item); }
         static value splat(const double item) noexcept { return vdupq_n_f64(item); }
         static bits fill(const uint64 item) noexcept { return vdupq_n_u64(item); }
 
@@ -89,7 +87,9 @@ namespace sci::core::drivers::processor::kernels {
         static value subtract(const value left, const value right) noexcept { return vsubq_f64(left, right); }
         static value multiply(const value left, const value right) noexcept { return vmulq_f64(left, right); }
         static value divide(const value left, const value right) noexcept { return vdivq_f64(left, right); }
-        static value fuse(const value left, const value right, const value addend) noexcept { return vfmaq_f64(addend, left, right); }
+        static value fuse(const value left, const value right, const value addend) noexcept {
+            return vfmaq_f64(addend, left, right);
+        }
 
         static value negate(const value item) noexcept { return vnegq_f64(item); }
         static value absolute(const value item) noexcept { return vabsq_f64(item); }
@@ -100,7 +100,9 @@ namespace sci::core::drivers::processor::kernels {
         static mask less(const value left, const value right) noexcept { return vcltq_f64(left, right); }
         static mask greater(const value left, const value right) noexcept { return vcgtq_f64(left, right); }
         static mask equal(const value left, const value right) noexcept { return vceqq_f64(left, right); }
-        static mask unordered(const value item) noexcept { return veorq_u64(vceqq_f64(item, item), vdupq_n_u64(~uint64{0})); }
+        static mask unordered(const value item) noexcept {
+            return veorq_u64(vceqq_f64(item, item), vdupq_n_u64(~uint64{0}));
+        }
         static mask test(const bits item) noexcept { return vtstq_u64(item, item); }
         static bool any(const mask item) noexcept { return vmaxvq_u32(vreinterpretq_u32_u64(item)) != 0; }
 
@@ -116,8 +118,7 @@ namespace sci::core::drivers::processor::kernels {
         static bits toggle(const bits left, const bits right) noexcept { return veorq_u64(left, right); }
 
         // Every lane shifted left by `count` bits, or right by -count when it is negative.
-        template <int count>
-        static bits shift(const bits item) noexcept {
+        template <int count> static bits shift(const bits item) noexcept {
             if constexpr (count > 0) {
                 return vshlq_n_u64(item, count);
             } else {
@@ -128,7 +129,7 @@ namespace sci::core::drivers::processor::kernels {
 
     constexpr Table table = compose<Neon>("neon");
 
-    const Table* const neon = &table;
+    const Table *const neon = &table;
 
 }
 
@@ -138,7 +139,7 @@ namespace sci::core::drivers::processor::kernels {
 
 namespace sci::core::drivers::processor::kernels {
 
-    const Table* const neon = nullptr;
+    const Table *const neon = nullptr;
 
 }
 

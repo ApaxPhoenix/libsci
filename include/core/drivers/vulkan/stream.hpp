@@ -19,11 +19,11 @@ namespace sci::core::drivers::vulkan {
     // results; the host only blocks in wait().
     class Stream {
     public:
-        Stream(const Context& context, Allocator& allocator);
+        Stream(const Context &context, Allocator &allocator);
         ~Stream();
 
-        Stream(const Stream&) = delete;
-        Stream& operator=(const Stream&) = delete;
+        Stream(const Stream &) = delete;
+        Stream &operator=(const Stream &) = delete;
 
         // Scratch memory that lives until the batch being recorded completes: small argument blocks
         // going in, small results (reduction partials) coming out.
@@ -31,7 +31,8 @@ namespace sci::core::drivers::vulkan {
 
         // `work` estimates the dispatch's cost (see device.cpp); a batch is submitted once it carries
         // enough work, since macOS aborts command buffers that hold the GPU for too long.
-        void record(const Pipeline& pipeline, const void* constants, uint64 work, uint32 columns, uint32 rows = 1, uint32 layers = 1);
+        void record(const Pipeline &pipeline, const void *constants, uint64 work, uint32 columns, uint32 rows = 1,
+                    uint32 layers = 1);
 
         // Submits the recorded batch without waiting for it.
         void flush();
@@ -40,7 +41,7 @@ namespace sci::core::drivers::vulkan {
         void wait();
 
         // Hands a buffer back to the allocator once the GPU can no longer be using it.
-        void retire(const Buffer& buffer);
+        void retire(const Buffer &buffer);
 
     private:
         static constexpr size depth = 4;
@@ -50,8 +51,8 @@ namespace sci::core::drivers::vulkan {
         // Waits for batches[index] to finish, then hands its retired buffers back to the allocator.
         void complete(size index);
 
-        const Context& context;
-        Allocator& allocator;
+        const Context &context;
+        Allocator &allocator;
         VkCommandPool pool{VK_NULL_HANDLE};
         Batch batches[depth]{};
         size current{0};

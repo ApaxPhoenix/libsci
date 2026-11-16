@@ -14,24 +14,20 @@ namespace sci::core::memory {
     public:
         Allocation() noexcept = default;
 
-        Allocation(const size bytes, const size alignment)
-            : alignment(alignment) {
-            reserve(bytes);
-        }
+        Allocation(const size bytes, const size alignment) : alignment(alignment) { reserve(bytes); }
 
         ~Allocation() {
             if (pointer) ::operator delete(pointer, std::align_val_t{alignment});
         }
 
-        Allocation(const Allocation&) = delete;
-        Allocation& operator=(const Allocation&) = delete;
+        Allocation(const Allocation &) = delete;
+        Allocation &operator=(const Allocation &) = delete;
 
-        Allocation(Allocation&& allocation) noexcept
-            : pointer(std::exchange(allocation.pointer, nullptr)),
-              bytes(std::exchange(allocation.bytes, 0)),
+        Allocation(Allocation &&allocation) noexcept
+            : pointer(std::exchange(allocation.pointer, nullptr)), bytes(std::exchange(allocation.bytes, 0)),
               alignment(allocation.alignment) {}
 
-        Allocation& operator=(Allocation&& allocation) noexcept {
+        Allocation &operator=(Allocation &&allocation) noexcept {
             std::swap(pointer, allocation.pointer);
             std::swap(bytes, allocation.bytes);
             std::swap(alignment, allocation.alignment);
@@ -39,7 +35,7 @@ namespace sci::core::memory {
         }
 
         // Grows to at least `amount` bytes and returns the memory. Growing does not keep the contents.
-        void* reserve(const size amount) {
+        void *reserve(const size amount) {
             if (amount > bytes) {
                 if (pointer) ::operator delete(pointer, std::align_val_t{alignment});
                 pointer = ::operator new(amount, std::align_val_t{alignment});
@@ -48,11 +44,11 @@ namespace sci::core::memory {
             return pointer;
         }
 
-        [[nodiscard]] void* data() const noexcept { return pointer; }
+        [[nodiscard]] void *data() const noexcept { return pointer; }
         [[nodiscard]] size capacity() const noexcept { return bytes; }
 
     private:
-        void* pointer{nullptr};
+        void *pointer{nullptr};
         size bytes{0};
         size alignment{alignment::processor};
     };

@@ -10,8 +10,7 @@ namespace sci::core::drivers::processor::kernels {
 
     // One-lane pack over plain scalars: the fallback ISA and every loop tail. `tag` is the owning
     // ISA's pack (Neon<float>, ...), which keeps each file's instantiations apart.
-    template <typename type, typename integer, typename tag>
-    struct Scalar {
+    template <typename type, typename integer, typename tag> struct Scalar {
         using element = type;
         using value = type;
         using bits = integer;
@@ -20,8 +19,8 @@ namespace sci::core::drivers::processor::kernels {
 
         static constexpr size width = 1;
 
-        static value load(const type* source) noexcept { return *source; }
-        static void store(type* target, const value item) noexcept { *target = item; }
+        static value load(const type *source) noexcept { return *source; }
+        static void store(type *target, const value item) noexcept { *target = item; }
         static value splat(const type item) noexcept { return item; }
         static bits fill(const integer item) noexcept { return item; }
 
@@ -33,19 +32,20 @@ namespace sci::core::drivers::processor::kernels {
         // Without a fused multiply-add instruction a float fma is still exact enough through double (the product
         // is exact there), which the range reduction of sine and cosine relies on. Doubles fall back to two roundings.
         static value fuse(const value left, const value right, const value addend) noexcept {
-            #if defined(__FMA__) || defined(__aarch64__)
-                if constexpr (sizeof(type) == 4) {
-                    return __builtin_fmaf(left, right, addend);
-                } else {
-                    return __builtin_fma(left, right, addend);
-                }
-            #else
-                if constexpr (sizeof(type) == 4) {
-                    return static_cast<float>(static_cast<double>(left) * static_cast<double>(right) + static_cast<double>(addend));
-                } else {
-                    return left * right + addend;
-                }
-            #endif
+#if defined(__FMA__) || defined(__aarch64__)
+            if constexpr (sizeof(type) == 4) {
+                return __builtin_fmaf(left, right, addend);
+            } else {
+                return __builtin_fma(left, right, addend);
+            }
+#else
+            if constexpr (sizeof(type) == 4) {
+                return static_cast<float>(static_cast<double>(left) * static_cast<double>(right) +
+                                          static_cast<double>(addend));
+            } else {
+                return left * right + addend;
+            }
+#endif
         }
 
         static value negate(const value item) noexcept { return -item; }
@@ -87,8 +87,7 @@ namespace sci::core::drivers::processor::kernels {
         static bits toggle(const bits left, const bits right) noexcept { return left ^ right; }
 
         // Every lane shifted left by `count` bits, or right by -count when it is negative.
-        template <int count>
-        static bits shift(const bits item) noexcept {
+        template <int count> static bits shift(const bits item) noexcept {
             if constexpr (count > 0) {
                 return item << count;
             } else {

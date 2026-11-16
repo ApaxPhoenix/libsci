@@ -21,25 +21,23 @@ namespace sci::array {
 
     // The memory behind an Array: host memory it owns, memory on a Device, or a slice of an Arena.
     // The elements are left for the Array to fill.
-    template <typename element>
-    class Storage {
+    template <typename element> class Storage {
     public:
         Storage() = default;
 
         explicit Storage(const core::size total)
-            : pointer(static_cast<element*>(allocation.reserve(total * sizeof(element)))), count(total) {
+            : pointer(static_cast<element *>(allocation.reserve(total * sizeof(element)))), count(total) {
             std::uninitialized_default_construct_n(pointer, count);
         }
 
-        Storage(Device& device, const core::size total)
-            : count(total), owner(&device) {
+        Storage(Device &device, const core::size total) : count(total), owner(&device) {
             if (count == 0) return;
             device.allocate(count * sizeof(element), memory);
-            pointer = static_cast<element*>(memory.host);
+            pointer = static_cast<element *>(memory.host);
         }
 
         // The arena keeps ownership.
-        Storage(core::memory::Arena& arena, const core::size total)
+        Storage(core::memory::Arena &arena, const core::size total)
             : pointer(arena.allocate<element>(total)), count(total) {
             std::uninitialized_default_construct_n(pointer, count);
         }
@@ -52,18 +50,16 @@ namespace sci::array {
             }
         }
 
-        Storage(const Storage&) = delete;
-        Storage& operator=(const Storage&) = delete;
+        Storage(const Storage &) = delete;
+        Storage &operator=(const Storage &) = delete;
 
-        Storage(Storage&& storage) noexcept
-            : allocation(std::move(storage.allocation)),
-              memory(std::exchange(storage.memory, {})),
-              pointer(std::exchange(storage.pointer, nullptr)),
-              count(std::exchange(storage.count, 0)),
+        Storage(Storage &&storage) noexcept
+            : allocation(std::move(storage.allocation)), memory(std::exchange(storage.memory, {})),
+              pointer(std::exchange(storage.pointer, nullptr)), count(std::exchange(storage.count, 0)),
               owner(std::exchange(storage.owner, nullptr)) {}
 
         // Swaps, so the storage moved from releases what this one held.
-        Storage& operator=(Storage&& storage) noexcept {
+        Storage &operator=(Storage &&storage) noexcept {
             std::swap(allocation, storage.allocation);
             std::swap(memory, storage.memory);
             std::swap(pointer, storage.pointer);
@@ -72,11 +68,11 @@ namespace sci::array {
             return *this;
         }
 
-        [[nodiscard]] element* data() noexcept { return pointer; }
-        [[nodiscard]] const element* data() const noexcept { return pointer; }
+        [[nodiscard]] element *data() noexcept { return pointer; }
+        [[nodiscard]] const element *data() const noexcept { return pointer; }
 
         [[nodiscard]] core::size size() const noexcept { return count; }
-        [[nodiscard]] Device* device() const noexcept { return owner; }
+        [[nodiscard]] Device *device() const noexcept { return owner; }
 
         // Lets the host touch the memory: waits for queued GPU work on the storage's device.
         void synchronize() const noexcept {
@@ -86,9 +82,9 @@ namespace sci::array {
     private:
         core::memory::Allocation allocation{core::size{0}, core::alignment::line};
         core::drivers::Memory memory{};
-        element* pointer{nullptr};
+        element *pointer{nullptr};
         core::size count{0};
-        Device* owner{nullptr};
+        Device *owner{nullptr};
     };
 
 }

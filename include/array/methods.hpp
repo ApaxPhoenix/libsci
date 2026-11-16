@@ -5,16 +5,13 @@
 
 namespace sci::array {
 
-    template <typename type, core::size order>
-    class Array;
+    template <typename type, core::size order> class Array;
 
     // Defined in expression.hpp.
-    template <typename source>
-    source::element reduce(const source& input, core::Fold fold);
+    template <typename source> source::element reduce(const source &input, core::Fold fold);
 
     // Array-like members shared by Array and every expression node.
-    template <typename derived>
-    struct Methods {
+    template <typename derived> struct Methods {
         [[nodiscard]] core::size size() const noexcept { return self().shape().total(); }
         [[nodiscard]] auto sum() const { return reduce(self(), core::Fold::sum); }
         [[nodiscard]] auto minimum() const { return reduce(self(), core::Fold::minimum); }
@@ -32,7 +29,7 @@ namespace sci::array {
         Methods() = default;
         friend derived;
 
-        [[nodiscard]] const derived& self() const noexcept { return static_cast<const derived&>(*this); }
+        [[nodiscard]] const derived &self() const noexcept { return static_cast<const derived &>(*this); }
     };
 
 }

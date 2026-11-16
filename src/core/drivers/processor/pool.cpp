@@ -22,17 +22,16 @@ namespace sci::core::drivers::processor {
     constexpr size patience = size{1} << 17;
 
     void Pool::relax() noexcept {
-        #if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-            _mm_pause();
-        #elif defined(__aarch64__)
-            __asm__ __volatile__("yield");
-        #elif defined(_M_ARM64)
-            __yield();
-        #endif
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+        _mm_pause();
+#elif defined(__aarch64__)
+        __asm__ __volatile__("yield");
+#elif defined(_M_ARM64)
+        __yield();
+#endif
     }
 
-    template <typename predicate>
-    void Pool::await(predicate&& ready) noexcept {
+    template <typename predicate> void Pool::await(predicate &&ready) noexcept {
         for (size spin = 0; !ready(); ++spin) {
             if (spin < 4096) {
                 relax();
@@ -53,18 +52,16 @@ namespace sci::core::drivers::processor {
     Pool::~Pool() {
         stopping.store(true);
         generation.fetch_add(2);
-        {
-            std::scoped_lock lock(guard);
-        }
+        { std::scoped_lock lock(guard); }
         signal.notify_all();
-        for (auto& thread : threads) {
+        for (auto &thread : threads) {
             if (thread.joinable()) thread.join();
         }
     }
 
-    Pool& Pool::global() {
+    Pool &Pool::global() {
         static Pool instance([] {
-            if (const char* text = std::getenv("SCI_THREADS")) {
+            if (const char *text = std::getenv("SCI_THREADS")) {
                 if (const long value = std::strtol(text, nullptr, 10); value > 0) {
                     return static_cast<size>(value);
                 }
@@ -75,7 +72,7 @@ namespace sci::core::drivers::processor {
         return instance;
     }
 
-    void Pool::run(const size count, void (*routine)(void*, size), void* state, const size limit) {
+    void Pool::run(const size count, void (*routine)(void *, size), void *state, const size limit) {
         if (count == 0) return;
 
         if (count == 1 || threads.empty() || nested || limit == 1) {
@@ -151,8 +148,9 @@ namespace sci::core::drivers::processor {
         }
     }
 
-    void Pool::drain(void (*routine)(void*, size), void* state, const size count) noexcept {
-        for (size index = next.fetch_add(1, std::memory_order_relaxed); index < count; index = next.fetch_add(1, std::memory_order_relaxed)) {
+    void Pool::drain(void (*routine)(void *, size), void *state, const size count) noexcept {
+        for (size index = next.fetch_add(1, std::memory_order_relaxed); index < count;
+             index = next.fetch_add(1, std::memory_order_relaxed)) {
             routine(state, index);
             pending.fetch_sub(1, std::memory_order_acq_rel);
         }

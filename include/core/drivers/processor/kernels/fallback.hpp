@@ -5,6 +5,6 @@
 namespace sci::core::drivers::processor::kernels {
 
     // Plain scalar kernels: any CPU, and the reference the vector paths are tested against. Never null.
-    extern const Table* const fallback;
+    extern const Table *const fallback;
 
 }

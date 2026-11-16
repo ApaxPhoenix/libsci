@@ -12,7 +12,7 @@ namespace sci::operations {
     using array::Shape;
 
     template <typename element, core::size input, core::size output>
-    Array<element, output> reshape(const Array<element, input>& alpha, const core::size (&shape)[output]) {
+    Array<element, output> reshape(const Array<element, input> &alpha, const core::size (&shape)[output]) {
         const Shape<output> bounds{std::to_array(shape)};
         if (bounds.total() != alpha.size()) {
             throw std::invalid_argument("reshape must preserve the element count");
@@ -23,8 +23,7 @@ namespace sci::operations {
         return beta;
     }
 
-    template <typename element, core::size rank>
-    Array<element, rank> transpose(const Array<element, rank>& input) {
+    template <typename element, core::size rank> Array<element, rank> transpose(const Array<element, rank> &input) {
         const auto shape = input.shape();
         Shape<rank> bounds{};
         for (core::size axis = 0; axis < rank; ++axis) {
@@ -32,8 +31,8 @@ namespace sci::operations {
         }
 
         Array<element, rank> output(bounds, array::Uninitialized{});
-        const auto* source = input.begin();
-        auto* target = output.data();
+        const auto *source = input.begin();
+        auto *target = output.data();
         const auto count = input.size();
 
         for (core::size index = 0; index < count; ++index) {
@@ -52,8 +51,7 @@ namespace sci::operations {
         return output;
     }
 
-    template <typename element, core::size rank>
-    Array<element, 1> flatten(const Array<element, rank>& input) {
+    template <typename element, core::size rank> Array<element, 1> flatten(const Array<element, rank> &input) {
         Array<element, 1> output(Shape<1>{input.size()}, array::Uninitialized{});
         std::copy(input.begin(), input.end(), output.begin());
 
@@ -61,8 +59,8 @@ namespace sci::operations {
     }
 
     template <typename element, core::size rank>
-    requires (rank > 1)
-    Array<element, rank - 1> squeeze(const Array<element, rank>& input, core::size axis) {
+        requires(rank > 1)
+    Array<element, rank - 1> squeeze(const Array<element, rank> &input, core::size axis) {
         const auto shape = input.shape();
         if (axis >= rank || shape[axis] != 1) {
             throw std::invalid_argument("squeeze requires an axis of length 1");
@@ -80,7 +78,7 @@ namespace sci::operations {
     }
 
     template <typename element, core::size rank>
-    Array<element, rank + 1> expand(const Array<element, rank>& input, core::size axis) {
+    Array<element, rank + 1> expand(const Array<element, rank> &input, core::size axis) {
         if (axis > rank) {
             throw std::invalid_argument("expand axis is out of range");
         }

@@ -9,8 +9,7 @@
 namespace sci::core::drivers::processor::kernels {
 
     // Natural logarithm over a whole pack.
-    template <typename pack>
-    struct Logarithm {
+    template <typename pack> struct Logarithm {
         using type = pack::element;
         using value = pack::value;
         using limit = Constants<type>;
@@ -22,10 +21,11 @@ namespace sci::core::drivers::processor::kernels {
             const auto pattern = pack::raw(scaled);
 
             // x = 2^e * m with m in [sqrt(2)/2, sqrt(2)).
-            value exponent = pack::subtract(
-                pack::cast(pack::unite(pack::template shift<-limit::mantissa>(pattern), pack::raw(pack::splat(limit::magnitude)))),
-                pack::splat(limit::exponent));
-            value mantissa = pack::cast(pack::unite(pack::intersect(pattern, pack::fill(limit::fraction)), pack::fill(limit::one)));
+            value exponent = pack::subtract(pack::cast(pack::unite(pack::template shift<-limit::mantissa>(pattern),
+                                                                   pack::raw(pack::splat(limit::magnitude)))),
+                                            pack::splat(limit::exponent));
+            value mantissa = pack::cast(
+                    pack::unite(pack::intersect(pattern, pack::fill(limit::fraction)), pack::fill(limit::one)));
 
             const auto large = pack::greater(mantissa, pack::splat(limit::root));
             mantissa = pack::select(large, pack::multiply(mantissa, pack::splat(type{0.5})), mantissa);
@@ -39,8 +39,10 @@ namespace sci::core::drivers::processor::kernels {
             const value square = pack::multiply(ratio, ratio);
             const value tail = pack::multiply(square, series.template evaluate<pack, 0>(square));
             const value half = pack::multiply(pack::multiply(fraction, fraction), pack::splat(type{0.5}));
-            const value inner = pack::fuse(ratio, pack::add(half, tail), pack::multiply(exponent, pack::splat(limit::remainder)));
-            value result = pack::subtract(pack::multiply(exponent, pack::splat(limit::natural)), pack::subtract(pack::subtract(half, inner), fraction));
+            const value inner =
+                    pack::fuse(ratio, pack::add(half, tail), pack::multiply(exponent, pack::splat(limit::remainder)));
+            value result = pack::subtract(pack::multiply(exponent, pack::splat(limit::natural)),
+                                          pack::subtract(pack::subtract(half, inner), fraction));
 
             constexpr type infinity = std::numeric_limits<type>::infinity();
             constexpr type undefined = std::numeric_limits<type>::quiet_NaN();

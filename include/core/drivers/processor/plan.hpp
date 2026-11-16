@@ -19,8 +19,7 @@ namespace sci::core::drivers::processor {
         // set stays in L1 while it is evaluated (1024 measured best on an M1).
         static constexpr size block = 1024;
 
-        Plan(const Chunk& chunk, const size count)
-            : count(count) {
+        Plan(const Chunk &chunk, const size count) : count(count) {
             const size blocks = (count + block - 1) / block;
             const size cost = chunk.cost();
             if (blocks < 2 || count * cost < threshold) return;
@@ -38,7 +37,8 @@ namespace sci::core::drivers::processor {
         // The elements of one part, in whole blocks except at the very end.
         [[nodiscard]] Range range(const size part) const noexcept {
             const size blocks = (count + block - 1) / block;
-            return {.first = blocks * part / parts * block, .last = std::min(blocks * (part + 1) / parts * block, count)};
+            return {.first = blocks * part / parts * block,
+                    .last = std::min(blocks * (part + 1) / parts * block, count)};
         }
 
         size parts{1};

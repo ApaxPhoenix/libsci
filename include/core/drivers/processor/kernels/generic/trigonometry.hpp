@@ -12,15 +12,13 @@ namespace sci::core::drivers::processor::kernels {
 
     // Sine and cosine over a whole pack, each through its own polynomial. Tangent is their quotient
     // and the inverses go through the C library (see Operation).
-    template <typename pack>
-    struct Trigonometry {
+    template <typename pack> struct Trigonometry {
         using type = pack::element;
         using value = pack::value;
         using limit = Constants<type>;
 
         // `phase` false gives the sine, true the cosine (the sine a quarter turn later).
-        template <bool phase>
-        static value evaluate(const value input) noexcept {
+        template <bool phase> static value evaluate(const value input) noexcept {
             // Nearest whole number of quarter turns, j; the low bits of `shifted` hold j mod 4.
             const value shifted = pack::fuse(input, pack::splat(limit::quadrant), pack::splat(limit::round));
             const value quarters = pack::subtract(shifted, pack::splat(limit::round));
@@ -33,7 +31,8 @@ namespace sci::core::drivers::processor::kernels {
             reduced = pack::fuse(negative, pack::splat(limit::quarter[3]), reduced);
 
             const value square = pack::multiply(reduced, reduced);
-            const value sine = pack::fuse(pack::multiply(reduced, square), odd.template evaluate<pack, 1>(square), reduced);
+            const value sine =
+                    pack::fuse(pack::multiply(reduced, square), odd.template evaluate<pack, 1>(square), reduced);
             const value cosine = pack::fuse(square, even.template evaluate<pack, 1>(square), pack::splat(type{1}));
 
             auto quadrant = pack::raw(shifted);
