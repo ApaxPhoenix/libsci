@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief How a chunk's elements are split across the pool.
+
 #include "core/bytecode/chunk.hpp"
 #include "core/bytecode/precision.hpp"
 #include "core/drivers/processor/context.hpp"
@@ -11,12 +14,12 @@
 
 namespace sci::core::drivers::processor {
 
-    // How a chunk's elements are split across the pool: parts of whole blocks, and how many threads
-    // may take part.
+    /// How a chunk's elements are split across the pool: parts of whole blocks, and how many threads
+    /// may take part.
     class Plan {
     public:
-        // Elements per block. Every temporary of an expression is one block, so its whole working
-        // set stays in L1 while it is evaluated (1024 measured best on an M1).
+        /// Elements per block. Every temporary of an expression is one block, so its whole working
+        /// set stays in L1 while it is evaluated (1024 measured best on an M1).
         static constexpr size block = 1024;
 
         Plan(const Chunk &chunk, const size count) : count(count) {
@@ -34,7 +37,7 @@ namespace sci::core::drivers::processor {
             seats = cost <= streaming && touched >= spill ? Context::performance() : 0;
         }
 
-        // The elements of one part, in whole blocks except at the very end.
+        /// The elements of one part, in whole blocks except at the very end.
         [[nodiscard]] Range range(const size part) const noexcept {
             const size blocks = (count + block - 1) / block;
             return {.first = blocks * part / parts * block,
@@ -45,14 +48,14 @@ namespace sci::core::drivers::processor {
         size seats{1};
 
     private:
-        // Weighted element count below which forking costs more than it saves.
+        /// Weighted element count below which forking costs more than it saves.
         static constexpr size threshold = size{1} << 17;
 
-        // Chunks this cheap per element only stream memory...
+        /// Chunks this cheap per element only stream memory...
         static constexpr uint32 streaming = 16;
 
-        // ...and once they touch more than the caches hold, DRAM is the limit: extra slow cores on a
-        // hybrid chip only add contention (measured on an M1: 4 threads beat 8 by about 15%).
+        /// ...and once they touch more than the caches hold, DRAM is the limit: extra slow cores on a
+        /// hybrid chip only add contention (measured on an M1: 4 threads beat 8 by about 15%).
         static constexpr size spill = size{32} << 20;
 
         size count;

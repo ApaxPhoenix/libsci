@@ -1,5 +1,9 @@
 #pragma once
 
+/// @file
+/// @brief Elementwise operations of one operand: roots, exponentials and every trigonometric
+///       function.
+
 #include <array/array.hpp>
 
 // Elementwise functions of one array, lazy like the binary ones. On float and double arrays the
@@ -77,7 +81,7 @@ namespace sci::operations {
         return array::apply<core::Code::acot>(std::forward<source>(input));
     }
 
-    // sinh, cosh, tanh and their inverses, with the h suffix from C.
+    /// sinh, cosh, tanh and their inverses, with the h suffix from C.
     template <operand source> auto sinh(source &&input) {
         return array::apply<core::Code::sinh>(std::forward<source>(input));
     }

@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief The recorded operations of one elementwise expression.
+
 #include "core/bytecode/code.hpp"
 #include "core/bytecode/fold.hpp"
 #include "core/bytecode/instruction.hpp"
@@ -18,17 +21,17 @@
 
 namespace sci::core {
 
-    // The recorded operations of one elementwise expression: a flat list of instructions over input
-    // arrays, constants and temporaries. Expression nodes record onto it (input, constant, emit),
-    // `a * b + c` becomes one fma, and output() or reduce() finishes it. Fixed capacity, so
-    // recording never allocates.
+    /// The recorded operations of one elementwise expression: a flat list of instructions over input
+    /// arrays, constants and temporaries. Expression nodes record onto it (input, constant, emit),
+    /// `a * b + c` becomes one fma, and output() or reduce() finishes it. Fixed capacity, so
+    /// recording never allocates.
     class Chunk {
     public:
         static constexpr size capacity = 64;
 
         explicit Chunk(const Precision precision) noexcept : precision(precision) {}
 
-        // Recording. Each call returns the value id of what it added.
+        /// Recording. Each call returns the value id of what it added.
         [[nodiscard]] uint8 input(const void *pointer) noexcept {
             for (uint8 index = 0; index < arguments; ++index) {
                 if (inputs[index] == pointer) return slot::input | index;
@@ -48,8 +51,8 @@ namespace sci::core {
             return slot::literal | literals++;
         }
 
-        // Sources are consumed: expression trees use every temporary exactly once, so a temporary
-        // returns to the free list as soon as its consumer is recorded.
+        /// Sources are consumed: expression trees use every temporary exactly once, so a temporary
+        /// returns to the free list as soon as its consumer is recorded.
         [[nodiscard]] uint8 emit(const Code code, const uint8 first, const uint8 second = slot::none,
                                  const uint8 third = slot::none) noexcept {
             if (overflow) return slot::none;
@@ -72,17 +75,17 @@ namespace sci::core {
             temporaries = std::max<uint8>(temporaries, index + 1);
             const uint8 target = slot::temporary | index;
 
-            this->code[length++] = Instruction{.code = code, .target = target, .sources = {first, second, third}};
+            instructions[length++] = Instruction{.code = code, .target = target, .sources = {first, second, third}};
             return target;
         }
 
-        // Finishes a chunk whose result is written to the output array.
+        /// Finishes a chunk whose result is written to the output array.
         const Chunk &output(const uint8 value) noexcept {
             if (overflow) return *this;
-            if (length > 0 && code[length - 1].target == value && (value & slot::types) == slot::temporary) {
-                code[length - 1].target = slot::output;
+            if (length > 0 && instructions[length - 1].target == value && (value & slot::types) == slot::temporary) {
+                instructions[length - 1].target = slot::output;
             } else if (length < capacity) {
-                code[length++] = Instruction{
+                instructions[length++] = Instruction{
                         .code = Code::copy, .target = slot::output, .sources = {value, slot::none, slot::none}};
             } else {
                 fail();
@@ -91,21 +94,22 @@ namespace sci::core {
             return *this;
         }
 
-        // Finishes a chunk whose result feeds a reduction instead of being stored.
+        /// Finishes a chunk whose result feeds a reduction instead of being stored.
         const Chunk &reduce(const uint8 value) noexcept {
             result = value;
             return *this;
         }
 
-        // False once the expression outgrew the fixed capacity; callers then fall back to a loop.
+        /// False once the expression outgrew the fixed capacity; callers then fall back to a loop.
         [[nodiscard]] bool valid() const noexcept { return !overflow; }
 
-        // Rough per-element work: one unit per array streamed plus each instruction's cost. Decides
-        // when a chunk is worth spreading across threads or sending to the GPU.
+        /// Rough per-element work: one unit per array streamed plus each instruction's cost. Decides
+        /// when a chunk is worth spreading across threads or sending to the GPU.
         [[nodiscard]] uint32 cost() const noexcept {
             uint32 total = arguments + 1;
             for (uint8 index = 0; index < length; ++index) {
-                if (const Code operation = code[index].code; operation == Code::divide || operation == Code::root) {
+                if (const Code operation = instructions[index].code;
+                    operation == Code::divide || operation == Code::root) {
                     total += 4;
                 } else if (operation == Code::exponential || operation == Code::logarithm) {
                     total += 12;
@@ -120,16 +124,16 @@ namespace sci::core {
             return total;
         }
 
-        // A sum whose last instruction multiplies into the result, sum(... * ...): the reduction can
-        // skip that multiply and contract its operands directly (a dot product), so the product
-        // never round-trips through memory.
+        /// A sum whose last instruction multiplies into the result, sum(... * ...): the reduction can
+        /// skip that multiply and contract its operands directly (a dot product), so the product
+        /// never round-trips through memory.
         [[nodiscard]] bool contracted(const Fold fold) const noexcept {
-            return fold == Fold::sum && length > 0 && code[length - 1].code == Code::multiply &&
-                   code[length - 1].target == result;
+            return fold == Fold::sum && length > 0 && instructions[length - 1].code == Code::multiply &&
+                   instructions[length - 1].target == result;
         }
 
-        // The instructions and value counts without the input addresses or constant values: chunks
-        // with the same signature compile to the same machine code or shader (see the JITs).
+        /// The instructions and value counts without the input addresses or constant values: chunks
+        /// with the same signature compile to the same machine code or shader (see the JITs).
         [[nodiscard]] std::string signature() const {
             std::string key;
             key.reserve(5 + 5 * size{length});
@@ -139,7 +143,7 @@ namespace sci::core {
             key += static_cast<char>(temporaries);
             key += static_cast<char>(result);
             for (uint8 index = 0; index < length; ++index) {
-                const auto &[code, target, sources] = this->code[index];
+                const auto &[code, target, sources] = instructions[index];
                 key += static_cast<char>(code);
                 key += static_cast<char>(target);
                 for (const uint8 source : sources) {
@@ -149,23 +153,23 @@ namespace sci::core {
             return key;
         }
 
-        // The recorded chunk, read by the executors. Only the first length / arguments / literals
-        // entries are meaningful.
+        /// The recorded chunk, read by the executors. Only the first length / arguments / literals
+        /// entries are meaningful.
         Precision precision;
         uint8 length{0};
         uint8 arguments{0};
         uint8 literals{0};
         uint8 temporaries{0};
         uint8 result{slot::none};
-        Instruction code[capacity]{};
+        Instruction instructions[capacity]{};
         const void *inputs[capacity]{};
         double constants[capacity]{};
 
     private:
-        // Rewrites `product + addend` into one fma when the product was the last recorded instruction.
+        /// Rewrites `product + addend` into one fma when the product was the last recorded instruction.
         uint8 contract(const uint8 product, const uint8 addend) noexcept {
             if (length == 0 || (product & slot::types) != slot::temporary) return slot::none;
-            Instruction &last = code[length - 1];
+            Instruction &last = instructions[length - 1];
             if (last.code != Code::multiply || last.target != product) return slot::none;
             last.code = Code::fuse;
             last.sources[2] = addend;

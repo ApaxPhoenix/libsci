@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Arrays reshaped: reshape, transpose, flatten, squeeze and expand.
+
 #include <array/array.hpp>
 
 #include <algorithm>

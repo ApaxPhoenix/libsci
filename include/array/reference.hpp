@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief An array in an expression: a leaf of the tree.
+
 #include "array/deferred.hpp"
 #include "array/methods.hpp"
 #include "array/shape.hpp"
@@ -15,8 +18,8 @@ namespace sci::array {
 
     using core::drivers::Device;
 
-    // Leaf: an array the expression reads. `pointer` is a plain pointer to an array that outlives the
-    // expression, or a shared pointer to a temporary moved into it, which it keeps alive.
+    /// Leaf: an array the expression reads. `pointer` is a plain pointer to an array that outlives the
+    /// expression, or a shared pointer to a temporary moved into it, which it keeps alive.
     template <typename pointer> struct Reference : Methods<Reference<pointer>> {
         using element = std::pointer_traits<pointer>::element_type::element;
         static constexpr core::size rank = std::pointer_traits<pointer>::element_type::rank;
@@ -31,6 +34,7 @@ namespace sci::array {
         [[nodiscard]] element at(const core::size index) const noexcept { return source->data()[index]; }
     };
 
+    /// @brief Every reference is a lazy expression.
     template <typename pointer> struct Deferred<Reference<pointer>> : std::true_type {};
 
 }

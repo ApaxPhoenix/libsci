@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Reductions: sum, mean, minimum and maximum, fused with what they reduce.
+
 #include <array/array.hpp>
 
 // Whole-array reductions, named as in numpy (numpy.min and numpy.max become minimum and maximum
@@ -18,7 +21,7 @@ namespace sci::operations {
         return count == 0 ? element{} : sum(input) / static_cast<element>(count);
     }
 
-    // NaN anywhere gives NaN, as in numpy.min / numpy.max.
+    /// NaN anywhere gives NaN, as in numpy.min / numpy.max.
     template <operand source> source::element minimum(const source &input) {
         return array::reduce(input, core::Fold::minimum);
     }

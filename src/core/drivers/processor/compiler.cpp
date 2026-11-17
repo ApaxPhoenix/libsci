@@ -55,7 +55,7 @@ namespace sci::core::drivers::processor {
         // hyperbolic::arctangent) run best as kernel loops over whole blocks: a call per register
         // costs more than the temporaries it saves, so chunks that use them stay on the kernels.
         for (uint8 index = 0; index < chunk.length; ++index) {
-            if (const Code code = chunk.code[index].code; code >= Code::exponential && code <= Code::atan)
+            if (const Code code = chunk.instructions[index].code; code >= Code::exponential && code <= Code::atan)
                 return nullptr;
         }
 

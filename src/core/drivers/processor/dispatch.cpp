@@ -68,7 +68,7 @@ namespace sci::core::drivers::processor {
                 values[slot::output] = output + start;
             }
             for (uint8 index = 0; index < steps; ++index) {
-                const Instruction &step = chunk.code[index];
+                const Instruction &step = chunk.instructions[index];
                 const type *sources[3] = {values[step.sources[0]], values[step.sources[1]], values[step.sources[2]]};
                 routines.kernels[static_cast<size>(step.code)](sources, values[step.target], count);
             }
@@ -111,7 +111,7 @@ namespace sci::core::drivers::processor {
         }
 
         // A contracted sum skips the final multiply and takes the dot product of its operands.
-        const Instruction *product = chunk.length > 0 ? &chunk.code[chunk.length - 1] : nullptr;
+        const Instruction *product = chunk.length > 0 ? &chunk.instructions[chunk.length - 1] : nullptr;
         const bool contract = chunk.contracted(fold);
         const uint8 steps = contract ? chunk.length - 1 : chunk.length;
         const auto reduction = routines.folds[static_cast<size>(fold)];

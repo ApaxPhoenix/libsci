@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Natural logarithm over a whole pack.
+
 #include "core/drivers/processor/kernels/generic/constants.hpp"
 #include "core/drivers/processor/kernels/generic/polynomial.hpp"
 #include "core/types.hpp"
@@ -8,7 +11,7 @@
 
 namespace sci::core::drivers::processor::kernels {
 
-    // Natural logarithm over a whole pack.
+    /// Natural logarithm over a whole pack.
     template <typename pack> struct Logarithm {
         using type = pack::element;
         using value = pack::value;
@@ -53,7 +56,7 @@ namespace sci::core::drivers::processor::kernels {
         }
 
     private:
-        // The series tail R(z) (see Polynomial::reciprocals).
+        /// The series tail R(z) (see Polynomial::reciprocals).
         static constexpr auto series = Polynomial<type, limit::logarithm>::reciprocals();
     };
 

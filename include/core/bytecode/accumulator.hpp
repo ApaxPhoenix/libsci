@@ -1,5 +1,9 @@
 #pragma once
 
+/// @file
+/// @brief Folds the partial results of a reduction in double precision, starting from the fold's
+///       identity (0, +infinity or -infinity).
+
 #include "core/bytecode/fold.hpp"
 
 #include <algorithm>
@@ -8,8 +12,8 @@
 
 namespace sci::core {
 
-    // Folds the partial results of a reduction in double precision, starting from the fold's
-    // identity (0, +infinity or -infinity). Minimum and maximum let NaN win, as numpy does.
+    /// Folds the partial results of a reduction in double precision, starting from the fold's
+    /// identity (0, +infinity or -infinity). Minimum and maximum let NaN win, as numpy does.
     class Accumulator {
     public:
         explicit Accumulator(const Fold fold) noexcept

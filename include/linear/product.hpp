@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Matrix product of row-major matrices (numpy.matmul).
+
 #include "array/array.hpp"
 #include "core/assert.hpp"
 #include "core/drivers/device.hpp"
@@ -11,8 +14,8 @@ namespace sci::linear {
     using array::Device;
     using array::Shape;
 
-    // Matrix product of row-major matrices (numpy.matmul). GPU operands multiply on the GPU; host
-    // float and double use the CPU kernels (Apple's BLAS on macOS); other element types a plain loop.
+    /// Matrix product of row-major matrices (numpy.matmul). GPU operands multiply on the GPU; host
+    /// float and double use the CPU kernels (Apple's BLAS on macOS); other element types a plain loop.
     template <typename element>
     Array<element, 2> product(const Array<element, 2> &left, const Array<element, 2> &right) {
         const core::size rows = left.shape()[0];
@@ -58,8 +61,8 @@ namespace sci::linear {
         return output;
     }
 
-    // Inner product of two vectors or vector expressions (numpy.dot on 1-D arrays), computed in a
-    // single pass: the products are never stored.
+    /// Inner product of two vectors or vector expressions (numpy.dot on 1-D arrays), computed in a
+    /// single pass: the products are never stored.
     template <array::operand left, array::operand right>
         requires(left::rank == 1 && right::rank == 1)
     typename left::element dot(const left &first, const right &second) {

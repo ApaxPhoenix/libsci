@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Aligned host memory that frees itself.
+
 #include "core/alignment.hpp"
 #include "core/types.hpp"
 
@@ -8,8 +11,8 @@
 
 namespace sci::core::memory {
 
-    // Aligned host memory that frees itself: the bytes behind host arrays, arena blocks, CPU device
-    // memory and per-thread scratch space. Move-only.
+    /// Aligned host memory that frees itself: the bytes behind host arrays, arena blocks, CPU device
+    /// memory and per-thread scratch space. Move-only.
     class Allocation {
     public:
         Allocation() noexcept = default;
@@ -34,7 +37,7 @@ namespace sci::core::memory {
             return *this;
         }
 
-        // Grows to at least `amount` bytes and returns the memory. Growing does not keep the contents.
+        /// Grows to at least `amount` bytes and returns the memory. Growing does not keep the contents.
         void *reserve(const size amount) {
             if (amount > bytes) {
                 if (pointer) ::operator delete(pointer, std::align_val_t{alignment});

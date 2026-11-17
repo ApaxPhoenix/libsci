@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief What one code does to a pack.
+
 #include "core/bytecode/code.hpp"
 #include "core/drivers/processor/kernels/generic/exponential.hpp"
 #include "core/drivers/processor/kernels/generic/library.hpp"
@@ -12,9 +15,9 @@
 
 namespace sci::core::drivers::processor::kernels {
 
-    // What one code does to a pack. The loops in elementwise.hpp and reductions.hpp call apply()
-    // with the ISA's pack, and with its one-lane Scalar pack for the tail. The functions with no
-    // polynomial of their own, the inverse circular and the hyperbolic ones, go through the C library.
+    /// What one code does to a pack. The loops in elementwise.hpp and reductions.hpp call apply()
+    /// with the ISA's pack, and with its one-lane Scalar pack for the tail. The functions with no
+    /// polynomial of their own, the inverse circular and the hyperbolic ones, go through the C library.
     template <Code code> struct Operation {
         template <typename pack> static pack::value apply(const pack::value item) noexcept {
             if constexpr (code == Code::copy)

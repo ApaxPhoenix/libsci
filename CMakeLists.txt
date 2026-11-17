@@ -196,8 +196,9 @@ if (DOXYGEN_FOUND)
     # are pages of their own beside the reference. Everything is generated
     # into the build tree's docs/; the source tree keeps no docs folder.
     set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${source}/README.md")
-    doxygen_add_docs(docs "${source}/README.md" "${source}/CONTRIBUTING.md" "${source}/SECURITY.md"
-            "${source}/CHANGELOG.md" "${source}/include" "${source}/src"
+    file(GLOB pages CONFIGURE_DEPENDS "${source}/*.md" "${source}/bindings/*/README.md" "${source}/frontend/README.md"
+            "${source}/benchmarks/*.md" "${source}/tests/*.md" "${source}/assets/*/*.md")
+    doxygen_add_docs(docs ${pages} "${source}/include" "${source}/src"
             COMMENT "Generating documentation")
 endif ()
 
@@ -324,6 +325,11 @@ set_target_properties(asmjit PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${
 target_link_libraries(sci PUBLIC Vulkan::Vulkan Threads::Threads)
 target_link_libraries(sci PRIVATE asmjit::asmjit "${library}")
 target_compile_options(sci PRIVATE ${warnings} ${optimisation})
+if (WIN32)
+    # The SCI_* settings are read with getenv, which the Windows C runtime marks
+    # deprecated for the pointer it returns; libsci copies what it reads at once.
+    target_compile_definitions(sci PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif ()
 
 # The CPU's features are asked of it through __builtin_cpu_supports, which
 # clang-cl answers from compiler-rt's builtins library: linked here, from

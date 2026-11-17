@@ -43,9 +43,10 @@ namespace sci::core::drivers::processor::compiler {
                 reads[identifier & ~slot::types] = true;
         };
         for (uint8 step = 0; step < chunk.length; ++step) {
-            for (const uint8 source : chunk.code[step].sources)
+            for (const uint8 source : chunk.instructions[step].sources)
                 note(source);
-            signs = signs || chunk.code[step].code == Code::negate || chunk.code[step].code == Code::absolute;
+            signs = signs || chunk.instructions[step].code == Code::negate ||
+                    chunk.instructions[step].code == Code::absolute;
         }
         note(chunk.result);
         x86::Gp pointers[Chunk::capacity];
@@ -121,7 +122,7 @@ namespace sci::core::drivers::processor::compiler {
         };
 
         for (uint8 step = 0; step < chunk.length; ++step) {
-            const Instruction &instruction = chunk.code[step];
+            const Instruction &instruction = chunk.instructions[step];
             const x86::Vec first = value(instruction.sources[0]);
             x86::Vec result = compiler.new_vec256("value");
             switch (instruction.code) {

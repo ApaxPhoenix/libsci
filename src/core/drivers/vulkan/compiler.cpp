@@ -44,7 +44,7 @@ namespace sci::core::drivers::vulkan {
             body += std::format("    const float4 literal{0} = float4(chunk.constants[{0}]);\n", index);
         }
         for (uint8 step = 0; step < chunk.length; ++step) {
-            const Instruction &instruction = chunk.code[step];
+            const Instruction &instruction = chunk.instructions[step];
             const std::string &first = names[instruction.sources[0]];
             const std::string &second = names[instruction.sources[1]];
             const std::string &third = names[instruction.sources[2]];

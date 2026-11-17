@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief A compute pipeline for one entry point of a SPIR-V module.
+
 #include "core/types.hpp"
 #include <span>
 #include <vulkan/vulkan.h>
@@ -8,8 +11,8 @@ namespace sci::core::drivers::vulkan {
 
     struct Context;
 
-    // A compute pipeline for one entry point of a SPIR-V module. Shaders take every argument
-    // (device pointers included) as push constants, so there are no descriptor sets to manage.
+    /// A compute pipeline for one entry point of a SPIR-V module. Shaders take every argument
+    /// (device pointers included) as push constants, so there are no descriptor sets to manage.
     class Pipeline {
     public:
         Pipeline(const Context &context, std::span<const uint32> code, const char *entry, uint32 bytes);
@@ -25,7 +28,7 @@ namespace sci::core::drivers::vulkan {
         VkPipelineLayout layout{VK_NULL_HANDLE};
         VkPipeline handle{VK_NULL_HANDLE};
 
-        // Size of the push-constant block the entry point takes.
+        /// Size of the push-constant block the entry point takes.
         uint32 bytes{0};
     };
 

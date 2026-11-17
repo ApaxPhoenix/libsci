@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Runs a code over arrays a pack at a time, for every instruction set.
+
 #include "core/types.hpp"
 
 namespace sci::core::drivers::processor::kernels {

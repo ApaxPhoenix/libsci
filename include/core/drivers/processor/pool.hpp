@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Fork-join thread pool.
+
 #include "core/types.hpp"
 
 #include <atomic>
@@ -11,12 +14,12 @@
 
 namespace sci::core::drivers::processor {
 
-    // Fork-join thread pool: run() hands out indices [0, count) to the workers and the calling
-    // thread, and returns once every index has been processed.
-    //
-    // The hot path takes no locks. A job is published seqlock style: the generation is odd while the
-    // job fields are rewritten, and workers announce themselves in `busy` before reading them. Idle
-    // workers spin for a while before parking, so back-to-back jobs cost a few microseconds.
+    /// Fork-join thread pool: run() hands out indices [0, count) to the workers and the calling
+    /// thread, and returns once every index has been processed.
+    ///
+    /// The hot path takes no locks. A job is published seqlock style: the generation is odd while the
+    /// job fields are rewritten, and workers announce themselves in `busy` before reading them. Idle
+    /// workers spin for a while before parking, so back-to-back jobs cost a few microseconds.
     class Pool {
     public:
         explicit Pool(size count = std::thread::hardware_concurrency());
@@ -25,10 +28,10 @@ namespace sci::core::drivers::processor {
         Pool(const Pool &) = delete;
         Pool &operator=(const Pool &) = delete;
 
-        // Threads that can take part in a job, the caller included.
+        /// Threads that can take part in a job, the caller included.
         [[nodiscard]] size width() const noexcept { return threads.size() + 1; }
 
-        // At most `limit` threads (the caller included) take part; 0 means all of them.
+        /// At most `limit` threads (the caller included) take part; 0 means all of them.
         template <typename action> void run(const size count, action &&work, const size limit = 0) {
             using callable = std::remove_reference_t<action>;
             run(
@@ -38,14 +41,14 @@ namespace sci::core::drivers::processor {
 
         void run(size count, void (*routine)(void *, size), void *state, size limit);
 
-        // Shared pool, sized from SCI_THREADS when set, otherwise from the hardware.
+        /// Shared pool, sized from SCI_THREADS when set, otherwise from the hardware.
         [[nodiscard]] static Pool &global();
 
     private:
-        // Pauses the core for a moment inside a spin loop.
+        /// Pauses the core for a moment inside a spin loop.
         static void relax() noexcept;
 
-        // Spins on a condition, then starts yielding the core so a preempted peer can finish.
+        /// Spins on a condition, then starts yielding the core so a preempted peer can finish.
         template <typename predicate> static void await(predicate &&ready) noexcept;
 
         void loop(size seat);
@@ -56,7 +59,7 @@ namespace sci::core::drivers::processor {
         std::mutex guard;
         std::condition_variable signal;
 
-        // The published job; only read by workers counted in `busy`.
+        /// The published job; only read by workers counted in `busy`.
         void (*task)(void *, size){nullptr};
         void *argument{nullptr};
         size total{0};

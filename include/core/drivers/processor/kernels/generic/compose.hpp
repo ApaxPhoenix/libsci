@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Builds one instruction set's table of kernels from the generic ones.
+
 #include "core/bytecode/code.hpp"
 #include "core/bytecode/fold.hpp"
 #include "core/drivers/processor/kernels/generic/elementwise.hpp"
@@ -73,6 +76,7 @@ namespace sci::core::drivers::processor::kernels {
         return routines;
     }
 
+    /// @brief Builds one instruction set's table of kernels, every code and fold, from its pack type.
     template <template <typename> class pack> constexpr Table compose(const char *name) noexcept {
         return Table{name, assemble<pack<float>>(), assemble<pack<double>>()};
     }

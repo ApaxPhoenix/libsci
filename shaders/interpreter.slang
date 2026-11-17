@@ -9,15 +9,15 @@
 #include "common/layout.slang"
 
 float4 fetch(Chunk* chunk, uint identifier, uint4 index, inout float4 registers[16]) {
-    const uint kind = identifier >> 6;
+    const uint type = identifier >> 6;
     const uint slot = identifier & 63;
-    if (kind == input) {
+    if (type == input) {
         return load(chunk, slot, index);
     }
-    if (kind == literal) {
+    if (type == literal) {
         return float4(chunk.constants[slot]);
     }
-    if (kind == temporary) {
+    if (type == temporary) {
         return registers[slot];
     }
     return float4(0.0);

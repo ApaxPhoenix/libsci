@@ -1,5 +1,9 @@
 #pragma once
 
+/// @file
+/// @brief One command buffer of a Stream, with its fence, scratch memory and the buffers waiting on
+///       it.
+
 #include "core/drivers/vulkan/buffer.hpp"
 #include "core/types.hpp"
 #include <vulkan/vulkan.h>
@@ -8,7 +12,7 @@
 
 namespace sci::core::drivers::vulkan {
 
-    // One command buffer of a Stream, with its fence, scratch memory and the buffers waiting on it.
+    /// One command buffer of a Stream, with its fence, scratch memory and the buffers waiting on it.
     struct Batch {
         VkCommandBuffer commands{VK_NULL_HANDLE};
         VkFence fence{VK_NULL_HANDLE};
@@ -20,8 +24,8 @@ namespace sci::core::drivers::vulkan {
         bool pending{false};
         std::vector<Buffer> retired;
 
-        // Records a barrier that makes everything compute shaders have written so far visible to
-        // `read` accesses in the `after` stage.
+        /// Records a barrier that makes everything compute shaders have written so far visible to
+        /// `read` accesses in the `after` stage.
         void barrier(const VkPipelineStageFlags after, const VkAccessFlags read) const noexcept {
             const VkMemoryBarrier memory{.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
                                          .pNext = nullptr,

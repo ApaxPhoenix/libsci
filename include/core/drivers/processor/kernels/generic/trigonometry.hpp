@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Sine and cosine over a whole pack, each through its own polynomial.
+
 #include "core/drivers/processor/kernels/generic/constants.hpp"
 #include "core/drivers/processor/kernels/generic/polynomial.hpp"
 #include "core/types.hpp"
@@ -10,14 +13,14 @@
 
 namespace sci::core::drivers::processor::kernels {
 
-    // Sine and cosine over a whole pack, each through its own polynomial. Tangent is their quotient
-    // and the inverses go through the C library (see Operation).
+    /// Sine and cosine over a whole pack, each through its own polynomial. Tangent is their quotient
+    /// and the inverses go through the C library (see Operation).
     template <typename pack> struct Trigonometry {
         using type = pack::element;
         using value = pack::value;
         using limit = Constants<type>;
 
-        // `phase` false gives the sine, true the cosine (the sine a quarter turn later).
+        /// `phase` false gives the sine, true the cosine (the sine a quarter turn later).
         template <bool phase> static value evaluate(const value input) noexcept {
             // Nearest whole number of quarter turns, j; the low bits of `shifted` hold j mod 4.
             const value shifted = pack::fuse(input, pack::splat(limit::quadrant), pack::splat(limit::round));
@@ -66,7 +69,7 @@ namespace sci::core::drivers::processor::kernels {
         }
 
     private:
-        // Taylor series of sine (odd powers) and cosine (even powers), in powers of r^2.
+        /// Taylor series of sine (odd powers) and cosine (even powers), in powers of r^2.
         static constexpr auto odd = Polynomial<type, limit::sine + 1>::template alternating<1>();
         static constexpr auto even = Polynomial<type, limit::cosine + 1>::template alternating<0>();
     };

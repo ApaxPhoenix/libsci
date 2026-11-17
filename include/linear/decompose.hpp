@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief LU decomposition with partial pivoting, as scipy.linalg.lu gives it.
+
 #include "array/array.hpp"
 #include "core/assert.hpp"
 #include "core/drivers/processor/pool.hpp"
@@ -17,9 +20,9 @@ namespace sci::linear {
     using array::Array;
     using array::Shape;
 
-    // In-place LU with partial pivoting of a row-major order x order matrix. Afterwards the strict lower
-    // triangle holds L (its unit diagonal implied), the rest holds U, and rows[i] is the original
-    // row now at position i. A zero pivot (a singular matrix) is skipped; solving then gives inf/NaN.
+    /// In-place LU with partial pivoting of a row-major order x order matrix. Afterwards the strict lower
+    /// triangle holds L (its unit diagonal implied), the rest holds U, and rows[i] is the original
+    /// row now at position i. A zero pivot (a singular matrix) is skipped; solving then gives inf/NaN.
     template <typename element> void factor(element *matrix, core::size *rows, const core::size order) {
         for (core::size index = 0; index < order; ++index) {
             rows[index] = index;
@@ -65,7 +68,7 @@ namespace sci::linear {
         }
     }
 
-    // LU decomposition with partial pivoting (scipy.linalg.lu). The factors live where the matrix does.
+    /// LU decomposition with partial pivoting (scipy.linalg.lu). The factors live where the matrix does.
     template <typename element> Factors<element> decompose(const Array<element, 2> &matrix) {
         static_assert(std::is_floating_point_v<element>, "decompose needs a floating-point matrix");
         const core::size order = matrix.shape()[0];

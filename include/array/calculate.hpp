@@ -1,12 +1,15 @@
 #pragma once
 
+/// @file
+/// @brief Scalar semantics of each code, for element types the engine does not run natively.
+
 #include "core/bytecode/code.hpp"
 
 #include <cmath>
 
 namespace sci::array {
 
-    // Scalar semantics of each code, for element types the engine does not run natively.
+    /// Scalar semantics of each code, for element types the engine does not run natively.
     template <core::Code code, typename type>
     type calculate(const type alpha, const type beta = type{}, const type gamma = type{}) noexcept {
         using core::Code;

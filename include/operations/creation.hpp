@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Arrays made from nothing: zeros, ones, full, empty, ranges and eye.
+
 #include <array/array.hpp>
 
 #include <cmath>
@@ -104,14 +107,14 @@ namespace sci::operations {
         return {std::move(xx), std::move(yy)};
     }
 
-    // Contents are unspecified until written, which skips the zero-fill.
+    /// Contents are unspecified until written, which skips the zero-fill.
     template <typename element = float, core::size rank, location... place>
         requires(sizeof...(place) <= 1)
     Array<element, rank> empty(const core::size (&shape)[rank], place &...where) {
         return Array<element, rank>(where..., Shape<rank>{std::to_array(shape)}, array::Uninitialized{});
     }
 
-    // start, start + step, ... up to (not including) stop.
+    /// start, start + step, ... up to (not including) stop.
     template <typename element = float>
     Array<element, 1> range(const element start, const element stop, const element step = element{1}) {
         const double span =

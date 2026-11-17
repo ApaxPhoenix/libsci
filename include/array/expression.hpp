@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief A lazy expression tree (including a bare reference to an array).
+
 #include "array/calculate.hpp"
 #include "array/deferred.hpp"
 #include "array/dense.hpp"
@@ -38,23 +41,23 @@ namespace sci::array {
 
     template <typename type, core::size order> class Array;
 
-    // A lazy expression tree (including a bare reference to an array).
+    /// A lazy expression tree (including a bare reference to an array).
     template <typename type>
     concept expression = Deferred<std::remove_cvref_t<type>>::value;
 
-    // An Array.
+    /// An Array.
     template <typename type>
     concept tensor = Dense<std::remove_cvref_t<type>>::value;
 
-    // Anything elementwise operations accept as an array argument.
+    /// Anything elementwise operations accept as an array argument.
     template <typename type>
     concept operand = expression<type> || tensor<type>;
 
     template <typename type>
     concept scalar = std::is_arithmetic_v<std::remove_cvref_t<type>>;
 
-    // Turns an operand into an expression leaf: arrays by pointer (or by shared pointer when they are
-    // temporaries), expressions by value.
+    /// Turns an operand into an expression leaf: arrays by pointer (or by shared pointer when they are
+    /// temporaries), expressions by value.
     template <operand type> auto capture(type &&item) {
         using bare = std::remove_cvref_t<type>;
         if constexpr (expression<type>) {
@@ -72,7 +75,7 @@ namespace sci::array {
         return Node<code, captured<type>>(capture(std::forward<type>(item)));
     }
 
-    // Scalars on either side take the element type of the array side.
+    /// Scalars on either side take the element type of the array side.
     template <core::Code code, typename left, typename right> auto apply(left &&first, right &&second) {
         if constexpr (scalar<left>) {
             using element = std::remove_cvref_t<right>::element;
@@ -120,8 +123,8 @@ namespace sci::array {
 
     template <operand type> auto operator-(type &&item) { return apply<core::Code::negate>(std::forward<type>(item)); }
 
-    // Writes the expression into target, which must already have the expression's shape. The target
-    // may appear in the expression (every kernel is elementwise). Runs on the target's device.
+    /// Writes the expression into target, which must already have the expression's shape. The target
+    /// may appear in the expression (every kernel is elementwise). Runs on the target's device.
     template <typename element, core::size rank, typename source>
     void assign(Array<element, rank> &target, const source &item) {
         ASSERT(target.shape() == item.shape());
@@ -151,7 +154,7 @@ namespace sci::array {
         }
     }
 
-    // Sum, minimum or maximum of an array or expression, in a single pass, on the device its arrays live on.
+    /// Sum, minimum or maximum of an array or expression, in a single pass, on the device its arrays live on.
     template <typename source> typename source::element reduce(const source &input, const core::Fold fold) {
         using element = source::element;
         const auto item = capture(input);

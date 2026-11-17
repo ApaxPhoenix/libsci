@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief One piece of memory in an Arena's chain.
+
 #include "core/memory/allocation.hpp"
 #include "core/memory/cursor.hpp"
 #include "core/types.hpp"
@@ -9,7 +12,7 @@
 
 namespace sci::core::memory {
 
-    // One piece of memory in an Arena's chain: the bytes, how far they are used, and the next block.
+    /// One piece of memory in an Arena's chain: the bytes, how far they are used, and the next block.
     struct Block {
         Allocation allocation;
         Cursor<std::byte> head;

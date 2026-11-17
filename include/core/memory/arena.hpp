@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Bump allocator over a chain of blocks.
+
 #include "core/alignment.hpp"
 #include "core/memory/block.hpp"
 #include "core/memory/cursor.hpp"
@@ -12,8 +15,8 @@
 
 namespace sci::core::memory {
 
-    // Bump allocator over a chain of blocks: allocate() hands out the next piece of the active block,
-    // reset() makes every block reusable at once, and the memory is freed with the arena. Move-only.
+    /// Bump allocator over a chain of blocks: allocate() hands out the next piece of the active block,
+    /// reset() makes every block reusable at once, and the memory is freed with the arena. Move-only.
     class Arena {
     public:
         explicit Arena(const size bytes)

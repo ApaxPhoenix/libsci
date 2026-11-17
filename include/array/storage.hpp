@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Where an array can live besides plain host memory.
+
 #include "core/alignment.hpp"
 #include "core/drivers/device.hpp"
 #include "core/drivers/memory.hpp"
@@ -15,12 +18,12 @@ namespace sci::array {
 
     using core::drivers::Device;
 
-    // Where an array can live besides plain host memory.
+    /// Where an array can live besides plain host memory.
     template <typename place>
     concept location = std::same_as<place, Device> || std::same_as<place, core::memory::Arena>;
 
-    // The memory behind an Array: host memory it owns, memory on a Device, or a slice of an Arena.
-    // The elements are left for the Array to fill.
+    /// The memory behind an Array: host memory it owns, memory on a Device, or a slice of an Arena.
+    /// The elements are left for the Array to fill.
     template <typename element> class Storage {
     public:
         Storage() = default;
@@ -36,7 +39,7 @@ namespace sci::array {
             pointer = static_cast<element *>(memory.host);
         }
 
-        // The arena keeps ownership.
+        /// The arena keeps ownership.
         Storage(core::memory::Arena &arena, const core::size total)
             : pointer(arena.allocate<element>(total)), count(total) {
             std::uninitialized_default_construct_n(pointer, count);
@@ -58,7 +61,7 @@ namespace sci::array {
               pointer(std::exchange(storage.pointer, nullptr)), count(std::exchange(storage.count, 0)),
               owner(std::exchange(storage.owner, nullptr)) {}
 
-        // Swaps, so the storage moved from releases what this one held.
+        /// Swaps, so the storage moved from releases what this one held.
         Storage &operator=(Storage &&storage) noexcept {
             std::swap(allocation, storage.allocation);
             std::swap(memory, storage.memory);
@@ -74,7 +77,7 @@ namespace sci::array {
         [[nodiscard]] core::size size() const noexcept { return count; }
         [[nodiscard]] Device *device() const noexcept { return owner; }
 
-        // Lets the host touch the memory: waits for queued GPU work on the storage's device.
+        /// Lets the host touch the memory: waits for queued GPU work on the storage's device.
         void synchronize() const noexcept {
             if (owner) owner->synchronize();
         }

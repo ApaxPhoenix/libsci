@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief What arrays and expressions share: size, sum, mean, minimum, maximum and copy.
+
 #include "core/bytecode/fold.hpp"
 #include "core/types.hpp"
 
@@ -7,10 +10,10 @@ namespace sci::array {
 
     template <typename type, core::size order> class Array;
 
-    // Defined in expression.hpp.
+    /// Defined in expression.hpp.
     template <typename source> source::element reduce(const source &input, core::Fold fold);
 
-    // Array-like members shared by Array and every expression node.
+    /// Array-like members shared by Array and every expression node.
     template <typename derived> struct Methods {
         [[nodiscard]] core::size size() const noexcept { return self().shape().total(); }
         [[nodiscard]] auto sum() const { return reduce(self(), core::Fold::sum); }
@@ -22,7 +25,7 @@ namespace sci::array {
             return size() == 0 ? element{} : sum() / static_cast<element>(size());
         }
 
-        // A new array holding the values (numpy.copy) on the device they live on.
+        /// A new array holding the values (numpy.copy) on the device they live on.
         [[nodiscard]] auto copy() const { return Array<typename derived::element, derived::rank>(capture(self())); }
 
     private:

@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief One-lane pack over plain scalars.
+
 #include "core/types.hpp"
 
 // The C functions (::sqrtf, ::sqrt), not <cmath>: its std:: overloads are inline functions the
@@ -8,8 +11,8 @@
 
 namespace sci::core::drivers::processor::kernels {
 
-    // One-lane pack over plain scalars: the fallback ISA and every loop tail. `tag` is the owning
-    // ISA's pack (Neon<float>, ...), which keeps each file's instantiations apart.
+    /// One-lane pack over plain scalars: the fallback ISA and every loop tail. `tag` is the owning
+    /// ISA's pack (Neon<float>, ...), which keeps each file's instantiations apart.
     template <typename type, typename integer, typename tag> struct Scalar {
         using element = type;
         using value = type;
@@ -29,8 +32,8 @@ namespace sci::core::drivers::processor::kernels {
         static value multiply(const value left, const value right) noexcept { return left * right; }
         static value divide(const value left, const value right) noexcept { return left / right; }
 
-        // Without a fused multiply-add instruction a float fma is still exact enough through double (the product
-        // is exact there), which the range reduction of sine and cosine relies on. Doubles fall back to two roundings.
+        /// Without a fused multiply-add instruction a float fma is still exact enough through double (the product
+        /// is exact there), which the range reduction of sine and cosine relies on. Doubles fall back to two roundings.
         static value fuse(const value left, const value right, const value addend) noexcept {
 #if defined(__FMA__) || defined(__aarch64__)
             if constexpr (sizeof(type) == 4) {
@@ -86,7 +89,7 @@ namespace sci::core::drivers::processor::kernels {
         static bits unite(const bits left, const bits right) noexcept { return left | right; }
         static bits toggle(const bits left, const bits right) noexcept { return left ^ right; }
 
-        // Every lane shifted left by `count` bits, or right by -count when it is negative.
+        /// Every lane shifted left by `count` bits, or right by -count when it is negative.
         template <int count> static bits shift(const bits item) noexcept {
             if constexpr (count > 0) {
                 return item << count;

@@ -1,12 +1,15 @@
 #pragma once
 
+/// @file
+/// @brief E^x over a whole pack.
+
 #include "core/drivers/processor/kernels/generic/constants.hpp"
 #include "core/drivers/processor/kernels/generic/polynomial.hpp"
 #include "core/types.hpp"
 
 namespace sci::core::drivers::processor::kernels {
 
-    // e^x over a whole pack.
+    /// e^x over a whole pack.
     template <typename pack> struct Exponential {
         using type = pack::element;
         using value = pack::value;
@@ -40,10 +43,10 @@ namespace sci::core::drivers::processor::kernels {
         }
 
     private:
-        // Taylor series of e^r.
+        /// Taylor series of e^r.
         static constexpr auto series = Polynomial<type, limit::exponential + 1>::factorials();
 
-        // 2^k for integral k in the normal exponent range, built straight from the exponent bits.
+        /// 2^k for integral k in the normal exponent range, built straight from the exponent bits.
         static value scale(const value exponent) noexcept {
             return pack::cast(pack::template shift<limit::mantissa>(
                     pack::raw(pack::add(exponent, pack::splat(limit::exponent)))));

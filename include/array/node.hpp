@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief An operation in an expression: an interior node of the tree.
+
 #include "array/calculate.hpp"
 #include "array/deferred.hpp"
 #include "array/methods.hpp"
@@ -19,7 +22,7 @@ namespace sci::array {
 
     using core::drivers::Device;
 
-    // Interior node: code applied to its operands.
+    /// Interior node: code applied to its operands.
     template <core::Code code, typename... operands> struct Node : Methods<Node<code, operands...>> {
         using element = std::tuple_element_t<0, std::tuple<operands...>>::element;
         static constexpr core::size rank = std::max({operands::rank...});
@@ -33,8 +36,8 @@ namespace sci::array {
 
         explicit Node(operands... items) : children(std::move(items)...) {}
 
-        // Operands must agree on their shape (no broadcasting yet, apart from scalars): the first array
-        // operand gives it, and every other array operand must match.
+        /// Operands must agree on their shape (no broadcasting yet, apart from scalars): the first array
+        /// operand gives it, and every other array operand must match.
         [[nodiscard]] Shape<rank> shape() const noexcept {
             const Shape<rank> result = std::get<lead>(children).shape();
             // Scalars match any shape.
@@ -52,7 +55,7 @@ namespace sci::array {
             return result;
         }
 
-        // The first device found among the leaves decides where the expression runs.
+        /// The first device found among the leaves decides where the expression runs.
         [[nodiscard]] Device *device() const noexcept {
             Device *found = nullptr;
             std::apply([&](const auto &...child) { ((found = found ? found : child.device()), ...); }, children);
@@ -80,7 +83,7 @@ namespace sci::array {
         }
 
     private:
-        // Index of the first array operand; rank > 0 guarantees there is one.
+        /// Index of the first array operand; rank > 0 guarantees there is one.
         static constexpr core::size lead = [] {
             constexpr bool arrays[] = {(operands::rank > 0)...};
             core::size index = 0;
@@ -90,6 +93,7 @@ namespace sci::array {
         }();
     };
 
+    /// @brief Every node is a lazy expression.
     template <core::Code code, typename... operands> struct Deferred<Node<code, operands...>> : std::true_type {};
 
 }

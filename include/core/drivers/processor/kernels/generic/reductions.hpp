@@ -1,10 +1,13 @@
 #pragma once
 
+/// @file
+/// @brief Sums, minima and maxima over a whole pack.
+
 #include "core/types.hpp"
 
 namespace sci::core::drivers::processor::kernels {
 
-    // Four independent accumulators hide the add latency and give a partly pairwise summation order.
+    /// Four independent accumulators hide the add latency and give a partly pairwise summation order.
     template <typename pack> pack::element sum(const typename pack::element *source, const size count) noexcept {
         using type = pack::element;
         constexpr size width = pack::width;
@@ -38,7 +41,7 @@ namespace sci::core::drivers::processor::kernels {
         return result;
     }
 
-    // sum(left * right) with four fused multiply-add accumulators: the multiply never leaves registers.
+    /// sum(left * right) with four fused multiply-add accumulators: the multiply never leaves registers.
     template <typename pack>
     pack::element dot(const typename pack::element *left, const typename pack::element *right,
                       const size count) noexcept {

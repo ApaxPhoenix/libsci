@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief The integer and floating-point types every part of libsci names.
+
 #include <cstddef>
 #include <cstdint>
 

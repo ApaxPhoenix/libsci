@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief An n-dimensional, contiguous, row-major array, in the spirit of numpy.ndarray.
+
 #include "array/expression.hpp"
 #include "array/methods.hpp"
 #include "array/shape.hpp"
@@ -18,22 +21,22 @@
 
 namespace sci::array {
 
-    // An n-dimensional, contiguous, row-major array, in the spirit of numpy.ndarray:
-    //
-    //     Array<float, 2> a({2, 3});           // zeros
-    //     Array<float, 2> b({2, 3}, 1.5f);     // filled
-    //     Array<float, 2> c = a * b + 1.0f;    // computed in a single loop
-    //     float total = c.sum();
-    //
-    // Arrays can live on a Device (a.to(graphics)) or in an Arena; expressions then run there, and
-    // reading an element on the host waits for the GPU first, so a GPU array reads like any other
-    // array. size(), sum(), mean(), minimum(), maximum() and copy() come from Methods, which
-    // expressions share.
+    /// An n-dimensional, contiguous, row-major array, in the spirit of numpy.ndarray:
+    ///
+    ///     Array<float, 2> a({2, 3});           // zeros
+    ///     Array<float, 2> b({2, 3}, 1.5f);     // filled
+    ///     Array<float, 2> c = a * b + 1.0f;    // computed in a single loop
+    ///     float total = c.sum();
+    ///
+    /// Arrays can live on a Device (a.to(graphics)) or in an Arena; expressions then run there, and
+    /// reading an element on the host waits for the GPU first, so a GPU array reads like any other
+    /// array. size(), sum(), mean(), minimum(), maximum() and copy() come from Methods, which
+    /// expressions share.
     template <typename type, core::size order> class Array : public Methods<Array<type, order>> {
     public:
         using element = type;
 
-        // Number of dimensions (numpy's ndim).
+        /// Number of dimensions (numpy's ndim).
         static constexpr core::size rank = order;
 
     private:
@@ -44,20 +47,20 @@ namespace sci::array {
     public:
         Array() = default;
 
-        // Every element set to value, zeros unless one is given.
+        /// Every element set to value, zeros unless one is given.
         explicit Array(Shape<rank> shape, const element &value = element{})
             : store(shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
             std::fill_n(data(), store.size(), value);
         }
 
-        // The same on a Device or in an Arena.
+        /// The same on a Device or in an Arena.
         template <location place>
         Array(place &where, Shape<rank> shape, const element &value = element{})
             : store(where, shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
             std::fill_n(data(), store.size(), value);
         }
 
-        // Values in row-major order; missing trailing values are zero.
+        /// Values in row-major order; missing trailing values are zero.
         Array(Shape<rank> shape, std::initializer_list<element> values)
             : store(shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {
             ASSERT(values.size() <= store.size());
@@ -71,7 +74,7 @@ namespace sci::array {
             std::fill(std::copy(values.begin(), values.end(), data()), data() + store.size(), element{});
         }
 
-        // Uninitialised (see sci::empty).
+        /// Uninitialised (see sci::empty).
         Array(Shape<rank> shape, Uninitialized /*unused*/)
             : store(shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {}
 
@@ -79,8 +82,8 @@ namespace sci::array {
         Array(place &where, Shape<rank> shape, Uninitialized /*unused*/)
             : store(where, shape.total()), bounds(shape), layout(Stride<rank>::contiguous(shape)) {}
 
-        // Computes an expression in a single pass, on the device its arrays live on. Implicit on
-        // purpose, so `Array<float, 2> c = a * b;` works as it does in numpy.
+        /// Computes an expression in a single pass, on the device its arrays live on. Implicit on
+        /// purpose, so `Array<float, 2> c = a * b;` works as it does in numpy.
         template <expression source>
             requires(std::is_same_v<typename source::element, element> && source::rank == rank)
         Array(const source &item) // NOLINT(google-explicit-constructor, hicpp-explicit-conversions)
@@ -93,8 +96,8 @@ namespace sci::array {
         Array(Array &&) noexcept = default;
         Array &operator=(Array &&) noexcept = default;
 
-        // Same shape: computed in place (the array may appear in the expression). Otherwise, the
-        // array is replaced by a new one.
+        /// Same shape: computed in place (the array may appear in the expression). Otherwise, the
+        /// array is replaced by a new one.
         template <expression source>
             requires(std::is_same_v<typename source::element, element> && source::rank == rank)
         Array &operator=(const source &item) {
@@ -110,10 +113,10 @@ namespace sci::array {
         [[nodiscard]] Shape<rank> shape() const noexcept { return bounds; }
         [[nodiscard]] Stride<rank> strides() const noexcept { return layout; }
 
-        // The device the array lives on (null for host and arena memory); the array does not own it.
+        /// The device the array lives on (null for host and arena memory); the array does not own it.
         [[nodiscard]] Device *device() const noexcept { return store.device(); }
 
-        // Raw element pointer. For GPU arrays, call device()->synchronize() before using it on the host.
+        /// Raw element pointer. For GPU arrays, call device()->synchronize() before using it on the host.
         [[nodiscard]] element *data() noexcept { return store.data(); }
         [[nodiscard]] const element *data() const noexcept { return store.data(); }
 
@@ -137,7 +140,7 @@ namespace sci::array {
             return data() + store.size();
         }
 
-        // a[i, j] (multi-dimensional) or a[i] (flat).
+        /// a[i, j] (multi-dimensional) or a[i] (flat).
         template <typename... arguments>
             requires(sizeof...(arguments) == rank && rank > 1)
         [[nodiscard]] element &operator[](arguments... indices) {
@@ -162,7 +165,7 @@ namespace sci::array {
             return data()[index];
         }
 
-        // A copy on a Device (or from the GPU back to a CPU device), or in an Arena.
+        /// A copy on a Device (or from the GPU back to a CPU device), or in an Arena.
         template <location place> [[nodiscard]] Array to(place &where) const {
             Array result(where, bounds, Uninitialized{});
             store.synchronize();
@@ -170,7 +173,7 @@ namespace sci::array {
             return result;
         }
 
-        // A copy in plain host memory, wherever this array lives (like torch.Tensor.cpu()).
+        /// A copy in plain host memory, wherever this array lives (like torch.Tensor.cpu()).
         [[nodiscard]] Array host() const {
             Array result(bounds, Uninitialized{});
             store.synchronize();
@@ -178,7 +181,7 @@ namespace sci::array {
             return result;
         }
 
-        // Sets every element (numpy.ndarray.fill).
+        /// Sets every element (numpy.ndarray.fill).
         void fill(const element &value) {
             store.synchronize();
             std::fill_n(data(), store.size(), value);
@@ -213,14 +216,14 @@ namespace sci::array {
         }
     };
 
-    // Same shape and every element equal; `!=` is derived from it.
+    /// Same shape and every element equal; `!=` is derived from it.
     template <typename element, core::size rank>
     bool operator==(const Array<element, rank> &left, const Array<element, rank> &right) {
         if (left.shape() != right.shape()) return false;
         return std::equal(left.begin(), left.end(), right.begin());
     }
 
-    // Prints the elements in row-major order: [1, 2, 3].
+    /// Prints the elements in row-major order: [1, 2, 3].
     template <typename element, core::size rank>
     std::ostream &operator<<(std::ostream &stream, const Array<element, rank> &array) {
         stream << "[";

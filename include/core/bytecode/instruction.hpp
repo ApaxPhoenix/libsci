@@ -1,11 +1,14 @@
 #pragma once
 
+/// @file
+/// @brief One instruction of a chunk, and the value ids it reads and writes.
+
 #include "core/bytecode/code.hpp"
 #include "core/types.hpp"
 
 namespace sci::core {
 
-    // A value id packs its type into the top two bits and its index into the low six.
+    /// A value id packs its type into the top two bits and its index into the low six.
     namespace slot {
         inline constexpr uint8 input = 0x00;
         inline constexpr uint8 literal = 0x40;
@@ -15,7 +18,7 @@ namespace sci::core {
         inline constexpr uint8 types = 0xC0;
     }
 
-    // target = code(sources...), all value ids.
+    /// target = code(sources...), all value ids.
     struct Instruction {
         Code code;
         uint8 target;

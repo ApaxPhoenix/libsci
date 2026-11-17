@@ -41,7 +41,7 @@ namespace sci::core::drivers::processor::compiler {
                 reads[identifier & ~slot::types] = true;
         };
         for (uint8 step = 0; step < chunk.length; ++step) {
-            for (const uint8 source : chunk.code[step].sources)
+            for (const uint8 source : chunk.instructions[step].sources)
                 note(source);
         }
         note(chunk.result);
@@ -81,7 +81,7 @@ namespace sci::core::drivers::processor::compiler {
         };
 
         for (uint8 step = 0; step < chunk.length; ++step) {
-            const auto &[code, target, sources] = chunk.code[step];
+            const auto &[code, target, sources] = chunk.instructions[step];
             const a64::Vec first = value(sources[0]);
             a64::Vec result = compiler.new_vec128("value");
             switch (code) {

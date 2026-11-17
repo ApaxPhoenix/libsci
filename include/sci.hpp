@@ -1,21 +1,24 @@
 #pragma once
 
-// libsci in one header, laid out like numpy: everything you normally need is in `sci::`.
-//
-//     #include <sci.hpp>
-//
-//     auto first = sci::range(0.0f, 1.0f, 0.001f);           // Array<float, 1>
-//     auto second = sci::ones({1000});
-//     sci::Array<float, 1> third = first * second + 2.0f;    // computed in a single loop
-//     float total = sci::sum(sci::sin(third));               // or third.sum()
-//
-//     sci::Device graphics(sci::Target::graphics);           // like torch.device / cupy
-//     auto fourth = third.to(graphics);                      // expressions on it run on the GPU
-//     auto matrix = sci::product(left.to(graphics), right.to(graphics));
-//
-// Expressions are lazy: `first * second + 2.0f` is computed when it is stored in an Array, reduced,
-// or copied, in a single loop with no temporary arrays. Reading a GPU array on the host waits for
-// the GPU.
+/// @file
+/// @brief libsci in one header, laid out like numpy: everything usually needed is in sci.
+///
+/// libsci in one header, laid out like numpy: everything you normally need is in `sci::`.
+///
+///     #include <sci.hpp>
+///
+///     auto first = sci::range(0.0f, 1.0f, 0.001f);           // Array<float, 1>
+///     auto second = sci::ones({1000});
+///     sci::Array<float, 1> third = first * second + 2.0f;    // computed in a single loop
+///     float total = sci::sum(sci::sin(third));               // or third.sum()
+///
+///     sci::Device graphics(sci::Target::graphics);           // like torch.device / cupy
+///     auto fourth = third.to(graphics);                      // expressions on it run on the GPU
+///     auto matrix = sci::product(left.to(graphics), right.to(graphics));
+///
+/// Expressions are lazy: `first * second + 2.0f` is computed when it is stored in an Array, reduced,
+/// or copied, in a single loop with no temporary arrays. Reading a GPU array on the host waits for
+/// the GPU.
 
 #include "array/array.hpp"
 #include "core/drivers/device.hpp"
@@ -54,7 +57,7 @@ namespace sci {
     using operations::reshape;
     using operations::transpose;
 
-    // With two operands elementwise (numpy.minimum), with one a reduction (numpy.min).
+    /// With two operands elementwise (numpy.minimum), with one a reduction (numpy.min).
     using operations::maximum;
     using operations::minimum;
 

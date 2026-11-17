@@ -1,10 +1,13 @@
 #pragma once
 
+/// @file
+/// @brief A position in memory that only moves forward.
+
 #include "core/types.hpp"
 
 namespace sci::core::memory {
 
-    // A position in memory that only moves forward: where an arena block hands out its next piece.
+    /// A position in memory that only moves forward: where an arena block hands out its next piece.
     template <typename type> class Cursor {
     public:
         constexpr Cursor() noexcept = default;
