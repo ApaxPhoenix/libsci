@@ -12,6 +12,9 @@ namespace sci::core::drivers::processor::compiler {
 
     /// Emits `chunk` into `code` as a NEON loop (a Compiler::Function, four floats or two doubles per iteration).
     /// False when this build is not for ARM64 or the chunk holds an instruction it cannot compile.
+    /// @param code Where the code goes.
+    /// @param chunk The chunk.
+    /// @return Whether it could be emitted.
     [[nodiscard]] bool neon(asmjit::CodeHolder &code, const Chunk &chunk);
 
 }

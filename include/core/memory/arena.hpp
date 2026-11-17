@@ -19,9 +19,15 @@ namespace sci::core::memory {
     /// reset() makes every block reusable at once, and the memory is freed with the arena. Move-only.
     class Arena {
     public:
+        /// @brief An arena whose blocks hold a number of bytes.
+        /// @param bytes How many bytes a block holds.
         explicit Arena(const size bytes)
             : first(std::make_unique<Block>(bytes, alignment::processor)), active(first.get()), limit(bytes) {}
 
+        /// @brief The next piece of the active block, or of a new one.
+        /// @param count How many elements.
+        /// @param bound The alignment, a power of two.
+        /// @return The piece.
         template <typename type>
         [[nodiscard]] type *allocate(const size count, const size bound = alignment::processor) {
             const size bytes = count * sizeof(type) + bound - 1 & ~(bound - 1);
@@ -39,6 +45,7 @@ namespace sci::core::memory {
             return pointer;
         }
 
+        /// @brief Makes every block reusable at once.
         void reset() noexcept {
             active = first.get();
             for (Block *block = first.get(); block; block = block->next.get()) {
@@ -46,6 +53,8 @@ namespace sci::core::memory {
             }
         }
 
+        /// @brief How many bytes every block holds together.
+        /// @return The capacity.
         [[nodiscard]] size capacity() const noexcept {
             size total = 0;
             for (const Block *block = first.get(); block; block = block->next.get()) {
@@ -55,8 +64,11 @@ namespace sci::core::memory {
         }
 
     private:
+        /// @brief The first block.
         std::unique_ptr<Block> first;
+        /// @brief The block being allocated from.
         Block *active{nullptr};
+        /// @brief How many bytes a new block holds at least.
         size limit{0};
     };
 

@@ -7,6 +7,10 @@
 
 namespace sci::core::drivers::processor::kernels {
 
+    /// @brief Applies a one-operand code to every element.
+    /// @param sources The operand's elements.
+    /// @param target Where the results go.
+    /// @param count How many elements.
     template <typename pack, typename operation>
     void unary(const typename pack::element *const *sources, typename pack::element *target,
                const size count) noexcept {
@@ -21,6 +25,10 @@ namespace sci::core::drivers::processor::kernels {
         }
     }
 
+    /// @brief Applies a two-operand code to every element.
+    /// @param sources The operands' elements.
+    /// @param target Where the results go.
+    /// @param count How many elements.
     template <typename pack, typename operation>
     void binary(const typename pack::element *const *sources, typename pack::element *target,
                 const size count) noexcept {
@@ -44,6 +52,10 @@ namespace sci::core::drivers::processor::kernels {
         }
     }
 
+    /// @brief Applies a three-operand code to every element.
+    /// @param sources The operands' elements.
+    /// @param target Where the results go.
+    /// @param count How many elements.
     template <typename pack>
     void ternary(const typename pack::element *const *sources, typename pack::element *target,
                  const size count) noexcept {

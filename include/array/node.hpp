@@ -24,7 +24,9 @@ namespace sci::array {
 
     /// Interior node: code applied to its operands.
     template <core::Code code, typename... operands> struct Node : Methods<Node<code, operands...>> {
+        /// @brief The element type, the first operand's.
         using element = std::tuple_element_t<0, std::tuple<operands...>>::element;
+        /// @brief The most dimensions among the operands.
         static constexpr core::size rank = std::max({operands::rank...});
 
         static_assert((std::is_same_v<typename operands::element, element> && ...),
@@ -32,12 +34,16 @@ namespace sci::array {
         static_assert(((operands::rank == 0 || operands::rank == rank) && ...), "operands must share a rank");
         static_assert(rank > 0, "an expression needs at least one array operand");
 
+        /// @brief The operands.
         std::tuple<operands...> children;
 
+        /// @brief A node over its operands.
+        /// @param items The operands.
         explicit Node(operands... items) : children(std::move(items)...) {}
 
         /// Operands must agree on their shape (no broadcasting yet, apart from scalars): the first array
         /// operand gives it, and every other array operand must match.
+        /// @return The shape.
         [[nodiscard]] Shape<rank> shape() const noexcept {
             const Shape<rank> result = std::get<lead>(children).shape();
             // Scalars match any shape.
@@ -56,12 +62,16 @@ namespace sci::array {
         }
 
         /// The first device found among the leaves decides where the expression runs.
+        /// @return The device, or null for the host.
         [[nodiscard]] Device *device() const noexcept {
             Device *found = nullptr;
             std::apply([&](const auto &...child) { ((found = found ? found : child.device()), ...); }, children);
             return found;
         }
 
+        /// @brief Records the operands, then the code applied to them.
+        /// @param chunk The chunk recorded into.
+        /// @return The result's value id.
         [[nodiscard]] core::uint8 record(core::Chunk &chunk) const noexcept {
             return std::apply(
                     [&](const auto &...child) {
@@ -77,6 +87,9 @@ namespace sci::array {
                     children);
         }
 
+        /// @brief One element of the result, computed on the host.
+        /// @param index The element's flat index.
+        /// @return The element.
         [[nodiscard]] element at(const core::size index) const noexcept {
             return std::apply([&](const auto &...child) { return calculate<code, element>(child.at(index)...); },
                               children);

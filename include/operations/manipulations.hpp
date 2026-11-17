@@ -14,6 +14,10 @@ namespace sci::operations {
     using array::Array;
     using array::Shape;
 
+    /// @brief The same elements in a new shape (numpy.reshape).
+    /// @param alpha The array.
+    /// @param shape The new shape; it holds as many elements.
+    /// @return The array.
     template <typename element, core::size input, core::size output>
     Array<element, output> reshape(const Array<element, input> &alpha, const core::size (&shape)[output]) {
         const Shape<output> bounds{std::to_array(shape)};
@@ -26,6 +30,9 @@ namespace sci::operations {
         return beta;
     }
 
+    /// @brief The dimensions in reverse order (numpy.transpose).
+    /// @param input The array.
+    /// @return The array.
     template <typename element, core::size rank> Array<element, rank> transpose(const Array<element, rank> &input) {
         const auto shape = input.shape();
         Shape<rank> bounds{};
@@ -54,6 +61,9 @@ namespace sci::operations {
         return output;
     }
 
+    /// @brief The elements in one dimension, in row-major order (numpy.ravel).
+    /// @param input The array.
+    /// @return The array.
     template <typename element, core::size rank> Array<element, 1> flatten(const Array<element, rank> &input) {
         Array<element, 1> output(Shape<1>{input.size()}, array::Uninitialized{});
         std::copy(input.begin(), input.end(), output.begin());
@@ -61,6 +71,10 @@ namespace sci::operations {
         return output;
     }
 
+    /// @brief Removes a dimension of extent one (numpy.squeeze).
+    /// @param input The array.
+    /// @param axis The dimension.
+    /// @return The array.
     template <typename element, core::size rank>
         requires(rank > 1)
     Array<element, rank - 1> squeeze(const Array<element, rank> &input, core::size axis) {
@@ -80,6 +94,10 @@ namespace sci::operations {
         return reshape(input, bounds);
     }
 
+    /// @brief Inserts a dimension of extent one (numpy.expand_dims).
+    /// @param input The array.
+    /// @param axis Where it goes.
+    /// @return The array.
     template <typename element, core::size rank>
     Array<element, rank + 1> expand(const Array<element, rank> &input, core::size axis) {
         if (axis > rank) {

@@ -16,6 +16,12 @@ namespace sci::linear {
     /// Solves L U X = P^T B for the `width` columns of B, given factor()'s packed LU and row order:
     /// forward substitution through the unit lower triangle, then back substitution through the upper.
     /// Rows are updated as whole rows of `width` values, which keeps the inner loops contiguous.
+    /// @param factors factor()'s packed LU.
+    /// @param rows Its row order.
+    /// @param right B, row-major.
+    /// @param solution Receives X.
+    /// @param order The matrix's rows and columns.
+    /// @param width B's columns.
     template <typename element>
     void substitute(const element *factors, const core::size *rows, const element *right, element *solution,
                     const core::size order, const core::size width) {
@@ -48,6 +54,9 @@ namespace sci::linear {
     /// x with matrix * x = right (numpy.linalg.solve). `right` is a vector, or a matrix whose columns
     /// are several right-hand sides solved at once. The result has right's shape and lives where the
     /// matrix does.
+    /// @param matrix The square matrix.
+    /// @param right The right-hand side.
+    /// @return x.
     template <typename element, core::size rank>
         requires(rank == 1 || rank == 2)
     Array<element, rank> solve(const Array<element, 2> &matrix, const Array<element, rank> &right) {

@@ -28,11 +28,16 @@ namespace sci::array {
     public:
         Storage() = default;
 
+        /// @brief Storage for elements in plain host memory.
+        /// @param total How many elements.
         explicit Storage(const core::size total)
             : pointer(static_cast<element *>(allocation.reserve(total * sizeof(element)))), count(total) {
             std::uninitialized_default_construct_n(pointer, count);
         }
 
+        /// @brief Storage for elements on a device.
+        /// @param device The device.
+        /// @param total How many elements.
         Storage(Device &device, const core::size total) : count(total), owner(&device) {
             if (count == 0) return;
             device.allocate(count * sizeof(element), memory);
@@ -40,6 +45,8 @@ namespace sci::array {
         }
 
         /// The arena keeps ownership.
+        /// @param arena The arena.
+        /// @param total How many elements.
         Storage(core::memory::Arena &arena, const core::size total)
             : pointer(arena.allocate<element>(total)), count(total) {
             std::uninitialized_default_construct_n(pointer, count);
@@ -56,12 +63,16 @@ namespace sci::array {
         Storage(const Storage &) = delete;
         Storage &operator=(const Storage &) = delete;
 
+        /// @brief Takes another storage's elements, leaving it empty.
+        /// @param storage The storage moved from.
         Storage(Storage &&storage) noexcept
             : allocation(std::move(storage.allocation)), memory(std::exchange(storage.memory, {})),
               pointer(std::exchange(storage.pointer, nullptr)), count(std::exchange(storage.count, 0)),
               owner(std::exchange(storage.owner, nullptr)) {}
 
         /// Swaps, so the storage moved from releases what this one held.
+        /// @param storage The storage moved from.
+        /// @return This storage.
         Storage &operator=(Storage &&storage) noexcept {
             std::swap(allocation, storage.allocation);
             std::swap(memory, storage.memory);
@@ -71,10 +82,18 @@ namespace sci::array {
             return *this;
         }
 
+        /// @brief The first element.
+        /// @return A pointer to it.
         [[nodiscard]] element *data() noexcept { return pointer; }
+        /// @brief The first element, read-only.
+        /// @return A pointer to it.
         [[nodiscard]] const element *data() const noexcept { return pointer; }
 
+        /// @brief How many elements.
+        /// @return The count.
         [[nodiscard]] core::size size() const noexcept { return count; }
+        /// @brief The device the elements live on.
+        /// @return The device, or null for host and arena memory.
         [[nodiscard]] Device *device() const noexcept { return owner; }
 
         /// Lets the host touch the memory: waits for queued GPU work on the storage's device.
@@ -83,10 +102,15 @@ namespace sci::array {
         }
 
     private:
+        /// @brief The host memory, for host storage.
         core::memory::Allocation allocation{core::size{0}, core::alignment::line};
+        /// @brief The device memory, for device storage.
         core::drivers::Memory memory{};
+        /// @brief The first element.
         element *pointer{nullptr};
+        /// @brief How many elements.
         core::size count{0};
+        /// @brief The device, or null.
         Device *owner{nullptr};
     };
 

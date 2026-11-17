@@ -12,11 +12,13 @@ namespace sci::core {
 
     /// @brief float runs natively, at single precision.
     template <> struct Traits<float> {
+        /// @brief float runs natively, at single precision.
         static constexpr auto precision = Precision::single;
     };
 
     /// @brief double runs natively, at wide precision.
     template <> struct Traits<double> {
+        /// @brief double runs natively, at wide precision.
         static constexpr auto precision = Precision::wide;
     };
 

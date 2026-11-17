@@ -22,6 +22,9 @@ namespace sci::core::drivers::processor {
         /// set stays in L1 while it is evaluated (1024 measured best on an M1).
         static constexpr size block = 1024;
 
+        /// @brief Splits a chunk's elements, or keeps them in one part when that is cheaper.
+        /// @param chunk The recorded expression.
+        /// @param count How many elements.
         Plan(const Chunk &chunk, const size count) : count(count) {
             const size blocks = (count + block - 1) / block;
             const size cost = chunk.cost();
@@ -38,13 +41,17 @@ namespace sci::core::drivers::processor {
         }
 
         /// The elements of one part, in whole blocks except at the very end.
+        /// @param part Which part.
+        /// @return Its range.
         [[nodiscard]] Range range(const size part) const noexcept {
             const size blocks = (count + block - 1) / block;
             return {.first = blocks * part / parts * block,
                     .last = std::min(blocks * (part + 1) / parts * block, count)};
         }
 
+        /// @brief How many parts.
         size parts{1};
+        /// @brief How many threads may take part; 0 for all of them.
         size seats{1};
 
     private:
@@ -58,6 +65,7 @@ namespace sci::core::drivers::processor {
         /// hybrid chip only add contention (measured on an M1: 4 threads beat 8 by about 15%).
         static constexpr size spill = size{32} << 20;
 
+        /// @brief How many elements.
         size count;
     };
 

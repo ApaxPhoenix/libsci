@@ -17,6 +17,9 @@ namespace sci::core::memory {
     public:
         Allocation() noexcept = default;
 
+        /// @brief An aligned allocation.
+        /// @param bytes How many bytes.
+        /// @param alignment The alignment, a power of two.
         Allocation(const size bytes, const size alignment) : alignment(alignment) { reserve(bytes); }
 
         ~Allocation() {
@@ -26,10 +29,15 @@ namespace sci::core::memory {
         Allocation(const Allocation &) = delete;
         Allocation &operator=(const Allocation &) = delete;
 
+        /// @brief Takes another allocation's memory, leaving it empty.
+        /// @param allocation The allocation moved from.
         Allocation(Allocation &&allocation) noexcept
             : pointer(std::exchange(allocation.pointer, nullptr)), bytes(std::exchange(allocation.bytes, 0)),
               alignment(allocation.alignment) {}
 
+        /// @brief Takes another allocation's memory, leaving it empty.
+        /// @param allocation The allocation moved from.
+        /// @return This allocation.
         Allocation &operator=(Allocation &&allocation) noexcept {
             std::swap(pointer, allocation.pointer);
             std::swap(bytes, allocation.bytes);
@@ -38,6 +46,8 @@ namespace sci::core::memory {
         }
 
         /// Grows to at least `amount` bytes and returns the memory. Growing does not keep the contents.
+        /// @param amount How many bytes.
+        /// @return The memory.
         void *reserve(const size amount) {
             if (amount > bytes) {
                 if (pointer) ::operator delete(pointer, std::align_val_t{alignment});
@@ -47,12 +57,19 @@ namespace sci::core::memory {
             return pointer;
         }
 
+        /// @brief The memory.
+        /// @return A pointer to it.
         [[nodiscard]] void *data() const noexcept { return pointer; }
+        /// @brief How many bytes it holds.
+        /// @return The capacity.
         [[nodiscard]] size capacity() const noexcept { return bytes; }
 
     private:
+        /// @brief The memory.
         void *pointer{nullptr};
+        /// @brief How many bytes.
         size bytes{0};
+        /// @brief Its alignment.
         size alignment{alignment::processor};
     };
 

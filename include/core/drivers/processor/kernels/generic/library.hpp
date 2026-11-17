@@ -11,9 +11,14 @@ namespace sci::core::drivers::processor::kernels {
     /// Runs a C library function on every lane of a pack, the float or the double version to match
     /// the pack: the functions with no polynomial of their own (see Operation).
     template <typename pack> struct Library {
+        /// @brief The element type.
         using type = pack::element;
+        /// @brief A pack of elements.
         using value = pack::value;
 
+        /// @brief Runs the function on every lane.
+        /// @param input The pack.
+        /// @return The pack of results.
         template <float (*narrow)(float), double (*wide)(double)> static value apply(const value input) noexcept {
             type inputs[pack::width];
             type outputs[pack::width];

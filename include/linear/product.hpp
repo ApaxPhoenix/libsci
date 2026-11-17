@@ -16,6 +16,9 @@ namespace sci::linear {
 
     /// Matrix product of row-major matrices (numpy.matmul). GPU operands multiply on the GPU; host
     /// float and double use the CPU kernels (Apple's BLAS on macOS); other element types a plain loop.
+    /// @param left The left matrix.
+    /// @param right The right matrix.
+    /// @return The product.
     template <typename element>
     Array<element, 2> product(const Array<element, 2> &left, const Array<element, 2> &right) {
         const core::size rows = left.shape()[0];
@@ -63,6 +66,9 @@ namespace sci::linear {
 
     /// Inner product of two vectors or vector expressions (numpy.dot on 1-D arrays), computed in a
     /// single pass: the products are never stored.
+    /// @param first The first vector.
+    /// @param second The second vector.
+    /// @return The inner product.
     template <array::operand left, array::operand right>
         requires(left::rank == 1 && right::rank == 1)
     typename left::element dot(const left &first, const right &second) {

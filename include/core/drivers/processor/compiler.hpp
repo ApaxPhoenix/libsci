@@ -32,30 +32,43 @@ namespace sci::core::drivers::processor {
         /// point at the first element, constants holds the chunk's constants in the element type.
         using Function = void (*)(const void *const *inputs, const void *constants, void *output, size count);
 
+        /// @brief The process's compiler.
+        /// @return The compiler.
         [[nodiscard]] static Compiler &global();
 
         /// Elements one iteration of compiled code covers, or 0 when this table has no compiler.
+        /// @param table The kernels.
+        /// @param precision Whether the elements are float or double.
+        /// @return The width.
         [[nodiscard]] static size width(const kernels::Table &table, Precision precision) noexcept;
 
         /// The compiled chunk, or null when the kernels should run it: not supported, too small, or
         /// not worth compiling yet. A chunk compiles the second time it is seen, or the first time when
         /// it carries enough work (`count` elements) to pay for compiling.
+        /// @param chunk The recorded expression.
+        /// @param table The kernels.
+        /// @param count How many elements it will run over.
+        /// @return The function, or null.
         [[nodiscard]] Function compile(const Chunk &chunk, const kernels::Table &table, size count);
 
     private:
         Compiler();
 
-        // Created with the first compile: setting it up detects the CPU and reserves executable
-        // memory, which small array operations should never pay for.
+        /// Created with the first compile: setting it up detects the CPU and reserves executable
+        /// memory, which small array operations should never pay for.
         std::optional<asmjit::JitRuntime> runtime;
+        /// @brief Guards the maps.
         std::mutex guard;
 
-        // Compiled chunks by signature (null when compiling failed), and how often each chunk not yet
-        // compiled has been seen.
+        /// Compiled chunks by signature (null when compiling failed), and how often each chunk not yet
+        /// compiled has been seen.
         std::unordered_map<std::string, Function> functions;
+        /// @brief How often each chunk not yet compiled has been seen.
         std::unordered_map<std::string, uint32> sightings;
 
+        /// @brief Whether compiling is on (SCI_JIT=0 turns it off).
         bool enabled{true};
+        /// @brief Whether every compile is reported (SCI_JIT=trace).
         bool tracing{false};
     };
 

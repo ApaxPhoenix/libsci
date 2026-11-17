@@ -20,8 +20,11 @@ namespace sci::core::drivers::processor::kernels {
         /// Sum of products of two runs: sum(a * b) without materialising a * b.
         using Contraction = type (*)(const type *left, const type *right, size count) noexcept;
 
+        /// @brief A kernel for each code.
         Kernel kernels[static_cast<size>(Code::count)]{};
+        /// @brief A reduction for each fold.
         Reduction folds[static_cast<size>(Fold::count)]{};
+        /// @brief The dot product, for sums that end in a multiply.
         Contraction dot{nullptr};
     };
 

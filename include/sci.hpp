@@ -57,7 +57,7 @@ namespace sci {
     using operations::reshape;
     using operations::transpose;
 
-    /// With two operands elementwise (numpy.minimum), with one a reduction (numpy.min).
+    // With two operands elementwise (numpy.minimum), with one a reduction (numpy.min).
     using operations::maximum;
     using operations::minimum;
 

@@ -13,10 +13,16 @@ namespace sci::core::drivers::processor::kernels {
 
     /// Natural logarithm over a whole pack.
     template <typename pack> struct Logarithm {
+        /// @brief The element type.
         using type = pack::element;
+        /// @brief A pack of elements.
         using value = pack::value;
+        /// @brief The element type's constants.
         using limit = Constants<type>;
 
+        /// @brief ln x for every lane.
+        /// @param input The pack.
+        /// @return The pack of results.
         static value logarithm(const value input) noexcept {
             // Subnormal inputs are scaled into the normal range first, and the scale taken back below.
             const auto small = pack::less(input, pack::splat(limit::tiny));

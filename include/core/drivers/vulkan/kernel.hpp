@@ -13,7 +13,9 @@ namespace sci::core::drivers::vulkan {
     /// evaluate (writes the output array) and reduce (one partial per workgroup), taking the same
     /// arguments as shaders/interpreter.slang.
     struct Kernel {
+        /// @brief The pipeline evaluating the chunk.
         std::unique_ptr<Pipeline> evaluate;
+        /// @brief The pipeline reducing it.
         std::unique_ptr<Pipeline> reduce;
     };
 

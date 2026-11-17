@@ -11,10 +11,16 @@ namespace sci::core::drivers::processor::kernels {
 
     /// e^x over a whole pack.
     template <typename pack> struct Exponential {
+        /// @brief The element type.
         using type = pack::element;
+        /// @brief A pack of elements.
         using value = pack::value;
+        /// @brief The element type's constants.
         using limit = Constants<type>;
 
+        /// @brief e^x for every lane.
+        /// @param input The pack.
+        /// @return The pack of results.
         static value exponential(const value input) noexcept {
             const value clamped =
                     pack::maximum(pack::minimum(input, pack::splat(limit::upper)), pack::splat(limit::lower));
@@ -47,6 +53,8 @@ namespace sci::core::drivers::processor::kernels {
         static constexpr auto series = Polynomial<type, limit::exponential + 1>::factorials();
 
         /// 2^k for integral k in the normal exponent range, built straight from the exponent bits.
+        /// @param exponent k, in every lane.
+        /// @return The pack of powers.
         static value scale(const value exponent) noexcept {
             return pack::cast(pack::template shift<limit::mantissa>(
                     pack::raw(pack::add(exponent, pack::splat(limit::exponent)))));

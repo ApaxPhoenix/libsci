@@ -9,9 +9,11 @@ namespace sci::core::drivers::processor::kernels {
 
     /// Coefficients of a polynomial: coefficients[k] multiplies x^k.
     template <typename type, size count> struct Polynomial {
+        /// @brief The coefficients.
         type coefficients[count]{};
 
         /// Taylor coefficients 1/k!.
+        /// @return The polynomial.
         static constexpr Polynomial factorials() noexcept {
             Polynomial polynomial{};
             double factor = 1.0;
@@ -24,6 +26,7 @@ namespace sci::core::drivers::processor::kernels {
 
         /// atanh series tail: log((1 + s) / (1 - s)) = 2s + s * R(z) with z = s^2 and
         /// R(z) = 2z/3 + 2z^2/5 + ... = z * sum 2 z^k / (2k + 3).
+        /// @return The polynomial.
         static constexpr Polynomial reciprocals() noexcept {
             Polynomial polynomial{};
             for (size index = 0; index < count; ++index) {
@@ -33,6 +36,7 @@ namespace sci::core::drivers::processor::kernels {
         }
 
         /// Taylor coefficients (-1)^k / (2k + offset)!, in powers of r^2.
+        /// @return The polynomial.
         template <size offset> static constexpr Polynomial alternating() noexcept {
             Polynomial polynomial{};
             for (size index = 0; index < count; ++index) {
@@ -46,6 +50,8 @@ namespace sci::core::drivers::processor::kernels {
         }
 
         /// sum c[k] x^(k - from) for k in [from, count), by Horner's rule.
+        /// @param input x, in every lane.
+        /// @return The sum, in every lane.
         template <typename pack, size from> pack::value evaluate(const pack::value input) const noexcept {
             typename pack::value result = pack::splat(coefficients[count - 1]);
             for (size index = count - 1; index-- > from;) {

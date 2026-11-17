@@ -25,24 +25,43 @@ namespace sci::operations {
     using array::location;
     using array::Shape;
 
+    /// @brief An array of zeros (numpy.zeros).
+    /// @param shape The extent of each dimension.
+    /// @param where The Device or Arena it lives on, if any.
+    /// @return The array.
     template <typename element = float, core::size rank, location... place>
         requires(sizeof...(place) <= 1)
     Array<element, rank> zeros(const core::size (&shape)[rank], place &...where) {
         return Array<element, rank>(where..., Shape<rank>{std::to_array(shape)});
     }
 
+    /// @brief An array of ones (numpy.ones).
+    /// @param shape The extent of each dimension.
+    /// @param where The Device or Arena it lives on, if any.
+    /// @return The array.
     template <typename element = float, core::size rank, location... place>
         requires(sizeof...(place) <= 1)
     Array<element, rank> ones(const core::size (&shape)[rank], place &...where) {
         return Array<element, rank>(where..., Shape<rank>{std::to_array(shape)}, element{1});
     }
 
+    /// @brief An array of one value (numpy.full).
+    /// @param shape The extent of each dimension.
+    /// @param value The value.
+    /// @param where The Device or Arena it lives on, if any.
+    /// @return The array.
     template <typename element = float, core::size rank, location... place>
         requires(sizeof...(place) <= 1)
     Array<element, rank> full(const core::size (&shape)[rank], const element value, place &...where) {
         return Array<element, rank>(where..., Shape<rank>{std::to_array(shape)}, value);
     }
 
+    /// @brief count values evenly spaced from start to stop, both included (numpy.linspace).
+    /// @param start The first value.
+    /// @param stop The last value.
+    /// @param count How many values.
+    /// @param where The Device or Arena it lives on, if any.
+    /// @return The array.
     template <typename element = float, location... place>
         requires(sizeof...(place) <= 1)
     Array<element, 1> linspace(const element start, const element stop, const core::size count, place &...where) {
@@ -64,6 +83,10 @@ namespace sci::operations {
         return result;
     }
 
+    /// @brief Ones on the diagonal, zeros elsewhere (numpy.eye).
+    /// @param shape The extent of each dimension.
+    /// @param where The Device or Arena it lives on, if any.
+    /// @return The array.
     template <typename element = float, core::size rank, location... place>
         requires(sizeof...(place) <= 1 && rank == 2)
     Array<element, rank> eye(const core::size (&shape)[rank], place &...where) {
@@ -81,12 +104,21 @@ namespace sci::operations {
         return result;
     }
 
+    /// @brief A square identity matrix (numpy.identity).
+    /// @param order Its rows and columns.
+    /// @param where The Device or Arena it lives on, if any.
+    /// @return The matrix.
     template <typename element = float, location... place>
         requires(sizeof...(place) <= 1)
     Array<element, 2> eye(const core::size order, place &...where) {
         return eye<element>({order, order}, where...);
     }
 
+    /// @brief Coordinate matrices from two vectors (numpy.meshgrid).
+    /// @param x The x values.
+    /// @param y The y values.
+    /// @param where The Device or Arena they live on, if any.
+    /// @return The x and y coordinates of every point.
     template <typename element = float, location... place>
         requires(sizeof...(place) <= 1)
     std::pair<Array<element, 2>, Array<element, 2>> grid(const Array<element, 1> &x, const Array<element, 1> &y,
@@ -108,6 +140,9 @@ namespace sci::operations {
     }
 
     /// Contents are unspecified until written, which skips the zero-fill.
+    /// @param shape The extent of each dimension.
+    /// @param where The Device or Arena it lives on, if any.
+    /// @return The array.
     template <typename element = float, core::size rank, location... place>
         requires(sizeof...(place) <= 1)
     Array<element, rank> empty(const core::size (&shape)[rank], place &...where) {
@@ -115,6 +150,10 @@ namespace sci::operations {
     }
 
     /// start, start + step, ... up to (not including) stop.
+    /// @param start The first value.
+    /// @param stop Where it stops.
+    /// @param step The distance between values.
+    /// @return The array.
     template <typename element = float>
     Array<element, 1> range(const element start, const element stop, const element step = element{1}) {
         const double span =
@@ -128,6 +167,9 @@ namespace sci::operations {
         return result;
     }
 
+    /// @brief 0, 1, ... up to (not including) stop (numpy.arange).
+    /// @param stop Where it stops.
+    /// @return The array.
     template <typename element = float> Array<element, 1> range(const element stop) {
         return range<element>(element{0}, stop);
     }

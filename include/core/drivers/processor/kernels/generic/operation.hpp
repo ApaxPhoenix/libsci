@@ -19,6 +19,9 @@ namespace sci::core::drivers::processor::kernels {
     /// with the ISA's pack, and with its one-lane Scalar pack for the tail. The functions with no
     /// polynomial of their own, the inverse circular and the hyperbolic ones, go through the C library.
     template <Code code> struct Operation {
+        /// @brief What the code does to one pack.
+        /// @param item The operand.
+        /// @return The result.
         template <typename pack> static pack::value apply(const pack::value item) noexcept {
             if constexpr (code == Code::copy)
                 return item;
@@ -85,6 +88,10 @@ namespace sci::core::drivers::processor::kernels {
             }
         }
 
+        /// @brief What one code does to two packs.
+        /// @param left The left operand.
+        /// @param right The right operand.
+        /// @return The result.
         template <typename pack> static pack::value apply(const pack::value left, const pack::value right) noexcept {
             if constexpr (code == Code::add)
                 return pack::add(left, right);

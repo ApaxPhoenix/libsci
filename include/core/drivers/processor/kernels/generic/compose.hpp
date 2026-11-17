@@ -30,6 +30,8 @@
 
 namespace sci::core::drivers::processor::kernels {
 
+    /// @brief One element type's kernels, every code and fold, from a pack type.
+    /// @return The routines.
     template <typename pack> constexpr Routines<typename pack::element> assemble() noexcept {
         Routines<typename pack::element> routines{};
         routines.kernels[static_cast<size>(Code::copy)] = &unary<pack, Operation<Code::copy>>;
@@ -77,6 +79,8 @@ namespace sci::core::drivers::processor::kernels {
     }
 
     /// @brief Builds one instruction set's table of kernels, every code and fold, from its pack type.
+    /// @param name The instruction set's name.
+    /// @return The table.
     template <template <typename> class pack> constexpr Table compose(const char *name) noexcept {
         return Table{name, assemble<pack<float>>(), assemble<pack<double>>()};
     }

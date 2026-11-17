@@ -8,6 +8,9 @@
 namespace sci::core::drivers::processor::kernels {
 
     /// Four independent accumulators hide the add latency and give a partly pairwise summation order.
+    /// @param source The elements.
+    /// @param count How many.
+    /// @return The sum.
     template <typename pack> pack::element sum(const typename pack::element *source, const size count) noexcept {
         using type = pack::element;
         constexpr size width = pack::width;
@@ -42,6 +45,10 @@ namespace sci::core::drivers::processor::kernels {
     }
 
     /// sum(left * right) with four fused multiply-add accumulators: the multiply never leaves registers.
+    /// @param left The left vector.
+    /// @param right The right vector.
+    /// @param count How many elements each has.
+    /// @return The dot product.
     template <typename pack>
     pack::element dot(const typename pack::element *left, const typename pack::element *right,
                       const size count) noexcept {
@@ -78,6 +85,10 @@ namespace sci::core::drivers::processor::kernels {
         return result;
     }
 
+    /// @brief The least or greatest element; NaN anywhere gives NaN.
+    /// @param source The elements.
+    /// @param count How many.
+    /// @return The extreme.
     template <typename pack, typename operation>
     pack::element extreme(const typename pack::element *source, const size count) noexcept {
         using type = pack::element;

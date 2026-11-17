@@ -14,8 +14,11 @@ namespace sci::linear {
     ///
     ///     auto [permutation, lower, upper] = sci::linear::decompose(matrix);
     template <typename element> struct Factors {
+        /// @brief The row permutation.
         Array<element, 2> permutation;
+        /// @brief The lower triangle, with a unit diagonal.
         Array<element, 2> lower;
+        /// @brief The upper triangle.
         Array<element, 2> upper;
     };
 

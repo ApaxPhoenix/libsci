@@ -10,6 +10,10 @@
 namespace sci::array {
 
     /// Scalar semantics of each code, for element types the engine does not run natively.
+    /// @param alpha The first operand.
+    /// @param beta The second, for codes that take one.
+    /// @param gamma The third, for codes that take one.
+    /// @return The result.
     template <core::Code code, typename type>
     type calculate(const type alpha, const type beta = type{}, const type gamma = type{}) noexcept {
         using core::Code;

@@ -32,40 +32,59 @@
 
 namespace sci::core::drivers {
 
-    // Mirrors Chunk in shaders/common/layout.slang, byte for byte: the GPU reads fields by offset.
-    // `reserved` is padding that puts `code` at byte 16 in both; it is never read.
+    /// Mirrors Chunk in shaders/common/layout.slang, byte for byte: the GPU reads fields by offset.
+    /// `reserved` is padding that puts `code` at byte 16 in both; it is never read.
     struct Layout {
+        /// @brief How many instructions.
         uint32 length;
+        /// @brief The value that is the result.
         uint32 result;
+        /// @brief Padding; never read.
         uint32 reserved[2];
+        /// @brief Each instruction: its code, target and first two sources, then its third source.
         uint32 code[Chunk::capacity][2];
+        /// @brief The constants, as floats.
         float constants[Chunk::capacity];
+        /// @brief Each input's device address.
         uint64 inputs[Chunk::capacity];
     };
 
     static_assert(offsetof(Layout, code) == 16 && offsetof(Layout, constants) == 528 &&
                   offsetof(Layout, inputs) == 784);
 
-    // Mirrors Arguments in shaders/common/layout.slang; `reserved` pads it to the shader's 32 bytes.
+    /// Mirrors Arguments in shaders/common/layout.slang; `reserved` pads it to the shader's 32 bytes.
     struct Evaluation {
+        /// @brief The chunk's device address.
         uint64 chunk;
+        /// @brief The output's device address.
         uint64 output;
+        /// @brief How many elements.
         uint32 count;
+        /// @brief Whether it evaluates or reduces.
         uint32 mode;
+        /// @brief How many workgroups.
         uint32 groups;
+        /// @brief Padding; never read.
         uint32 reserved;
     };
 
     static_assert(sizeof(Evaluation) == 32);
 
-    // Mirrors Arguments in shaders/product.slang.
+    /// Mirrors Arguments in shaders/product.slang.
     struct Product {
+        /// @brief The left matrix's device address.
         uint64 left;
+        /// @brief The right matrix's device address.
         uint64 right;
+        /// @brief The product's device address.
         uint64 output;
+        /// @brief The product's rows.
         uint32 rows;
+        /// @brief Its columns.
         uint32 columns;
+        /// @brief The shared dimension.
         uint32 depth;
+        /// @brief The first row of this dispatch's slice.
         uint32 first;
     };
 
@@ -86,20 +105,29 @@ namespace sci::core::drivers {
     // chunk cost) the CPU finishes first, reading the host-mapped memory once pending work is done.
     constexpr size handoff = size{1} << 27;
 
-    // Everything a GPU device owns. Members are destroyed in reverse order: the stream first, which
-    // waits for queued GPU work, then the pipelines that work used, and `context` (the Vulkan device)
-    // last, after every object created from it.
+    /// Everything a GPU device owns. Members are destroyed in reverse order: the stream first, which
+    /// waits for queued GPU work, then the pipelines that work used, and `context` (the Vulkan device)
+    /// last, after every object created from it.
     struct Graphics {
+        /// @brief The Vulkan device.
         vulkan::Context context;
+        /// @brief Its buffers.
         vulkan::Allocator allocator;
+        /// @brief The pipeline evaluating chunks.
         vulkan::Pipeline evaluate;
+        /// @brief The pipeline reducing them.
         vulkan::Pipeline reduce;
+        /// @brief The pipeline multiplying matrices.
         vulkan::Pipeline product;
+        /// @brief Compiles chunks into kernels of their own.
         vulkan::Compiler compiler;
+        /// @brief Records and submits the work.
         vulkan::Stream stream;
+        /// @brief Serializes the device's users.
         std::mutex guard;
 
-        // Takes over an opened context; everything else is built on top of it.
+        /// Takes over an opened context; everything else is built on top of it.
+        /// @param opened The opened context.
         explicit Graphics(vulkan::Context &&opened)
             : context(std::move(opened)), allocator(context),
               evaluate(context, shaders::interpreter, "evaluate", sizeof(Evaluation)),
@@ -107,9 +135,14 @@ namespace sci::core::drivers {
               product(context, shaders::product, "product", sizeof(Product)), compiler(context, sizeof(Evaluation)),
               stream(context, allocator) {}
 
-        // Translates a chunk for interpreter.slang and the JIT's kernels, which read the same block.
-        // False when the GPU cannot run it: float64, more temporaries than the interpreter has
-        // registers (unless the chunk is `compiled`), or an array that does not live on this device.
+        /// Translates a chunk for interpreter.slang and the JIT's kernels, which read the same block.
+        /// False when the GPU cannot run it: float64, more temporaries than the interpreter has
+        /// registers (unless the chunk is `compiled`), or an array that does not live on this device.
+        /// @param chunk The chunk.
+        /// @param count How many elements.
+        /// @param layout Receives the translated chunk.
+        /// @param compiled Whether a compiled kernel will run it.
+        /// @return Whether the GPU can run it.
         [[nodiscard]] bool encode(const Chunk &chunk, const size count, Layout &layout,
                                   const bool compiled) const noexcept {
             if (chunk.precision != Precision::single || (!compiled && chunk.temporaries > registers)) return false;
@@ -133,8 +166,12 @@ namespace sci::core::drivers {
             return true;
         }
 
-        // Copies a chunk into the batch's scratch memory and returns its device address, with
-        // every input advanced by `start` elements (for split dispatches).
+        /// Copies a chunk into the batch's scratch memory and returns its device address, with
+        /// every input advanced by `start` elements (for split dispatches).
+        /// @param layout The translated chunk.
+        /// @param arguments How many inputs it has.
+        /// @param start How far each input is advanced, in elements.
+        /// @return The device address.
         [[nodiscard]] uint64 upload(const Layout &layout, const uint8 arguments, const size start) {
             const vulkan::Region region = stream.reserve(sizeof(Layout));
             auto *copy = static_cast<Layout *>(region.host);

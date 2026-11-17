@@ -58,6 +58,8 @@ namespace sci::array {
 
     /// Turns an operand into an expression leaf: arrays by pointer (or by shared pointer when they are
     /// temporaries), expressions by value.
+    /// @param item The array, expression or scalar.
+    /// @return The leaf, or the expression itself.
     template <operand type> auto capture(type &&item) {
         using bare = std::remove_cvref_t<type>;
         if constexpr (expression<type>) {
@@ -69,13 +71,20 @@ namespace sci::array {
         }
     }
 
+    /// @brief The type capture() turns an operand into.
     template <typename type> using captured = decltype(capture(std::declval<type>()));
 
+    /// @brief An expression applying a code to one operand.
+    /// @param item The operand.
+    /// @return The expression.
     template <core::Code code, operand type> auto apply(type &&item) {
         return Node<code, captured<type>>(capture(std::forward<type>(item)));
     }
 
     /// Scalars on either side take the element type of the array side.
+    /// @param first The first operand.
+    /// @param second The second operand.
+    /// @return The expression.
     template <core::Code code, typename left, typename right> auto apply(left &&first, right &&second) {
         if constexpr (scalar<left>) {
             using element = std::remove_cvref_t<right>::element;
@@ -97,34 +106,55 @@ namespace sci::array {
     template <typename left, typename right>
     concept compatible = (operand<left> && (operand<right> || scalar<right>)) || (scalar<left> && operand<right>);
 
+    /// @brief The elementwise sum, as an expression.
+    /// @param first The first operand.
+    /// @param second The second operand.
+    /// @return The expression.
     template <typename left, typename right>
         requires compatible<left, right>
     auto operator+(left &&first, right &&second) {
         return apply<core::Code::add>(std::forward<left>(first), std::forward<right>(second));
     }
 
+    /// @brief The elementwise difference, as an expression.
+    /// @param first The first operand.
+    /// @param second The second operand.
+    /// @return The expression.
     template <typename left, typename right>
         requires compatible<left, right>
     auto operator-(left &&first, right &&second) {
         return apply<core::Code::subtract>(std::forward<left>(first), std::forward<right>(second));
     }
 
+    /// @brief The elementwise product, as an expression.
+    /// @param first The first operand.
+    /// @param second The second operand.
+    /// @return The expression.
     template <typename left, typename right>
         requires compatible<left, right>
     auto operator*(left &&first, right &&second) {
         return apply<core::Code::multiply>(std::forward<left>(first), std::forward<right>(second));
     }
 
+    /// @brief The elementwise quotient, as an expression.
+    /// @param first The first operand.
+    /// @param second The second operand.
+    /// @return The expression.
     template <typename left, typename right>
         requires compatible<left, right>
     auto operator/(left &&first, right &&second) {
         return apply<core::Code::divide>(std::forward<left>(first), std::forward<right>(second));
     }
 
+    /// @brief The elementwise negation, as an expression.
+    /// @param item The operand.
+    /// @return The expression.
     template <operand type> auto operator-(type &&item) { return apply<core::Code::negate>(std::forward<type>(item)); }
 
     /// Writes the expression into target, which must already have the expression's shape. The target
     /// may appear in the expression (every kernel is elementwise). Runs on the target's device.
+    /// @param target The array written.
+    /// @param item The expression.
     template <typename element, core::size rank, typename source>
     void assign(Array<element, rank> &target, const source &item) {
         ASSERT(target.shape() == item.shape());

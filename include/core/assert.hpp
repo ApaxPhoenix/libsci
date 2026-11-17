@@ -5,4 +5,5 @@
 
 #include <cassert>
 
+/// @brief Checks a condition in debug builds, as assert does.
 #define ASSERT(condition) assert(condition)

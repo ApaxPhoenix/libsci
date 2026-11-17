@@ -12,13 +12,21 @@ namespace sci::core::memory {
     public:
         constexpr Cursor() noexcept = default;
 
+        /// @brief A cursor at a place in memory.
+        /// @param origin The memory.
+        /// @param offset How many elements in.
         constexpr explicit Cursor(type *origin, size offset = 0) noexcept : pointer(origin + offset) {}
 
+        /// @brief Moves the cursor forward.
+        /// @param offset How many elements.
         constexpr void advance(size offset) noexcept { pointer += offset; }
 
+        /// @brief Where the cursor is.
+        /// @return A pointer.
         [[nodiscard]] constexpr type *raw() noexcept { return pointer; }
 
     private:
+        /// @brief Where the cursor is.
         type *pointer{nullptr};
     };
 
