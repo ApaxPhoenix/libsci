@@ -15,6 +15,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - The complete set of arithmetic and reduction functions, elementwise and fused.
 - `linspace` and `eye` beside `zeros`, `ones`, `full`, `empty` and `range`.
 - `reshape`, `transpose`, `flatten`, `squeeze` and `expand`.
+- A test suite, one test per source file or header under `tests/`: every operation checked
+  against a plain loop, the JIT against the interpreter, and a device against the host.
 - `debug`, `release`, `sanitize` and `analyze` presets, with `SCI_SANITIZE` and `SCI_TIDY`.
 - `.clangd`, `.clang-tidy` and `.clang-format`, shared with the other projects, and every source
   laid out by them.

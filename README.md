@@ -137,6 +137,7 @@ of date. If something in it is wrong, please open an issue.
 - [x] Every circular and hyperbolic function, and their inverses
 - [x] `linspace` and `eye`, and `reshape`, `transpose`, `flatten`, `squeeze` and `expand`
 - [x] C++26, with presets, clang-tidy, sanitizers and CI on Windows, Linux and macOS
+- [x] A test suite: every operation checked against a plain loop, on the CPU and the GPU
 
 ### Done before
 - [x] Lazy expressions fused into one pass, as bytecode (0.1.0-beta.1)
@@ -149,7 +150,6 @@ of date. If something in it is wrong, please open an issue.
 - [ ] Views: `reshape`, `transpose` and slicing without copies
 - [ ] Reductions along one dimension: `sum(a, axis)` and the rest
 - [ ] More elementwise functions: `power`, `floor`, `ceil`, `round`, `clip` and `where`
-- [ ] A test suite, run by CI on every push
 
 ### Later
 - [ ] Reading and writing `.npy` files
@@ -246,6 +246,7 @@ It is written to `cmake-build-release/docs/html`.
 | `include/`, `src/` | libsci: `array` (arrays, shapes, strides, storage and deferred expressions), `operations` (the numpy-style functions), `linear` (products, factorizations and solving), `core` (bytecode, memory, and the CPU and GPU drivers) |
 | `shaders/` | The Slang compute shaders, compiled into the library |
 | `cmake/` | The scripts that turn shaders into headers |
+| `tests/` | One test per source file or header, at the same relative path |
 | `releases/` | Every release's notes |
 | `bin/`, `build/` | What a build leaves, and scratch files; neither is committed |
 
@@ -262,7 +263,7 @@ covers the [Contributor License Agreement](CLA.md), and please read the
 [Code of Conduct](CODE_OF_CONDUCT.md). Open an issue to report a bug or to discuss a feature
 before starting on a large change. Pull requests should:
 
-- build without warnings;
+- build without warnings and pass `ctest`;
 - check every operation they change against a plain scalar loop;
 - add an entry to [CHANGELOG.md](CHANGELOG.md).
 
